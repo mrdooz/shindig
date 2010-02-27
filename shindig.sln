@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shindig", "shindig\shindig.vcproj", "{7603BE97-3581-4574-8114-90AA6113FDE4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549} = {5E05CA90-5A2B-46A0-91B1-4E91ADF2F549}
+		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3} = {B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}
+		{1D3401ED-8DD2-409B-8280-3EFD3067E98B} = {1D3401ED-8DD2-409B-8280-3EFD3067E98B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celsus", "..\celsus\celsus.vcproj", "{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bzip2", "..\libs\bzip2-1.0.5\bzip2\bzip2.vcproj", "{1D3401ED-8DD2-409B-8280-3EFD3067E98B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\libs\zlib-1.2.3\zlib\zlib.vcproj", "{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7603BE97-3581-4574-8114-90AA6113FDE4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7603BE97-3581-4574-8114-90AA6113FDE4}.Debug|Win32.Build.0 = Debug|Win32
+		{7603BE97-3581-4574-8114-90AA6113FDE4}.Release|Win32.ActiveCfg = Release|Win32
+		{7603BE97-3581-4574-8114-90AA6113FDE4}.Release|Win32.Build.0 = Release|Win32
+		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}.Debug|Win32.Build.0 = Debug|Win32
+		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}.Release|Win32.ActiveCfg = Release|Win32
+		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}.Release|Win32.Build.0 = Release|Win32
+		{1D3401ED-8DD2-409B-8280-3EFD3067E98B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1D3401ED-8DD2-409B-8280-3EFD3067E98B}.Debug|Win32.Build.0 = Debug|Win32
+		{1D3401ED-8DD2-409B-8280-3EFD3067E98B}.Release|Win32.ActiveCfg = Release|Win32
+		{1D3401ED-8DD2-409B-8280-3EFD3067E98B}.Release|Win32.Build.0 = Release|Win32
+		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549}.Debug|Win32.Build.0 = Debug|Win32
+		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549}.Release|Win32.ActiveCfg = Release|Win32
+		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1D3401ED-8DD2-409B-8280-3EFD3067E98B} = {B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}
+		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549} = {B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}
+	EndGlobalSection
+EndGlobal
