@@ -28,4 +28,6 @@ private:
   AnimationManager* animation_manager_;
 };
 
+void json_test();
+
 #endif // #ifndef REDUX_LOADER_HPP

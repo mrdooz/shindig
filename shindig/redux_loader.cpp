@@ -11,9 +11,32 @@
 #include <boost/filesystem.hpp>
 #include <celsus/CelsusExtra.hpp>
 #include <celsus/path_utils.hpp>
+#include <libs/json_spirit/json_spirit.h>
+#include <fstream>
 
 //using namespace std;
 //using namespace boost::filesystem;
+
+namespace json = json_spirit;
+
+void json_test()
+{
+  const char* file_name = "d:/projects/shindig/data/scenes/diskette.json";
+  std::ifstream is( file_name );
+  json_spirit::mValue value;
+  if (!json_spirit::read( is, value )) {
+    return;
+  }
+  //const json_spirit::mArray& addr_array = value.get_array();
+  const json_spirit::mObject& addr_array = value.get_obj();
+
+  for (json_spirit::mObject::const_iterator i = addr_array.begin(), e = addr_array.end(); i != e; ++i) {
+    const json::mValue v = i->second;
+    int a = 10;
+  }
+
+
+}
 
 ReduxLoader::ReduxLoader(const std::string& filename, Scene* scene, SystemInterface* system, AnimationManager* animation_manager)
   : filename_(filename)

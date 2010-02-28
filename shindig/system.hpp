@@ -6,7 +6,7 @@ class System
 public:
   System();
   ~System();
-  void init_directx(const HWND hwnd, const int width, const int height);
+  bool init_directx(const HWND hwnd, const int width, const int height);
   void tick();
   void resize(const int width, const int height);
 private:
