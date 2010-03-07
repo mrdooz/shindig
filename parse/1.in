@@ -1,0 +1,4 @@
+DepthStencilState dsNormal 
+{ 
+	DepthEnable=TRUE;
+};

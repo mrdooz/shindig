@@ -42,10 +42,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(CELSUS); $(BZIP2); $(ZLIB)"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS; _CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="d3d11.lib d3dx11.lib d3dx10.lib"
+				AdditionalDependencies="d3d11.lib d3dx11.lib d3dx10.lib d3dcompiler.lib dxguid.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -182,6 +182,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\effect_wrapper.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\redux_loader.cpp"
 				>
 			</File>
@@ -233,6 +237,10 @@
 			</File>
 			<File
 				RelativePath=".\debug_renderer.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\effect_wrapper.hpp"
 				>
 			</File>
 			<File

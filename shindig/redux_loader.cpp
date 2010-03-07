@@ -185,20 +185,39 @@ void ReduxLoader::load_animation(ChunkIo& reader)
 */
 }
 
-extern ID3D10Device* g_d3d_device;
+extern ID3D11Device* g_d3d_device;
+
+
+struct Mesh
+{
+	Mesh(const std::string& name) : _name(name) {}
+	std::string _name;
+	std::string _transform_name;
+	std::vector<D3D11_INPUT_ELEMENT_DESC> _input_element_descs;
+
+	DXGI_FORMAT _index_buffer_format;
+
+	int32_t _index_count;
+	int32_t _vertex_buffer_stride;
+	D3DXVECTOR3 _bounding_sphere_center;
+	float _bounding_sphere_radius;
+
+	CComPtr<ID3D11Buffer> _vertex_buffer; 
+	CComPtr<ID3D11Buffer> _index_buffer;
+};
 
 
 void ReduxLoader::load_mesh(ChunkIo& reader)
 {
-/*
-  const string mesh_name(reader.read_string());
+
+	const std::string mesh_name(reader.read_string());
   Mesh* mesh = new Mesh(mesh_name);
   LOG_VERBOSE_LN("loading mesh: %s", mesh_name.c_str());
-  mesh->transform_name_ = reader.read_string();
-  mesh->animation_node_ = animation_manager_->find_node_by_name(mesh->transform_name_);
+  mesh->_transform_name = reader.read_string();
+  //mesh->animation_node_ = animation_manager_->find_node_by_name(mesh->transform_name_);
 
   const uint32_t input_desc_count = reader.read_int();
-  D3D10_INPUT_ELEMENT_DESC desc;
+  D3D11_INPUT_ELEMENT_DESC desc;
   ZeroMemory(&desc, sizeof(desc));
   for (uint32_t i = 0; i < input_desc_count; ++i) {
     desc.SemanticName = _strdup(reader.read_cstring());     // memory is freed in the mesh's dtor
@@ -206,28 +225,27 @@ void ReduxLoader::load_mesh(ChunkIo& reader)
     desc.Format = static_cast<DXGI_FORMAT>(reader.read_int());
     desc.InputSlot = reader.read_int();
     desc.AlignedByteOffset = reader.read_int();
-    mesh->input_element_descs_.push_back(desc);
+    mesh->_input_element_descs.push_back(desc);
   }
 
   const uint32_t vertex_count = reader.read_int();
   const uint32_t vertex_size = reader.read_int();
   uint8_t* vertex_data = reader.read_data(vertex_count * vertex_size);
-  create_static_vertex_buffer(mesh->vertex_buffer_, g_d3d_device, vertex_data, vertex_count, vertex_size);
+  create_static_vertex_buffer(g_d3d_device, vertex_count, vertex_size, vertex_data, &mesh->_vertex_buffer);
 
   const uint32_t index_count = reader.read_int();
   const uint32_t index_size = reader.read_int();
   ENFORCE(index_size == 2 || index_size == 4)(index_size);
   uint8_t* index_data = reader.read_data(index_count * index_size);
-  create_static_index_buffer(mesh->index_buffer_, g_d3d_device, index_data, index_count, index_size);
-  mesh->index_buffer_format_ = index_size == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+  create_static_index_buffer(g_d3d_device, index_count, index_size, index_data, &mesh->_index_buffer);
+  mesh->_index_buffer_format = index_size == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
 
-  mesh->index_count_ = index_count;
-  mesh->vertex_buffer_stride_ = vertex_size;
+  mesh->_index_count = index_count;
+  mesh->_vertex_buffer_stride = vertex_size;
 
-  mesh->bounding_sphere_center_ = reader.read_generic<D3DXVECTOR3>();
-  mesh->bounding_sphere_radius_ = reader.read_generic<float>();
+  mesh->_bounding_sphere_center = reader.read_generic<D3DXVECTOR3>();
+  mesh->_bounding_sphere_radius = reader.read_generic<float>();
 
-  scene_->meshes_.push_back(MeshSPtr(mesh));
-*/
+  //scene_->meshes_.push_back(MeshSPtr(mesh));
 }
 

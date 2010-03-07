@@ -1,8 +1,11 @@
 #include "stdafx.h"
 #include "system.hpp"
 #include "redux_loader.hpp"
+#include "effect_wrapper.hpp"
 
 // http://www.directx11tutorials.com/category/tutorials/getting-started
+
+ID3D11Device* g_d3d_device = NULL;
 
 System::System()
 {
@@ -40,6 +43,8 @@ bool System::init_directx(const HWND hwnd, const int width, const int height)
     return false;
   }
 
+	g_d3d_device = _device;
+
   CComPtr<ID3D11Texture2D> back_buffer;
   RETURN_ON_FAIL_HR_BOOL(_swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer)));
   RETURN_ON_FAIL_HR_BOOL(_device->CreateRenderTargetView(back_buffer, NULL, &_render_target_view));
@@ -49,10 +54,20 @@ bool System::init_directx(const HWND hwnd, const int width, const int height)
   CD3D11_VIEWPORT vp((float)width, (float)height, 0, 1, 0, 0);
   _immediate_context->RSSetViewports(1, &vp);
 
+	EffectWrapper e(_device);
+	e.load("/projects/shindig/effects/systemVS.fx");
+
+/*
+	char user_dir[MAX_PATH];
+	GetEnvironmentVariable("USERPROFILE", user_dir, MAX_PATH);
+	char full_path[MAX_PATH];
+	sprintf(full_path, "%s/My Documents/My Dropbox/data/scenes/diskette.rdx", user_dir);
+
+	ReduxLoader loader(full_path, NULL, NULL, NULL);
+	loader.load();
+
   json_test();
-
-
-
+*/
   return true;
 }
 

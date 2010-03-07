@@ -1,6 +1,6 @@
 Debug/
 Release/
-data/
+data/scenes/
 *.ilk
 *.lib
 *.pdb
@@ -11,3 +11,6 @@ data/
 *.exp
 *.bmp
 *.*~
+*.zip
+*.obj
+*.exe
