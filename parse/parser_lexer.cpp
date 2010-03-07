@@ -1,5 +1,5 @@
 
-#line 1 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 1 "c:\\projects\\shindig\\parse\\parser.rl"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,23 +12,23 @@
 // HLSL RasterizerState parser
 
 
-#line 2 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 2 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
 static const char _rasta_man_actions[] = {
-	0, 1, 0, 1, 1, 1, 11, 1, 
-	12, 1, 13, 1, 14, 1, 15, 1, 
-	16, 1, 17, 2, 2, 3, 2, 2, 
+	0, 1, 0, 1, 1, 1, 12, 1, 
+	13, 1, 14, 1, 15, 1, 16, 1, 
+	17, 1, 18, 2, 2, 3, 2, 2, 
 	4, 2, 2, 5, 2, 2, 6, 2, 
 	2, 7, 2, 2, 8, 2, 2, 9, 
-	2, 2, 10
+	2, 2, 10, 2, 2, 11
 };
 
 static const short _rasta_man_key_offsets[] = {
 	0, 0, 20, 23, 31, 37, 45, 52, 
-	59, 66, 73, 82, 89, 96, 103, 110, 
-	117, 124, 131, 138, 145, 152, 159, 166, 
-	173, 180, 187, 194, 201, 208, 215, 222, 
-	229, 236, 243, 250, 258, 266, 274, 282, 
-	290, 298, 306, 314, 322
+	59, 66, 73, 83, 90, 97, 104, 111, 
+	118, 125, 132, 139, 146, 153, 160, 167, 
+	174, 181, 188, 195, 202, 209, 216, 223, 
+	230, 237, 244, 251, 258, 265, 272, 280, 
+	288, 296, 304, 312, 320, 328, 336, 344
 };
 
 static const char _rasta_man_trans_keys[] = {
@@ -41,48 +41,51 @@ static const char _rasta_man_trans_keys[] = {
 	65, 90, 97, 122, 112, 48, 57, 65, 
 	90, 97, 122, 116, 48, 57, 65, 90, 
 	97, 122, 104, 48, 57, 65, 90, 97, 
-	122, 69, 83, 87, 48, 57, 65, 90, 
-	97, 122, 110, 48, 57, 65, 90, 97, 
-	122, 97, 48, 57, 65, 90, 98, 122, 
-	98, 48, 57, 65, 90, 97, 122, 108, 
-	48, 57, 65, 90, 97, 122, 101, 48, 
-	57, 65, 90, 97, 122, 116, 48, 57, 
-	65, 90, 97, 122, 101, 48, 57, 65, 
+	122, 69, 70, 83, 87, 48, 57, 65, 
 	90, 97, 122, 110, 48, 57, 65, 90, 
-	97, 122, 99, 48, 57, 65, 90, 97, 
-	122, 105, 48, 57, 65, 90, 97, 122, 
-	108, 48, 57, 65, 90, 97, 122, 83, 
+	97, 122, 97, 48, 57, 65, 90, 98, 
+	122, 98, 48, 57, 65, 90, 97, 122, 
+	108, 48, 57, 65, 90, 97, 122, 101, 
+	48, 57, 65, 90, 97, 122, 117, 48, 
+	57, 65, 90, 97, 122, 110, 48, 57, 
+	65, 90, 97, 122, 99, 48, 57, 65, 
+	90, 97, 122, 116, 48, 57, 65, 90, 
+	97, 122, 101, 48, 57, 65, 90, 97, 
+	122, 110, 48, 57, 65, 90, 97, 122, 
+	99, 48, 57, 65, 90, 97, 122, 105, 
+	48, 57, 65, 90, 97, 122, 108, 48, 
+	57, 65, 90, 97, 122, 83, 48, 57, 
+	65, 90, 97, 122, 116, 48, 57, 65, 
+	90, 97, 122, 97, 48, 57, 65, 90, 
+	98, 122, 116, 48, 57, 65, 90, 97, 
+	122, 101, 48, 57, 65, 90, 97, 122, 
+	114, 48, 57, 65, 90, 97, 122, 105, 
 	48, 57, 65, 90, 97, 122, 116, 48, 
-	57, 65, 90, 97, 122, 97, 48, 57, 
-	65, 90, 98, 122, 116, 48, 57, 65, 
-	90, 97, 122, 101, 48, 57, 65, 90, 
-	97, 122, 114, 48, 57, 65, 90, 97, 
-	122, 105, 48, 57, 65, 90, 97, 122, 
-	116, 48, 57, 65, 90, 97, 122, 101, 
-	48, 57, 65, 90, 97, 122, 77, 48, 
-	57, 65, 90, 97, 122, 97, 48, 57, 
-	65, 90, 98, 122, 115, 48, 57, 65, 
-	90, 97, 122, 107, 48, 57, 65, 90, 
-	97, 122, 65, 97, 48, 57, 66, 90, 
-	98, 122, 76, 108, 48, 57, 65, 90, 
-	97, 122, 83, 115, 48, 57, 65, 90, 
-	97, 122, 69, 101, 48, 57, 65, 90, 
-	97, 122, 82, 114, 48, 57, 65, 90, 
-	97, 122, 85, 117, 48, 57, 65, 90, 
-	97, 122, 69, 101, 48, 57, 65, 90, 
-	97, 122, 69, 101, 48, 57, 65, 90, 
-	97, 122, 82, 114, 48, 57, 65, 90, 
-	97, 122, 79, 111, 48, 57, 65, 90, 
-	97, 122, 0
+	57, 65, 90, 97, 122, 101, 48, 57, 
+	65, 90, 97, 122, 77, 48, 57, 65, 
+	90, 97, 122, 97, 48, 57, 65, 90, 
+	98, 122, 115, 48, 57, 65, 90, 97, 
+	122, 107, 48, 57, 65, 90, 97, 122, 
+	65, 97, 48, 57, 66, 90, 98, 122, 
+	76, 108, 48, 57, 65, 90, 97, 122, 
+	83, 115, 48, 57, 65, 90, 97, 122, 
+	69, 101, 48, 57, 65, 90, 97, 122, 
+	82, 114, 48, 57, 65, 90, 97, 122, 
+	85, 117, 48, 57, 65, 90, 97, 122, 
+	69, 101, 48, 57, 65, 90, 97, 122, 
+	69, 101, 48, 57, 65, 90, 97, 122, 
+	82, 114, 48, 57, 65, 90, 97, 122, 
+	79, 111, 48, 57, 65, 90, 97, 122, 
+	0
 };
 
 static const char _rasta_man_single_lengths[] = {
 	0, 14, 1, 2, 0, 2, 1, 1, 
-	1, 1, 3, 1, 1, 1, 1, 1, 
+	1, 1, 4, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 2, 2, 2, 2, 2, 
-	2, 2, 2, 2, 2
+	1, 1, 1, 1, 1, 1, 2, 2, 
+	2, 2, 2, 2, 2, 2, 2, 2
 };
 
 static const char _rasta_man_range_lengths[] = {
@@ -91,16 +94,16 @@ static const char _rasta_man_range_lengths[] = {
 	3, 3, 3, 3, 3, 3, 3, 3, 
 	3, 3, 3, 3, 3, 3, 3, 3, 
 	3, 3, 3, 3, 3, 3, 3, 3, 
-	3, 3, 3, 3, 3
+	3, 3, 3, 3, 3, 3, 3, 3
 };
 
 static const short _rasta_man_index_offsets[] = {
 	0, 0, 18, 21, 27, 31, 37, 42, 
-	47, 52, 57, 64, 69, 74, 79, 84, 
-	89, 94, 99, 104, 109, 114, 119, 124, 
-	129, 134, 139, 144, 149, 154, 159, 164, 
-	169, 174, 179, 184, 190, 196, 202, 208, 
-	214, 220, 226, 232, 238
+	47, 52, 57, 65, 70, 75, 80, 85, 
+	90, 95, 100, 105, 110, 115, 120, 125, 
+	130, 135, 140, 145, 150, 155, 160, 165, 
+	170, 175, 180, 185, 190, 195, 200, 206, 
+	212, 218, 224, 230, 236, 242, 248, 254
 };
 
 static const char _rasta_man_indicies[] = {
@@ -111,52 +114,54 @@ static const char _rasta_man_indicies[] = {
 	16, 5, 5, 5, 13, 17, 5, 5, 
 	5, 13, 18, 5, 5, 5, 13, 19, 
 	5, 5, 5, 13, 20, 5, 5, 5, 
-	13, 21, 22, 23, 5, 5, 5, 13, 
-	24, 5, 5, 5, 13, 25, 5, 5, 
-	5, 13, 26, 5, 5, 5, 13, 27, 
-	5, 5, 5, 13, 28, 5, 5, 5, 
-	13, 29, 5, 5, 5, 13, 30, 5, 
-	5, 5, 13, 31, 5, 5, 5, 13, 
-	32, 5, 5, 5, 13, 33, 5, 5, 
-	5, 13, 34, 5, 5, 5, 13, 35, 
-	5, 5, 5, 13, 36, 5, 5, 5, 
-	13, 37, 5, 5, 5, 13, 38, 5, 
-	5, 5, 13, 39, 5, 5, 5, 13, 
-	40, 5, 5, 5, 13, 41, 5, 5, 
-	5, 13, 42, 5, 5, 5, 13, 43, 
-	5, 5, 5, 13, 44, 5, 5, 5, 
-	13, 45, 5, 5, 5, 13, 46, 5, 
-	5, 5, 13, 47, 5, 5, 5, 13, 
-	48, 48, 5, 5, 5, 13, 49, 49, 
-	5, 5, 5, 13, 50, 50, 5, 5, 
-	5, 13, 51, 51, 5, 5, 5, 13, 
+	13, 21, 22, 23, 24, 5, 5, 5, 
+	13, 25, 5, 5, 5, 13, 26, 5, 
+	5, 5, 13, 27, 5, 5, 5, 13, 
+	28, 5, 5, 5, 13, 29, 5, 5, 
+	5, 13, 30, 5, 5, 5, 13, 31, 
+	5, 5, 5, 13, 32, 5, 5, 5, 
+	13, 33, 5, 5, 5, 13, 34, 5, 
+	5, 5, 13, 35, 5, 5, 5, 13, 
+	36, 5, 5, 5, 13, 37, 5, 5, 
+	5, 13, 38, 5, 5, 5, 13, 39, 
+	5, 5, 5, 13, 40, 5, 5, 5, 
+	13, 41, 5, 5, 5, 13, 42, 5, 
+	5, 5, 13, 43, 5, 5, 5, 13, 
+	44, 5, 5, 5, 13, 45, 5, 5, 
+	5, 13, 46, 5, 5, 5, 13, 47, 
+	5, 5, 5, 13, 48, 5, 5, 5, 
+	13, 49, 5, 5, 5, 13, 50, 5, 
+	5, 5, 13, 51, 5, 5, 5, 13, 
 	52, 52, 5, 5, 5, 13, 53, 53, 
 	5, 5, 5, 13, 54, 54, 5, 5, 
 	5, 13, 55, 55, 5, 5, 5, 13, 
 	56, 56, 5, 5, 5, 13, 57, 57, 
+	5, 5, 5, 13, 58, 58, 5, 5, 
+	5, 13, 59, 59, 5, 5, 5, 13, 
+	60, 60, 5, 5, 5, 13, 61, 61, 
 	5, 5, 5, 13, 0
 };
 
 static const char _rasta_man_trans_targs[] = {
-	2, 0, 1, 1, 3, 4, 6, 35, 
-	39, 42, 1, 1, 1, 1, 5, 1, 
-	4, 7, 8, 9, 10, 11, 16, 27, 
-	12, 13, 14, 15, 4, 17, 18, 19, 
-	20, 21, 22, 23, 24, 25, 26, 4, 
-	28, 29, 30, 31, 32, 33, 34, 4, 
-	36, 37, 38, 4, 40, 41, 4, 43, 
-	44, 4
+	2, 0, 1, 1, 3, 4, 6, 38, 
+	42, 45, 1, 1, 1, 1, 5, 1, 
+	4, 7, 8, 9, 10, 11, 16, 19, 
+	30, 12, 13, 14, 15, 4, 17, 18, 
+	4, 20, 21, 22, 23, 24, 25, 26, 
+	27, 28, 29, 4, 31, 32, 33, 34, 
+	35, 36, 37, 4, 39, 40, 41, 4, 
+	43, 44, 4, 46, 47, 4
 };
 
 static const char _rasta_man_trans_actions[] = {
-	0, 0, 9, 11, 0, 40, 0, 0, 
+	0, 0, 9, 11, 0, 43, 0, 0, 
 	0, 0, 5, 7, 15, 13, 0, 17, 
-	34, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 22, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 19, 
-	0, 0, 0, 0, 0, 0, 0, 25, 
-	0, 0, 0, 31, 0, 0, 28, 0, 
-	0, 37
+	37, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 22, 0, 0, 
+	28, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 19, 0, 0, 0, 0, 
+	0, 0, 0, 25, 0, 0, 0, 34, 
+	0, 0, 31, 0, 0, 40
 };
 
 static const char _rasta_man_to_state_actions[] = {
@@ -165,7 +170,7 @@ static const char _rasta_man_to_state_actions[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0
+	0, 0, 0, 0, 0, 0, 0, 0
 };
 
 static const char _rasta_man_from_state_actions[] = {
@@ -174,7 +179,7 @@ static const char _rasta_man_from_state_actions[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0
+	0, 0, 0, 0, 0, 0, 0, 0
 };
 
 static const short _rasta_man_eof_trans[] = {
@@ -183,7 +188,7 @@ static const short _rasta_man_eof_trans[] = {
 	14, 14, 14, 14, 14, 14, 14, 14, 
 	14, 14, 14, 14, 14, 14, 14, 14, 
 	14, 14, 14, 14, 14, 14, 14, 14, 
-	14, 14, 14, 14, 14
+	14, 14, 14, 14, 14, 14, 14, 14
 };
 
 static const int rasta_man_start = 1;
@@ -193,7 +198,7 @@ static const int rasta_man_error = 0;
 static const int rasta_man_en_main = 1;
 
 
-#line 15 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 15 "c:\\projects\\shindig\\parse\\parser.rl"
 
 
 int parse_inner(Tokens& tokens, char* str)
@@ -203,7 +208,7 @@ int parse_inner(Tokens& tokens, char* str)
   char *ts, *te, *tm = 0, *eof = 0;  
 
   
-#line 181 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 186 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
 	{
 	cs = rasta_man_start;
 	ts = 0;
@@ -211,7 +216,7 @@ int parse_inner(Tokens& tokens, char* str)
 	act = 0;
 	}
 
-#line 187 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 192 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -232,7 +237,7 @@ _resume:
 #line 1 "NONE"
 	{ts = p;}
 	break;
-#line 206 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 211 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -303,62 +308,66 @@ _eof_trans:
 	{te = p+1;}
 	break;
 	case 3:
-#line 37 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 37 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 5;}
 	break;
 	case 4:
-#line 38 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 38 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 6;}
 	break;
 	case 5:
-#line 39 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 39 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 7;}
 	break;
 	case 6:
-#line 40 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 40 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 8;}
 	break;
 	case 7:
-#line 41 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 41 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 9;}
 	break;
 	case 8:
-#line 42 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 42 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 10;}
 	break;
 	case 9:
-#line 43 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 43 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 11;}
 	break;
 	case 10:
-#line 45 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 44 "c:\\projects\\shindig\\parse\\parser.rl"
 	{act = 12;}
 	break;
 	case 11:
-#line 32 "d:\\projects\\shindig\\parse\\parser.rl"
-	{te = p+1;{ tokens.push_back(Token(L_BRACKET, 0)); }}
+#line 45 "c:\\projects\\shindig\\parse\\parser.rl"
+	{act = 13;}
 	break;
 	case 12:
-#line 33 "d:\\projects\\shindig\\parse\\parser.rl"
-	{te = p+1;{ tokens.push_back(Token(R_BRACKET, 0)); }}
+#line 32 "c:\\projects\\shindig\\parse\\parser.rl"
+	{te = p+1;{ tokens.push_back(Token(L_BRACKET, 0)); }}
 	break;
 	case 13:
-#line 34 "d:\\projects\\shindig\\parse\\parser.rl"
-	{te = p+1;{ tokens.push_back(Token(SEMI_COLON, 0)); }}
+#line 33 "c:\\projects\\shindig\\parse\\parser.rl"
+	{te = p+1;{ tokens.push_back(Token(R_BRACKET, 0)); }}
 	break;
 	case 14:
-#line 35 "d:\\projects\\shindig\\parse\\parser.rl"
-	{te = p+1;{ tokens.push_back(Token(ASSIGN, 0)); }}
+#line 34 "c:\\projects\\shindig\\parse\\parser.rl"
+	{te = p+1;{ tokens.push_back(Token(SEMI_COLON, 0)); }}
 	break;
 	case 15:
-#line 45 "d:\\projects\\shindig\\parse\\parser.rl"
-	{te = p;p--;{ tokens.push_back(Token(ID, (int)make_string(ts, te))); }}
+#line 35 "c:\\projects\\shindig\\parse\\parser.rl"
+	{te = p+1;{ tokens.push_back(Token(ASSIGN, 0)); }}
 	break;
 	case 16:
-#line 46 "d:\\projects\\shindig\\parse\\parser.rl"
-	{te = p;p--;{ }}
+#line 45 "c:\\projects\\shindig\\parse\\parser.rl"
+	{te = p;p--;{ tokens.push_back(Token(ID, (int)make_string(ts, te))); }}
 	break;
 	case 17:
+#line 46 "c:\\projects\\shindig\\parse\\parser.rl"
+	{te = p;p--;{ }}
+	break;
+	case 18:
 #line 1 "NONE"
 	{	switch( act ) {
 	case 5:
@@ -371,24 +380,27 @@ _eof_trans:
 	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_WRITE_MASK, 0)); }
 	break;
 	case 8:
-	{{p = ((te))-1;} tokens.push_back(Token(BOOL_TRUE, 0)); }
+	{{p = ((te))-1;} tokens.push_back(DEPTH_FUNC, 0)); }
 	break;
 	case 9:
-	{{p = ((te))-1;} tokens.push_back(Token(BOOL_FALSE, 0)); }
+	{{p = ((te))-1;} tokens.push_back(Token(BOOL_TRUE, 0)); }
 	break;
 	case 10:
-	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_WRITE_MASK_ALL, 0)); }
+	{{p = ((te))-1;} tokens.push_back(Token(BOOL_FALSE, 0)); }
 	break;
 	case 11:
-	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_WRITE_MASK_ZERO, 0)); }
+	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_WRITE_MASK_ALL, 0)); }
 	break;
 	case 12:
+	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_WRITE_MASK_ZERO, 0)); }
+	break;
+	case 13:
 	{{p = ((te))-1;} tokens.push_back(Token(ID, (int)make_string(ts, te))); }
 	break;
 	}
 	}
 	break;
-#line 345 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 356 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -401,7 +413,7 @@ _again:
 #line 1 "NONE"
 	{ts = 0;}
 	break;
-#line 356 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 367 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -421,7 +433,7 @@ _again:
 	_out: {}
 	}
 
-#line 51 "d:\\projects\\shindig\\parse\\parser.rl"
+#line 51 "c:\\projects\\shindig\\parse\\parser.rl"
 
  
   return 1;

@@ -2,4 +2,9 @@ DepthStencilState dsNormal
 { 
 	DepthEnable=TRUE;
 	DepthEnable=FALSE;
+<<<<<<< HEAD
+=======
+	
+	DepthWriteMask = Zero;
+>>>>>>> origin/master
 };
