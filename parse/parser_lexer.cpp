@@ -1,5 +1,5 @@
 
-#line 1 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 1 "d:\\projects\\shindig\\parse\\parser.rl"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,7 +12,7 @@
 // HLSL RasterizerState parser
 
 
-#line 2 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 2 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 static const char _rasta_man_actions[] = {
 	0, 1, 0, 1, 1, 1, 12, 1, 
 	13, 1, 14, 1, 15, 1, 16, 1, 
@@ -198,7 +198,7 @@ static const int rasta_man_error = 0;
 static const int rasta_man_en_main = 1;
 
 
-#line 15 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 15 "d:\\projects\\shindig\\parse\\parser.rl"
 
 
 int parse_inner(Tokens& tokens, char* str)
@@ -208,7 +208,7 @@ int parse_inner(Tokens& tokens, char* str)
   char *ts, *te, *tm = 0, *eof = 0;  
 
   
-#line 186 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 186 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 	{
 	cs = rasta_man_start;
 	ts = 0;
@@ -216,7 +216,7 @@ int parse_inner(Tokens& tokens, char* str)
 	act = 0;
 	}
 
-#line 192 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 192 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -237,7 +237,7 @@ _resume:
 #line 1 "NONE"
 	{ts = p;}
 	break;
-#line 211 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 211 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -308,63 +308,63 @@ _eof_trans:
 	{te = p+1;}
 	break;
 	case 3:
-#line 37 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 37 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 5;}
 	break;
 	case 4:
-#line 38 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 38 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 6;}
 	break;
 	case 5:
-#line 39 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 39 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 7;}
 	break;
 	case 6:
-#line 40 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 40 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 8;}
 	break;
 	case 7:
-#line 41 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 41 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 9;}
 	break;
 	case 8:
-#line 42 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 42 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 10;}
 	break;
 	case 9:
-#line 43 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 43 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 11;}
 	break;
 	case 10:
-#line 44 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 44 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 12;}
 	break;
 	case 11:
-#line 45 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 45 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 13;}
 	break;
 	case 12:
-#line 32 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 32 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(L_BRACKET, 0)); }}
 	break;
 	case 13:
-#line 33 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 33 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(R_BRACKET, 0)); }}
 	break;
 	case 14:
-#line 34 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 34 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(SEMI_COLON, 0)); }}
 	break;
 	case 15:
-#line 35 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 35 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(ASSIGN, 0)); }}
 	break;
 	case 16:
-#line 45 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 45 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(ID, (int)make_string(ts, te))); }}
 	break;
 	case 17:
-#line 46 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 46 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p;p--;{ }}
 	break;
 	case 18:
@@ -400,7 +400,7 @@ _eof_trans:
 	}
 	}
 	break;
-#line 356 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 356 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -413,7 +413,7 @@ _again:
 #line 1 "NONE"
 	{ts = 0;}
 	break;
-#line 367 "c:\\projects\\shindig\\parse\\parser_lexer.cpp"
+#line 367 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -433,7 +433,7 @@ _again:
 	_out: {}
 	}
 
-#line 51 "c:\\projects\\shindig\\parse\\parser.rl"
+#line 51 "d:\\projects\\shindig\\parse\\parser.rl"
 
  
   return 1;
