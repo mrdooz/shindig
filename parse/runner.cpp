@@ -93,6 +93,13 @@ struct Parser
     }
 	}
 	
+  void depth_write_mask()
+  {
+    match(DEPTH_WRITE_MASK);
+    match(ASSIGN);
+
+  }
+
 	void depth_enable()
 	{
 		match(DEPTH_ENABLE);
