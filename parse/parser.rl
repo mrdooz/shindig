@@ -37,11 +37,11 @@ int parse_inner(Tokens& tokens, char* str)
 	"DepthStencilState" => { tokens.push_back(Token(DEPTH_STENCIL_STATE, 0)); };
 	"DepthEnable" => { tokens.push_back(Token(DEPTH_ENABLE, 0)); };
 	"DepthWriteMask" => { tokens.push_back(Token(DEPTH_WRITE_MASK, 0)); };
+	"DepthFunc" => { tokens.push_back(DEPTH_FUNC, 0)); };
     true_ic => { tokens.push_back(Token(BOOL_TRUE, 0)); };
     false_ic => { tokens.push_back(Token(BOOL_FALSE, 0)); };
 	depth_write_mask_all_ic => { tokens.push_back(Token(DEPTH_WRITE_MASK_ALL, 0)); };
 	depth_write_mask_zero_ic => { tokens.push_back(Token(DEPTH_WRITE_MASK_ZERO, 0)); };
-	
 	id => { tokens.push_back(Token(ID, (int)make_string(ts, te))); };
 	space+ => { };
     *|;
