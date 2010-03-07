@@ -1,5 +1,5 @@
 
-#line 1 "parser.rl"
+#line 1 "d:\\projects\\shindig\\parse\\parser.rl"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,12 +8,11 @@
 #include <memory.h>
 #include <d3d11.h>
 #include "parser.h"
-//#include "parser.c"
 
 // HLSL RasterizerState parser
 
 
-#line 2 "parser_lexer.cpp"
+#line 2 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 static const char _rasta_man_actions[] = {
 	0, 1, 0, 1, 1, 1, 11, 1, 
 	12, 1, 13, 1, 14, 1, 15, 1, 
@@ -194,28 +193,8 @@ static const int rasta_man_error = 0;
 static const int rasta_man_en_main = 1;
 
 
-#line 16 "parser.rl"
+#line 15 "d:\\projects\\shindig\\parse\\parser.rl"
 
-
-#include <vector>
-
-struct Token
-{
-	Token(const int tag, const int extra = 0) : tag(tag), extra(extra) {}
-	int tag;
-	int extra;
-};
-
-typedef std::vector<Token> Tokens;
-
-char* make_string(const char* ts, const char* te)
-{
-	const int len = te - ts;
-	char* buf = new char[len+1];
-	memcpy(buf, ts, len);
-	buf[len] = 0;
-	return buf;
-}
 
 int parse_inner(Tokens& tokens, char* str)
 {
@@ -224,7 +203,7 @@ int parse_inner(Tokens& tokens, char* str)
   char *ts, *te, *tm = 0, *eof = 0;  
 
   
-#line 181 "parser_lexer.cpp"
+#line 181 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 	{
 	cs = rasta_man_start;
 	ts = 0;
@@ -232,7 +211,7 @@ int parse_inner(Tokens& tokens, char* str)
 	act = 0;
 	}
 
-#line 187 "parser_lexer.cpp"
+#line 187 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -253,7 +232,7 @@ _resume:
 #line 1 "NONE"
 	{ts = p;}
 	break;
-#line 206 "parser_lexer.cpp"
+#line 206 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -324,71 +303,71 @@ _eof_trans:
 	{te = p+1;}
 	break;
 	case 3:
-#line 53 "parser.rl"
-	{act = 1;}
-	break;
-	case 4:
-#line 57 "parser.rl"
+#line 37 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 5;}
 	break;
-	case 5:
-#line 58 "parser.rl"
+	case 4:
+#line 38 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 6;}
 	break;
+	case 5:
+#line 39 "d:\\projects\\shindig\\parse\\parser.rl"
+	{act = 7;}
+	break;
 	case 6:
-#line 60 "parser.rl"
+#line 40 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 8;}
 	break;
 	case 7:
-#line 61 "parser.rl"
+#line 41 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 9;}
 	break;
 	case 8:
-#line 62 "parser.rl"
+#line 42 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 10;}
 	break;
 	case 9:
-#line 63 "parser.rl"
+#line 43 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 11;}
 	break;
 	case 10:
-#line 64 "parser.rl"
+#line 45 "d:\\projects\\shindig\\parse\\parser.rl"
 	{act = 12;}
 	break;
 	case 11:
-#line 54 "parser.rl"
+#line 32 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(L_BRACKET, 0)); }}
 	break;
 	case 12:
-#line 55 "parser.rl"
+#line 33 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(R_BRACKET, 0)); }}
 	break;
 	case 13:
-#line 56 "parser.rl"
+#line 34 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(SEMI_COLON, 0)); }}
 	break;
 	case 14:
-#line 59 "parser.rl"
+#line 35 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(ASSIGN, 0)); }}
 	break;
 	case 15:
-#line 64 "parser.rl"
+#line 45 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(ID, (int)make_string(ts, te))); }}
 	break;
 	case 16:
-#line 65 "parser.rl"
+#line 46 "d:\\projects\\shindig\\parse\\parser.rl"
 	{te = p;p--;{ }}
 	break;
 	case 17:
 #line 1 "NONE"
 	{	switch( act ) {
-	case 1:
+	case 5:
 	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_STENCIL_STATE, 0)); }
 	break;
-	case 5:
+	case 6:
 	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_ENABLE, 0)); }
 	break;
-	case 6:
+	case 7:
 	{{p = ((te))-1;} tokens.push_back(Token(DEPTH_WRITE_MASK, 0)); }
 	break;
 	case 8:
@@ -409,7 +388,7 @@ _eof_trans:
 	}
 	}
 	break;
-#line 345 "parser_lexer.cpp"
+#line 345 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -422,7 +401,7 @@ _again:
 #line 1 "NONE"
 	{ts = 0;}
 	break;
-#line 356 "parser_lexer.cpp"
+#line 356 "d:\\projects\\shindig\\parse\\parser_lexer.cpp"
 		}
 	}
 
@@ -442,126 +421,9 @@ _again:
 	_out: {}
 	}
 
-#line 70 "parser.rl"
+#line 51 "d:\\projects\\shindig\\parse\\parser.rl"
 
  
   return 1;
 }
 
-/*
-
-	BNF-ish syntax
-	
-	start ::= DEPTH_STENCIL_STATE id L_BRACKET var* R_BRACKET SEMI_COLON
-	
-	var ::= depth_enable | depth_write_mask SEMI_COLON
-	depth_enable ::= DEPTH_ENABLE EQ bool SEMI_COLOR
-	
-	bool ::= BOOL_TRUE | BOOL_FALSE;
-
-
-*/
-
-// recursive decent parser
-struct Parser
-{
-	Parser(const Tokens& tokens) : _tokens(tokens), _idx(0) {}
-	
-	void run()
-	{
-		start();
-		printf("pass\n");
-	}
-	
-	void dss_var()
-	{
-		switch(lookahead())
-		{
-			case DEPTH_ENABLE:
-			depth_enable();
-			break;
-		}
-	}
-	
-	void depth_enable()
-	{
-		match(DEPTH_ENABLE);
-		match(ASSIGN);
-		bool value = do_bool();
-		match(SEMI_COLON);
-	}
-	
-	bool do_bool()
-	{
-		switch(lookahead())
-		{
-			case BOOL_TRUE:
-				match(BOOL_TRUE);
-				return true;
-			case BOOL_FALSE:
-				match(BOOL_FALSE);
-				return false;
-		}
-		return false;
-	}
-	
-	void start()
-	{
-		match(DEPTH_STENCIL_STATE);
-		const std::string str(id());
-		match(L_BRACKET);
-		dss_var();
-		match(R_BRACKET);
-		match(SEMI_COLON);
-	}
-	
-	std::string id()
-	{
-		const std::string str((const char*)cur().extra);
-		match(ID);
-		return str;
-	}
-	
-	void match(const int cur)
-	{
-		// compares the look-ahead with the token, and croak if different
-		if (cur == lookahead()) {
-			_idx++;
-			return;
-		}
-		printf("fail\n");
-		assert(false);
-	}
-	
-	int lookahead()
-	{
-		if (_idx >= _tokens.size()) {
-			return -1;
-		}
-		return _tokens[_idx].tag;
-	}
-	
-	const Token& cur()
-	{
-		return _tokens[_idx];
-	}
-	
-	int _idx;
-	Tokens _tokens;
-};
-
-#define BUFSIZE 1024
-
-int main()
-{
-  char buf[BUFSIZE];
-	Tokens tokens;
-  while ( fgets( buf, sizeof(buf), stdin ) != 0 ) {
-    parse_inner(tokens, buf);
-  }
-	
-	Parser p(tokens);
-	p.run();
-	
-  return 0;
-}

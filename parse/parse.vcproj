@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="shindig"
-	ProjectGUID="{7603BE97-3581-4574-8114-90AA6113FDE4}"
-	RootNamespace="shindig"
+	Name="parse"
+	ProjectGUID="{683BAB60-6C33-45BA-942E-D2241E10E8A9}"
+	RootNamespace="parse"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,12 +41,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(CELSUS); $(BZIP2); $(ZLIB)"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS; _CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
@@ -61,10 +60,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="d3d11.lib d3dx11.lib d3dx10.lib d3dcompiler.lib dxguid.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -116,11 +114,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="$(CELSUS); $(BZIP2); $(ZLIB)"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -137,7 +134,7 @@
 				Name="VCLinkerTool"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
@@ -174,55 +171,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\app.cpp"
+				RelativePath=".\parser_lexer.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\debug_renderer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\effect_wrapper.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\redux_loader.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\scene.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\shindig.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\stdafx.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\system.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\vector_font.cpp"
+				RelativePath=".\runner.cpp"
 				>
 			</File>
 		</Filter>
@@ -232,47 +185,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\app.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\debug_renderer.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\effect_wrapper.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\fast_delegate.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\fast_delegate_bind.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\redux_loader.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\scene.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\shindig.h"
-				>
-			</File>
-			<File
-				RelativePath=".\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\system.hpp"
-				>
-			</File>
-			<File
-				RelativePath=".\vector_font.hpp"
+				RelativePath=".\parser.h"
 				>
 			</File>
 		</Filter>
@@ -282,6 +195,19 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\parser.rl"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					CommandLine="$(InputDir)ragel.exe $(InputPath) -o $(InputDir)parser_lexer.cpp"
+					Outputs="parser_lexer.cpp"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
