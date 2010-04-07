@@ -9,8 +9,8 @@ TestEffect::TestEffect()
 bool TestEffect::init()
 {
 	ResourceManager& r = ResourceManager::instance();
-	r.load_effect_states("/projects/shindig/effects/states.fx", fastdelegate::bind(&TestEffect::states_loaded, this, _1));
-	r.load_vertex_shader("/projects/shindig/effects/SystemVS.fx", "vsMain", fastdelegate::bind(&TestEffect::vs_loaded, this, _1));
+  r.load_effect_states("/projects/shindig/effects/states.fx", fastdelegate::MakeDelegate(this, &TestEffect::states_loaded));
+	r.load_vertex_shader("/projects/shindig/effects/SystemVS.fx", "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded));
 	return true;
 }
 

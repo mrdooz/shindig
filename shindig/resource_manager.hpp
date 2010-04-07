@@ -13,8 +13,8 @@ public:
 	static ResourceManager& instance();
 
 	typedef stdext::hash_map< std::string, CComPtr<ID3D11BlendState> > BlendStates;
-	typedef fastdelegate::FastDelegate<void (const BlendStates&) > fnStateLoaded;
-	typedef fastdelegate::FastDelegate<void (EffectWrapper*) > fnEffectLoaded;
+  typedef fastdelegate::FastDelegate1<const BlendStates& > fnStateLoaded;
+	typedef fastdelegate::FastDelegate1<EffectWrapper*> fnEffectLoaded;
 
 	// All the loading functions are synchronous, but the given callback can be
 	// called multiple times if the specified file is modified
