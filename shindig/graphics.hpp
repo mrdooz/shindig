@@ -13,6 +13,7 @@ public:
 	void resize(const int width, const int height);
 
 	ID3D11Device* device() { return _device; }
+  ID3D11DeviceContext* context() { return _immediate_context; }
 
 private:
 	DISALLOW_COPY_AND_ASSIGN(Graphics);

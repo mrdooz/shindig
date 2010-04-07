@@ -5,6 +5,7 @@ data/scenes/
 *.lib
 *.pdb
 *.pyd
+*.pyc
 *.ncb
 *.suo
 *.vcproj.*
@@ -14,4 +15,3 @@ data/scenes/
 *.zip
 *.obj
 *.exe
-*.pyc

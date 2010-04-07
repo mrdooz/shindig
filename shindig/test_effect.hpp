@@ -6,15 +6,17 @@
 
 struct TestEffect
 {
+  TestEffect();
+
 	bool init();
 	bool close();
 	bool render();
 
 	void states_loaded(const ResourceManager::BlendStates& states);
-	void vs_loaded(const EffectWrapper& effect);
+	void vs_loaded(EffectWrapper* effect);
 
 	CComPtr<ID3D11BlendState> _blend_state;
-	EffectWrapper _effect;
+	EffectWrapper* _effect;
 };
 
 #endif

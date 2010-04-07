@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "test_effect.hpp"
 
+TestEffect::TestEffect()
+  : _effect(NULL)
+{
+
+}
 bool TestEffect::init()
 {
 	ResourceManager& r = ResourceManager::instance();
@@ -11,6 +16,7 @@ bool TestEffect::init()
 
 bool TestEffect::close()
 {
+  SAFE_DELETE(_effect);
 	_blend_state.Release();
 	return true;
 }
@@ -26,7 +32,8 @@ void TestEffect::states_loaded(const ResourceManager::BlendStates& states)
 	_blend_state = states.find("AdditiveBlending")->second;
 }
 
-void TestEffect::vs_loaded(const EffectWrapper& effect)
+void TestEffect::vs_loaded(EffectWrapper* effect)
 {
-
+  SAFE_DELETE(effect);
+  _effect = effect;
 }

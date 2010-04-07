@@ -65,9 +65,9 @@ bool ResourceManager::reload_vertex_shader(const char* filename)
 		const std::string& shader_name = i->first;
 		fnEffectLoaded fn = i->second;
 
-		EffectWrapper ew;
-		ew.load(filename, shader_name.c_str());
-		fn(ew);
+    EffectWrapper* effect = new EffectWrapper();
+		effect->load(filename, shader_name.c_str());
+		fn(effect);
 	}
 	return true;
 }
