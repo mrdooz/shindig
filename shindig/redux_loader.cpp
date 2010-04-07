@@ -39,10 +39,9 @@ void json_test()
 
 }
 
-ReduxLoader::ReduxLoader(const std::string& filename, Scene* scene, SystemInterface* system, AnimationManager* animation_manager)
+ReduxLoader::ReduxLoader(const std::string& filename, Scene* scene, AnimationManager* animation_manager)
   : filename_(filename)
   , scene_(scene)
-  , system_(system)
   , animation_manager_(animation_manager)
 {
 }
@@ -207,6 +206,7 @@ struct Mesh
 
 void ReduxLoader::load_mesh(ChunkIo& reader)
 {
+  ID3D11Device* device = Graphics::instance().device();
 
 	const std::string mesh_name(reader.read_string());
   Mesh* mesh = new Mesh(mesh_name);
@@ -229,13 +229,13 @@ void ReduxLoader::load_mesh(ChunkIo& reader)
   const uint32_t vertex_count = reader.read_int();
   const uint32_t vertex_size = reader.read_int();
   uint8_t* vertex_data = reader.read_data(vertex_count * vertex_size);
-	create_static_vertex_buffer(Graphics::instance().device(), vertex_count, vertex_size, vertex_data, &mesh->_vertex_buffer);
+	create_static_vertex_buffer(device, vertex_count, vertex_size, vertex_data, &mesh->_vertex_buffer);
 
   const uint32_t index_count = reader.read_int();
   const uint32_t index_size = reader.read_int();
   ENFORCE(index_size == 2 || index_size == 4)(index_size);
   uint8_t* index_data = reader.read_data(index_count * index_size);
-  create_static_index_buffer(Graphics::instance().device(), index_count, index_size, index_data, &mesh->_index_buffer);
+  create_static_index_buffer(device, index_count, index_size, index_data, &mesh->_index_buffer);
   mesh->_index_buffer_format = index_size == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
 
   mesh->_index_count = index_count;

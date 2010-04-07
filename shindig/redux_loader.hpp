@@ -1,8 +1,6 @@
 #ifndef REDUX_LOADER_HPP
 #define REDUX_LOADER_HPP
 
-//#include "ReduxTypes.hpp"
-
 class ChunkIo;
 class MaterialManager;
 struct SystemInterface;
@@ -13,7 +11,7 @@ class AnimationManager;
 class ReduxLoader
 {
 public:
-  ReduxLoader(const std::string& filename, Scene* scene, SystemInterface* system, AnimationManager* animation_manager);
+  ReduxLoader(const std::string& filename, Scene* scene, AnimationManager* animation_manager);
   void load();
 private:
   void load_camera(ChunkIo& reader);
@@ -24,7 +22,6 @@ private:
 
   std::string filename_;
   Scene* scene_;
-  SystemInterface* system_;
   AnimationManager* animation_manager_;
 };
 

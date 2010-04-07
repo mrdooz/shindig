@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "test_effect.hpp"
+#include "redux_loader.hpp"
+#include "system.hpp"
+#include "scene.hpp"
 
 TestEffect::TestEffect()
   : _effect(NULL)
@@ -8,9 +11,15 @@ TestEffect::TestEffect()
 }
 bool TestEffect::init()
 {
+  System& sys = System::instance();
 	ResourceManager& r = ResourceManager::instance();
-  r.load_effect_states("/projects/shindig/effects/states.fx", fastdelegate::MakeDelegate(this, &TestEffect::states_loaded));
-	r.load_vertex_shader("/projects/shindig/effects/SystemVS.fx", "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded));
+
+  r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded));
+	r.load_vertex_shader(sys.convert_path("effects/SystemVS.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded));
+
+  Scene scene;
+  ReduxLoader loader(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox), &scene, NULL);
+  loader.load();
 	return true;
 }
 

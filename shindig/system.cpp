@@ -2,6 +2,10 @@
 #include "system.hpp"
 #include "fast_delegate.hpp"
 #include <celsus/UnicodeUtils.hpp>
+#include <shobjidl.h>
+#include <Shlguid.h>
+#include <Shlobj.h>
+#include <direct.h>
 
 using namespace boost::signals2;
 
@@ -121,6 +125,7 @@ System& System::instance()
 
 bool System::init()
 {
+  enum_known_folders();
 
 	DWORD thread_id;
 	_watcher_thread = CreateThread(0, 0, WatcherThread, NULL, 0, &thread_id);
@@ -184,4 +189,56 @@ boost::signals2::connection System::add_file_changed(const std::string& filename
 		_specific_signals.insert(std::make_pair(filename, new sigFileChanged()));
 	}
 	return _specific_signals[filename]->connect(slot);
+}
+
+void System::enum_known_folders()
+{
+
+  char buf[MAX_PATH+1];
+  _getcwd(buf, MAX_PATH);
+  _working_dir = buf;
+  _working_dir += "\\";
+
+  // find the "my documents" and drop box folders
+  // See https://cfx.svn.codeplex.com/svn/Visual%20Studio%202008/CppShellKnownFolders/ReadMe.txt
+  // for a good description of how this stuff works
+  CComPtr<IKnownFolderManager> pkfm;
+  RETURN_ON_FAIL(CoCreateInstance(CLSID_KnownFolderManager, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pkfm)));
+  KNOWNFOLDERID id;
+  RETURN_ON_FAIL(pkfm->FolderIdFromCsidl(CSIDL_MYDOCUMENTS, &id));
+  CComPtr<IKnownFolder> k;
+  RETURN_ON_FAIL(pkfm->GetFolder(id, &k));
+  KNOWNFOLDER_DEFINITION kfd;
+  RETURN_ON_FAIL(k->GetFolderDefinition(&kfd));
+  PWSTR pszPath = NULL;
+  if (SUCCEEDED(k->GetPath(0, &pszPath))) {
+    char* str = NULL;
+    UnicodeToAnsi(pszPath, &str);
+    _my_documents = str;
+    _dropbox = _my_documents + "\\My DropBox\\";
+    if( !(GetFileAttributesA(_dropbox.c_str()) & FILE_ATTRIBUTE_DIRECTORY)) {
+      _dropbox = "";
+    }
+
+    free(str);
+    CoTaskMemFree(pszPath);
+  }
+  FreeKnownFolderDefinitionFields(&kfd);
+}
+
+std::string System::convert_path(const std::string& str, DirTag tag)
+{
+  std::string res;
+  switch(tag) {
+    case kDirRelative:
+      res = working_dir() + str;
+      break;
+    case kDirDropBox:
+      res = dropbox() + str;
+      break;
+    case kDirAbsolute:
+      res = str;
+      break;
+  }
+  return res;
 }
