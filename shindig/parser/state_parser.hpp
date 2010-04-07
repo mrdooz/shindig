@@ -1,7 +1,7 @@
 
 #ifndef _MR_PARSER_HPP_
 #define _MR_PARSER_HPP_
-#include "d:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
+#include "c:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
 class StateParser
 {
 public:

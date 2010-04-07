@@ -51,8 +51,6 @@ bool EffectWrapper::load(const char* filename, const char* entry_point)
 
 void EffectWrapper::do_reflection(ID3DBlob* blob_out)
 {
-  set_variable("tjong", 10);
-
 	ID3D11ShaderReflection* pReflector = NULL; 
 	D3DReflect(blob_out->GetBufferPointer(), blob_out->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector);
 	D3D11_SHADER_DESC shader_desc;
