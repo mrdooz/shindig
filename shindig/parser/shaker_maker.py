@@ -1,5 +1,6 @@
 # my first parser generator!
 # builds recursive decent parsers
+# magnus osterlind, 2010
 
 # * = zero or more
 # + = one or more
@@ -12,10 +13,9 @@ import re
 
 matcher_prefix = "match_"
 parser_name = ""
+symbols_file = ""
 
 class_data = []
-
-#    ::=\s*(?P<rules>[\w\|\s\*\+\[\]]+?)\s* # rules
 
 rule_re = re.compile(r"""
     (?P<name>\w+)\s*  # non-terminal
@@ -268,6 +268,7 @@ def create_matchers(rules):
 
     matchers.append(parser_code_prolog.substitute( { 
         "PARSER_NAME" : parser_name,
+        "SYMBOLS_FILE" : '"%s"' % symbols_file,
         "CLASS_DATA" : "\n".join(class_data)
     }))
     matchers.append("\n".join(terminal_matchers))
@@ -286,14 +287,16 @@ def create_matchers(rules):
     return matchers, tokens
 
 parser = OptionParser()
-parser.add_option("-o", "--out_file", dest="outfile", default="mr_parser.hpp")
-parser.add_option("-s", "--out_sybols", dest="outfile_symbols", default="mr_parser_symbols.hpp")
-parser.add_option("-p", "--parser_name", dest="parser_name", default="Parser")
+parser.add_option("-o", "--out_file", dest="outfile", default="state_parser.hpp")
+parser.add_option("-s", "--out_sybols", dest="outfile_symbols", default="state_parser_symbols.hpp")
+parser.add_option("-g", "--grammar_file", dest="grammar_file", default="states.sm")
+parser.add_option("-p", "--parser_name", dest="parser_name", default="StateParser")
 
 options, args = parser.parse_args()
 parser_name = options.parser_name
+symbols_file = options.outfile_symbols
 
-rules = [r for r in rule_gen(file("gram.tjong").readlines())]
+rules = [r for r in rule_gen(file(options.grammar_file).readlines())]
 matchers, tokens = create_matchers(rules)
 open(options.outfile, "wt").write("\n".join(matchers))
 open(options.outfile_symbols, "wt").write(parser_header_code.substitute(

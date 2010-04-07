@@ -1,11 +1,107 @@
 #include "stdafx.h"
 #include "system.hpp"
-#include "redux_loader.hpp"
-#include "effect_wrapper.hpp"
+#include "fast_delegate.hpp"
+#include <celsus/UnicodeUtils.hpp>
 
-// http://www.directx11tutorials.com/category/tutorials/getting-started
+using namespace boost::signals2;
 
-ID3D11Device* g_d3d_device = NULL;
+System* System::_instance = NULL;
+
+#define GEN_NAME2(prefix, line) prefix##line
+#define GEN_NAME(prefix, line) GEN_NAME2(prefix, line)
+#define MAKE_SCOPED(type) type GEN_NAME(ANON, __LINE__)
+
+struct ScopedCs
+{
+	ScopedCs(CRITICAL_SECTION* cs) : _cs(cs) { EnterCriticalSection(_cs); }
+	~ScopedCs() { LeaveCriticalSection(_cs); }
+	CRITICAL_SECTION* _cs;
+};
+
+#define SCOPED_CS(x) MAKE_SCOPED(ScopedCs)(x);
+
+
+enum {
+	COMPLETION_KEY_NONE         =   0,
+	COMPLETION_KEY_SHUTDOWN     =   1,
+	COMPLETION_KEY_IO           =   2
+};
+
+
+/*
+  Directory watcher thread. Uses completion ports to block until it detects a change in the directory tree
+  or until a shutdown event is posted
+*/
+
+DWORD WINAPI System::WatcherThread(void* param)
+{
+	System& sys = System::instance();
+  const int32_t NUM_ENTRIES = 128;
+  FILE_NOTIFY_INFORMATION info[NUM_ENTRIES];
+
+  while (true) {
+
+		sys._dir_handle = CreateFile("./", FILE_LIST_DIRECTORY, FILE_SHARE_READ, NULL, OPEN_EXISTING, 
+      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+
+    if (sys._dir_handle == INVALID_HANDLE_VALUE) {
+      return 1;
+    }
+
+    sys._watcher_completion_port = CreateIoCompletionPort(sys._dir_handle, NULL, COMPLETION_KEY_IO, 0);
+
+    if (sys._watcher_completion_port == INVALID_HANDLE_VALUE) {
+      return 1;
+    }
+
+    OVERLAPPED overlapped;
+    ZeroMemory(&overlapped, sizeof(overlapped));
+    const BOOL res = ReadDirectoryChangesW(sys._dir_handle, info, sizeof(info), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &overlapped, NULL);
+    if (!res) {
+      return 1;
+    }
+
+    DWORD bytes;
+    ULONG key = COMPLETION_KEY_NONE;
+    OVERLAPPED *overlapped_ptr = NULL;
+    bool done = false;
+    GetQueuedCompletionStatus(sys._watcher_completion_port, &bytes, &key, &overlapped_ptr, INFINITE);
+    switch (key) {
+    case COMPLETION_KEY_NONE: 
+      done = true;
+      break;
+    case COMPLETION_KEY_SHUTDOWN: 
+      return 1;
+
+    case COMPLETION_KEY_IO: 
+      break;
+    }
+    CloseHandle(sys._dir_handle);
+    CloseHandle(sys._watcher_completion_port);
+
+    if (done) {
+      break;
+    } else {
+      info[0].FileName[info[0].FileNameLength/2+0] = 0;
+      info[0].FileName[info[0].FileNameLength/2+1] = 0;
+			char filename[MAX_PATH];
+      UnicodeToAnsiToBuffer(info[0].FileName, filename, MAX_PATH);
+      // change '\' to '/'
+      char *ptr = filename;
+      while (*ptr) {
+        if (*ptr == '\\') {
+          *ptr = '/';
+        }
+        ++ptr;
+      }
+
+			System::instance().file_changed_internal(filename);
+    }
+
+  }
+
+  return 0;
+}
 
 System::System()
 {
@@ -15,72 +111,77 @@ System::~System()
 {
 }
 
-bool System::init_directx(const HWND hwnd, const int width, const int height)
+System& System::instance()
 {
-  _buffer_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-  DXGI_SWAP_CHAIN_DESC sd;
-  ZeroMemory( &sd, sizeof( sd ) );
-  sd.BufferCount = 1;
-  sd.BufferDesc.Width = width;
-  sd.BufferDesc.Height = height;
-  sd.BufferDesc.Format = _buffer_format;
-  sd.BufferDesc.RefreshRate.Numerator = 60;
-  sd.BufferDesc.RefreshRate.Denominator = 1;
-  sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  sd.OutputWindow = hwnd;
-  sd.SampleDesc.Count = 1;
-  sd.SampleDesc.Quality = 0;
-  sd.Windowed = TRUE;
-
-  const int flags = D3D11_CREATE_DEVICE_DEBUG;
-  D3D_FEATURE_LEVEL feature_level;
-
-  RETURN_ON_FAIL_HR_BOOL(D3D11CreateDeviceAndSwapChain(
-    NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, NULL, 0, D3D11_SDK_VERSION, &sd, &_swap_chain, &_device, &feature_level, &_immediate_context));
-
-  if (feature_level < D3D_FEATURE_LEVEL_9_3) {
-    return false;
-  }
-
-	g_d3d_device = _device;
-
-  CComPtr<ID3D11Texture2D> back_buffer;
-  RETURN_ON_FAIL_HR_BOOL(_swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer)));
-  RETURN_ON_FAIL_HR_BOOL(_device->CreateRenderTargetView(back_buffer, NULL, &_render_target_view));
-  ID3D11RenderTargetView* render_targets[] = { _render_target_view };
-  _immediate_context->OMSetRenderTargets(1, render_targets, NULL);
-
-  CD3D11_VIEWPORT vp((float)width, (float)height, 0, 1, 0, 0);
-  _immediate_context->RSSetViewports(1, &vp);
-
-	EffectWrapper e(_device);
-	e.load("/projects/shindig/effects/systemVS.fx");
-
-/*
-	char user_dir[MAX_PATH];
-	GetEnvironmentVariable("USERPROFILE", user_dir, MAX_PATH);
-	char full_path[MAX_PATH];
-	sprintf(full_path, "%s/My Documents/My Dropbox/data/scenes/diskette.rdx", user_dir);
-
-	ReduxLoader loader(full_path, NULL, NULL, NULL);
-	loader.load();
-
-  json_test();
-*/
-  return true;
+	if (_instance == NULL) {
+		_instance = new System();
+	}
+	return *_instance;
 }
 
-void System::tick()
+bool System::init()
 {
-  float ClearColor[4] = { 0, 1.0f, 1.0f, 1.0f };
-  _immediate_context->ClearRenderTargetView(_render_target_view, ClearColor);
-  _swap_chain->Present(0,0);
+
+	DWORD thread_id;
+	_watcher_thread = CreateThread(0, 0, WatcherThread, NULL, 0, &thread_id);
+	InitializeCriticalSection(&_cs_deferred_files);
+
+	return true;
 }
 
-void System::resize(const int width, const int height)
+bool System::close()
 {
-  if (_swap_chain) {
-    _swap_chain->ResizeBuffers(1, width, height, _buffer_format, 0);
-  }
+	_specific_signals.clear();
+	DeleteCriticalSection(&_cs_deferred_files);
+
+	PostQueuedCompletionStatus(_watcher_completion_port, 0, COMPLETION_KEY_SHUTDOWN, 0);
+	WaitForSingleObject(_watcher_thread, INFINITE);
+
+	return true;
+}
+
+bool System::tick()
+{
+	// process the deferred files
+	SCOPED_CS(&_cs_deferred_files);
+
+	if (_deferred_files.empty()) {
+		return true;
+	}
+
+	for (DeferredFiles::iterator i = _deferred_files.begin(), e = _deferred_files.end(); i != e; ++i) {
+		const std::string& filename = *i;
+		_global_signals(filename);
+
+		for (SpecificSignals::iterator i = _specific_signals.begin(), e = _specific_signals.end(); i != e; ++i) {
+			if (i->first == filename) {
+				(*i->second)(filename);
+			}
+		}
+	}
+
+	_deferred_files.clear();
+	return true;
+}
+
+void System::file_changed_internal(const std::string& filename)
+{
+	// queue the file change
+	SCOPED_CS(&_cs_deferred_files);
+	_deferred_files.insert(filename);
+
+}
+
+boost::signals2::connection System::add_file_changed(const fnFileChanged& slot)
+{
+	return _global_signals.connect(slot);
+}
+
+boost::signals2::connection System::add_file_changed(const std::string& filename, const fnFileChanged& slot)
+{
+	SpecificSignals::iterator it = _specific_signals.find(filename);
+	if (it == _specific_signals.end()) {
+		_specific_signals.insert(std::make_pair(filename, new sigFileChanged()));
+	}
+	return _specific_signals[filename]->connect(slot);
 }

@@ -1,13 +1,8 @@
 #include "stdafx.h"
 #include "effect_wrapper.hpp"
-#include <celsus/CelsusExtra.hpp>
-#include <D3Dcompiler.h>
-#include <D3dx11effect.h>
-#include <boost/scoped_array.hpp>
+#include "graphics.hpp"
 
-#include <crtdefs.h>
-
-ID3DX11Effect* load_effect(const char* filename, ID3D11Device* device)
+ID3DX11Effect* load_effect(const char* filename)
 {
 
 	uint32_t len = 0;
@@ -21,7 +16,7 @@ ID3DX11Effect* load_effect(const char* filename, ID3D11Device* device)
 	HRESULT hr;
 	D3DX11CompileFromFile(filename, NULL, NULL, "vsMain", "vs_4_0", 0, 0, NULL, &shader, NULL, &hr);
 	ID3D11VertexShader* vs = NULL;
-	if (FAILED(device->CreateVertexShader(shader->GetBufferPointer(), shader->GetBufferSize(), NULL, &vs))) {
+	if (FAILED( Graphics::instance().device()->CreateVertexShader(shader->GetBufferPointer(), shader->GetBufferSize(), NULL, &vs))) {
 		return NULL;
 	}
 /*
@@ -35,8 +30,7 @@ ID3DX11Effect* load_effect(const char* filename, ID3D11Device* device)
 }
 
 
-EffectWrapper::EffectWrapper(const CComPtr<ID3D11Device>& device)
-  : _device(device)
+EffectWrapper::EffectWrapper()
 {
 }
 
@@ -46,7 +40,19 @@ EffectWrapper::~EffectWrapper()
 
 }
 
-bool EffectWrapper::load(const char* filename)
+bool tester(bool value, const char* str)
+{
+	return value;
+}
+
+bool tester(HRESULT hr, const char* str)
+{
+	return SUCCEEDED(hr);
+}
+
+#define LOGGED_ERR_BOOL(x) if (!tester(x, #x)) {	DebugBreak(); return false; } 
+
+bool EffectWrapper::load(const char* filename, const char* entry_point)
 {
 
 	uint8_t* buf = NULL;
@@ -58,12 +64,26 @@ bool EffectWrapper::load(const char* filename)
 
 	ID3DX11Effect* e = NULL;
 
-	HRESULT hr = D3DCompile(buf, len, "none", NULL, NULL, "vsMain", "vs_4_0", 
-		D3D10_SHADER_ENABLE_STRICTNESS, 0, &blob_out, &error_blob);
+	LOGGED_ERR_BOOL(D3DCompile(buf, len, "none", NULL, NULL, entry_point, "vs_4_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &blob_out, &error_blob));
 	int t = blob_out->GetBufferSize();
 	ID3D11VertexShader* shader = NULL;
-	_device->CreateVertexShader(blob_out->GetBufferPointer(), blob_out->GetBufferSize(), NULL, &shader);
+	Graphics::instance().device()->CreateVertexShader(blob_out->GetBufferPointer(), blob_out->GetBufferSize(), NULL, &shader);
 
+	do_reflection(blob_out);
+
+  _filename = filename;
+  //g_system->watch_file(filename, fastdelegate::bind(&EffectWrapper::file_changed, this));
+  return true;
+}
+
+struct ConstantBuffer
+{
+	ID3D11Buffer *_buffer;
+	D3D11_BUFFER_DESC desc;
+};
+
+void EffectWrapper::do_reflection(ID3DBlob* blob_out)
+{
 	ID3D11ShaderReflection* pReflector = NULL; 
 	D3DReflect(blob_out->GetBufferPointer(), blob_out->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector);
 	D3D11_SHADER_DESC shader_desc;
@@ -79,103 +99,41 @@ bool EffectWrapper::load(const char* filename)
 		D3D_FEATURE_LEVEL_11_0,
 	};
 
-	D3D_FEATURE_LEVEL feature_level;
 	for (int i = 0; i < ELEMS_IN_ARRAY(levels); ++i) {
-		hr = pReflector->GetMinFeatureLevel(&levels[i]);
+		HRESULT hr = pReflector->GetMinFeatureLevel(&levels[i]);
 		int a = 10;
 	}
 
-	D3D11_DEPTH_STENCIL_DESC d;
+	D3D11_SHADER_BUFFER_DESC d;
+	D3D11_SHADER_VARIABLE_DESC vd;
+	D3D11_SHADER_TYPE_DESC td;
 
+	// global constant buffer is called "$Globals"
 	for (UINT i = 0; i < shader_desc.ConstantBuffers; ++i) {
 		ID3D11ShaderReflectionConstantBuffer* b = pReflector->GetConstantBufferByIndex(i);
-		D3D11_SHADER_BUFFER_DESC d;
+		// create constant buffer
 		b->GetDesc(&d);
+		CD3D11_BUFFER_DESC bb(d.Size, D3D11_BIND_CONSTANT_BUFFER);
+		ID3D11Buffer *cb;
+		HRESULT hr = Graphics::instance().device()->CreateBuffer(&bb, NULL, &cb);
 		for (UINT j = 0; j < d.Variables; ++j) {
 			ID3D11ShaderReflectionVariable* v = b->GetVariableByIndex(j);
-				D3D11_SHADER_VARIABLE_DESC vd;
-				ID3D11ShaderReflectionType* t = v->GetType();
-				v->GetDesc(&vd);
-				D3D11_SHADER_TYPE_DESC td;
-				t->GetDesc(&td);
-				int a = 10;
+			ID3D11ShaderReflectionType* t = v->GetType();
+			v->GetDesc(&vd);
+			t->GetDesc(&td);
+
+			switch (td.Class) {
+				case D3D10_SVC_VECTOR:
+
+					break;
+			}
+			int a = 10;
 
 		}
 	}
 
-
-  if (!load_inner(filename)) {
-    return false;
-  }
-
-  _filename = filename;
-  //g_system->watch_file(filename, fastdelegate::bind(&EffectWrapper::file_changed, this));
-  return true;
 }
 
-void EffectWrapper::file_changed()
-{
-  if (!load_inner(_filename.c_str())) {
-    LOG_WARNING_LN("Error reloading shader: %s", _filename.c_str());
-  }
-}
-
-bool EffectWrapper::load_inner(const char* filename)
-{
-
-  ID3DX11Effect* effect = load_effect(filename, _device);
-  if (effect == NULL) {
-    return false;
-  }
-
-  techniques_.clear();
-  scalar_variables_.clear();
-  vector_variables_.clear();
-  matrix_variables_.clear();
-  constant_buffers_.clear();
-  shader_resource_variables_.clear();
-
-
-  _effect.Attach(effect);
-  D3DX11_EFFECT_DESC desc;
-  _effect->GetDesc(&desc);
-  collect_variables(desc);
-  collect_techniques(desc);
-  collect_cbuffers(desc);
-
-  return true;
-}
-/*
-bool EffectWrapper::get_pass_desc(D3D11_PASS_DESC& desc, const std::string& technique_name, const uint32_t pass)
-{
-  Techniques::iterator it = techniques_.find(technique_name);
-  if (it != techniques_.end()) {
-    return SUCCEEDED(it->second->GetPassByIndex(0)->GetDesc(&desc));
-  }
-  LOG_WARNING_LN("Unknown technique: %s", technique_name.c_str());
-  return false;
-}
-*/
-bool EffectWrapper::get_technique(ID3DX11EffectTechnique*& technique, const std::string& name)
-{
-  Techniques::iterator it = techniques_.find(name);
-  if (it != techniques_.end()) {
-    technique = it->second;
-    return true;
-  }
-  technique = NULL;
-  return false;
-}
-
-bool EffectWrapper::set_technique(const std::string& technique_name)
-{
-  Techniques::iterator it = techniques_.find(technique_name);
-  if (it != techniques_.end()) {
-    return SUCCEEDED(it->second->GetPassByIndex(0)->Apply(0, NULL));
-  }
-  LOG_WARNING_LN_ONESHOT("[%s] Unknown technique: %s", __FUNCTION__, technique_name.c_str());
-  return false;
-}
 
 bool EffectWrapper::set_variable(const std::string& name, const float value)
 {

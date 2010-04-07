@@ -1,22 +1,41 @@
 #ifndef _SYSTEM_HPP_
 #define _SYSTEM_HPP_
 
+typedef fastdelegate::FastDelegate< void (const std::string&) > fnFileChanged;
+
 class System
 {
 public:
-  System();
-  ~System();
-  bool init_directx(const HWND hwnd, const int width, const int height);
-  void tick();
-  void resize(const int width, const int height);
+	static System& instance();
+	bool init();
+	bool close();
+	bool tick();
+
+	boost::signals2::connection add_file_changed(const fnFileChanged& slot);
+	boost::signals2::connection add_file_changed(const std::string& filename, const fnFileChanged& slot);
+
 private:
+	DISALLOW_COPY_AND_ASSIGN(System);
+	System();
+	~System();
 
-  DXGI_FORMAT _buffer_format;
+	typedef boost::signals2::signal< void(std::string) > sigFileChanged;
+	typedef std::map< std::string, boost::shared_ptr<sigFileChanged> > SpecificSignals;
+	typedef std::set< std::string > DeferredFiles;
 
-  CComPtr<ID3D11Device> _device;
-  CComPtr<IDXGISwapChain> _swap_chain;
-  CComPtr<ID3D11DeviceContext> _immediate_context;
-  CComPtr<ID3D11RenderTargetView> _render_target_view;
+	static DWORD WINAPI WatcherThread(void* param);
+	void file_changed_internal(const std::string& filename);
+
+	CRITICAL_SECTION _cs_deferred_files;
+	sigFileChanged _global_signals;
+	SpecificSignals _specific_signals;
+	DeferredFiles _deferred_files;
+
+	DWORD _main_thread_id;
+	HANDLE _watcher_thread;
+	HANDLE _dir_handle;
+	HANDLE _watcher_completion_port;
+	static System* _instance;
 
 };
 

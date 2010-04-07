@@ -49,6 +49,7 @@
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4503"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -186,7 +187,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\graphics.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\redux_loader.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\resource_manager.cpp"
 				>
 			</File>
 			<File
@@ -222,6 +231,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\test_effect.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\vector_font.cpp"
 				>
 			</File>
@@ -252,7 +265,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\graphics.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\redux_loader.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\resource_manager.hpp"
 				>
 			</File>
 			<File
@@ -272,6 +293,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\test_effect.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\vector_font.hpp"
 				>
 			</File>
@@ -281,6 +306,60 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+		</Filter>
+		<Filter
+			Name="parser"
+			>
+			<File
+				RelativePath=".\parser\parser.rl"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="$(InputDir)ragel.exe $(InputPath) -o $(InputDir)state_parser_lexer.cpp"
+						Outputs="$(InputDir)/state_parser_lexer.cpp"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\parser\state_parser.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\parser\state_parser_lexer.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\parser\states.sm"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="$(InputDir)shaker_maker.py -o $(InputDir)/state_parser.hpp -s $(InputDir)/state_parser_symbols.hpp -g $(InputPath)"
+						Outputs="$(InputDir)/state_parser.hpp"
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

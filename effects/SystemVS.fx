@@ -1,3 +1,5 @@
+float4 c;
+
 cbuffer main
 {
 	matrix mWorldViewProj;	
@@ -20,7 +22,7 @@ VS_OUTPUT vsMain( in VS_INPUT v )
 	VS_OUTPUT o = (VS_OUTPUT)0;
 	
 	o.position = mul( float4( v.position, 1.0f ), mWorldViewProj );	
-	o.color = v.color;		
+	o.color = c;
 	return o;
 }
 

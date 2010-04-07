@@ -13,6 +13,7 @@
 #include <celsus/path_utils.hpp>
 #include <libs/json_spirit/json_spirit.h>
 #include <fstream>
+#include "graphics.hpp"
 
 //using namespace std;
 //using namespace boost::filesystem;
@@ -185,9 +186,6 @@ void ReduxLoader::load_animation(ChunkIo& reader)
 */
 }
 
-extern ID3D11Device* g_d3d_device;
-
-
 struct Mesh
 {
 	Mesh(const std::string& name) : _name(name) {}
@@ -231,13 +229,13 @@ void ReduxLoader::load_mesh(ChunkIo& reader)
   const uint32_t vertex_count = reader.read_int();
   const uint32_t vertex_size = reader.read_int();
   uint8_t* vertex_data = reader.read_data(vertex_count * vertex_size);
-  create_static_vertex_buffer(g_d3d_device, vertex_count, vertex_size, vertex_data, &mesh->_vertex_buffer);
+	create_static_vertex_buffer(Graphics::instance().device(), vertex_count, vertex_size, vertex_data, &mesh->_vertex_buffer);
 
   const uint32_t index_count = reader.read_int();
   const uint32_t index_size = reader.read_int();
   ENFORCE(index_size == 2 || index_size == 4)(index_size);
   uint8_t* index_data = reader.read_data(index_count * index_size);
-  create_static_index_buffer(g_d3d_device, index_count, index_size, index_data, &mesh->_index_buffer);
+  create_static_index_buffer(Graphics::instance().device(), index_count, index_size, index_data, &mesh->_index_buffer);
   mesh->_index_buffer_format = index_size == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
 
   mesh->_index_count = index_count;

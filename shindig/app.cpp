@@ -1,34 +1,56 @@
 #include "stdafx.h"
 #include "app.hpp"
 #include "system.hpp"
+#include "graphics.hpp"
+#include "test_effect.hpp"
 
-namespace
-{
-  App* g_app = NULL;
-}
+App* App::_instance = NULL;
 
-App::App(HINSTANCE instance)
-  : _instance(instance)
-  , _system(NULL)
+App::App()
+  : _hinstance(NULL)
   , _width(-1)
   , _height(-1)
   , _hwnd(NULL)
+	, _test_effect(NULL)
 {
-  g_app = this;
 }
 
 App::~App()
 {
-  SAFE_DELETE(_system);
 }
 
-void App::init()
+App& App::instance()
 {
+	if (_instance == NULL) {
+		_instance = new App();
+	}
+	return *_instance;
+}
+
+#define LOGGED_RETURN(x) if (!(x)) { assert(!#x); return false; }
+
+bool App::init(HINSTANCE hinstance)
+{
+	_hinstance = hinstance;
   _width = 800;
   _height = 600;
   create_window();
-  _system = new System();
-  _system->init_directx(_hwnd, _width, _height);
+	LOGGED_RETURN(System::instance().init());
+	LOGGED_RETURN(Graphics::instance().init(_hwnd, _width, _height));
+
+	_test_effect = new TestEffect();
+	_test_effect->init();
+
+	return true;
+}
+
+bool App::close()
+{
+	delete _test_effect;
+
+	LOGGED_RETURN(Graphics::instance().close());
+	LOGGED_RETURN(System::instance().close());
+	return true;
 }
 
 void App::set_client_size()
@@ -46,7 +68,7 @@ void App::set_client_size()
   SetWindowPos(_hwnd, NULL, -1, -1, _width + dx, _height + dy, SWP_NOZORDER | SWP_NOREPOSITION);
 }
 
-void App::create_window()
+bool App::create_window()
 {
   const char* kClassName = "AppClass";
 
@@ -56,26 +78,23 @@ void App::create_window()
   wcex.cbSize = sizeof(WNDCLASSEXA);
   wcex.style          = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
   wcex.lpfnWndProc    = wnd_proc;
-  wcex.hInstance      = _instance;
+  wcex.hInstance      = _hinstance;
   wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
   wcex.lpszClassName  = kClassName;
 
-  if (!RegisterClassExA(&wcex)) {
-    LOG_ERROR_LN("Error registering class");
-    return;
-    //return false;
-  }
+	LOGGED_RETURN(RegisterClassExA(&wcex));
 
   const uint32_t window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
 
   _hwnd = CreateWindowA(kClassName, "shindig - magnus österlind - 2010", window_style,
     CW_USEDEFAULT, CW_USEDEFAULT, _width, _height, NULL, NULL,
-    _instance, NULL);
+    _hinstance, NULL);
 
   set_client_size();
 
   ShowWindow(_hwnd, SW_SHOW);
 
+	return true;
 }
 
 void App::run()
@@ -86,8 +105,10 @@ void App::run()
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     } else {
-      _system->tick();
-      //render();
+			System::instance().tick();
+			Graphics::instance().tick();
+
+			_test_effect->render();
     }
   }
 
@@ -105,9 +126,7 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     {
       const int width = LOWORD(lParam);
       const int height = HIWORD(lParam);
-      if (g_app->_system) {
-        g_app->_system->resize(width, height);
-      }
+			Graphics::instance().resize(width, height);
     }
     break;
 

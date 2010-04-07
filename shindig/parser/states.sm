@@ -1,0 +1,125 @@
+# shaker-maker grammar file for .fx file style state blocks
+# magnus osterlind, 2010
+
+# naming:
+# keywords are capitals that end in _K
+# tokens with multiple possible values end in _V
+
+# the rules are a little weird because we can't handle kleen-stars in compound
+# statements. this should probably be fixed in the parser..
+
+%class% BigState _states;
+
+start ::= state(_states)*
+	.
+
+state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_state].
+
+#	state ::= [blend_states | depth_stencil_states | rasterizer_state | sampler_states | 
+#render_target_view | depth_stencil_view | generate_mips | vertex_shader | pixel_shader | 
+#	geometry_shader | ds_stencil_ref | ab_blend_factor | ab_sample_mask].
+
+# blend states
+blend_states(a) : BlendDescs& ::= BLEND_STATE_K ID L_BRACE blend_state(a[$ID$._str]) R_BRACE SEMI_COLON.
+blend_state(a) : D3D11_BLEND_DESC& ::= [ 
+	alpha_to_coverage_state(a.AlphaToCoverageEnable) | 
+	blend_enable_state(&a.RenderTarget[0]) | 
+	blend_enable_state_def(&a.RenderTarget[0]) | 
+	src_blend_state(&a.RenderTarget[0]) | 
+	dest_blend_state(&a.RenderTarget[0]) |
+	blend_op_state(&a.RenderTarget[0]) | 
+	src_blend_alpha_state(&a.RenderTarget[0]) | 
+	dest_blend_alpha_state(&a.RenderTarget[0]) | 
+	blend_op_alpha_state(&a.RenderTarget[0]) | 
+	render_target_write_mask_state(&a.RenderTarget[0]) ]*
+	.
+
+alpha_to_coverage_state(a) : BOOL& ::= ALPHA_TO_COVERAGE_ENABLE_K ASSIGN BOOL_V SEMI_COLON 
+	@pass{ a = $BOOL_V$.extra; }.
+	
+blend_enable_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= BLEND_ENABLE_K INDEX ASSIGN BOOL_V SEMI_COLON
+	@pass{ a[$INDEX$.extra].BlendEnable = $BOOL_V$.extra; }.
+blend_enable_state_def(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= BLEND_ENABLE_K ASSIGN BOOL_V SEMI_COLON
+	@pass{ a[0].BlendEnable = $BOOL_V$.extra; }.
+src_blend_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= SRC_BLEND_K ASSIGN BLEND_V SEMI_COLON
+	@pass{ a[0].SrcBlend = (D3D11_BLEND)$BLEND_V$.extra; }.
+dest_blend_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= DEST_BLEND_K ASSIGN BLEND_V SEMI_COLON
+	@pass{ a[0].DestBlend = (D3D11_BLEND)$BLEND_V$.extra; }.
+blend_op_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= BLEND_OP_K ASSIGN BLEND_OP_V SEMI_COLON
+	@pass{ a[0].BlendOp = (D3D11_BLEND_OP)$BLEND_OP_V$.extra; }.
+
+src_blend_alpha_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= SRC_BLEND_ALPHA_K ASSIGN BLEND_V SEMI_COLON
+	@pass{ a[0].SrcBlendAlpha = (D3D11_BLEND)$BLEND_V$.extra; }.
+dest_blend_alpha_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= DEST_BLEND_ALPHA_K ASSIGN BLEND_V SEMI_COLON
+	@pass{ a[0].DestBlendAlpha = (D3D11_BLEND)$BLEND_V$.extra; }.
+blend_op_alpha_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= BLEND_OP_ALPHA_K ASSIGN BLEND_OP_V SEMI_COLON
+	@pass{ a[0].BlendOpAlpha = (D3D11_BLEND_OP)$BLEND_OP_V$.extra; }.
+
+render_target_write_mask_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= RENDER_TARGET_WRITE_MASK_K INDEX ASSIGN VALUE SEMI_COLON.
+
+# depth stencil states
+depth_stencil_states ::= DEPTH_STENCIL_STATE_K ID L_BRACE depth_stencil_state R_BRACE SEMI_COLON.
+depth_stencil_state ::= [depth_enable_state | depth_write_mask_state]*.
+
+depth_enable_state ::= DEPTHSTENCIL_DEPTH_ENABLE_K ASSIGN BOOL_V SEMI_COLON.
+depth_write_mask_state ::= DEPTHSTENCIL_DEPTH_WRITE_MASK ASSIGN DEPTH_WRITE_MASK_V SEMI_COLON.
+
+# sampler states
+sampler_states ::= SAMPLER_STATE_K ID L_BRACE sampler_state R_BRACE SEMI_COLON.
+sampler_state ::= [filter_state | addressu_state | addressv_state | addressw_state]*.
+
+ds_stencil_ref ::= PASS_DS_STENCIL_REF.
+ab_blend_factor ::= PASS_AB_BLEND_FACTOR.
+ab_sample_mask ::= PASS_AB_SAMPLE_MASK.
+
+rasterizer_state ::= RASTERIZER_STATE_K.
+
+
+render_target_view ::= RENDER_TARGET_VIEW.
+depth_stencil_view ::= DEPTH_STENCIL_VIEW.
+generate_mips ::= PASS_GENERATE_MIPS.
+vertex_shader ::= VERTEX_SHADER.
+pixel_shader ::= PIXEL_SHADER.
+geometry_shader ::= GEOMETRY_SHADER.
+cull_mode ::= RASTERIZER_CULL_MODE.
+
+
+
+filter_state ::= FILTER ASSIGN FILTER_V SEMI_COLON.
+addressu_state ::= SAMPLER_ADDRESS_U ASSIGN ADDRESS_V SEMI_COLON.
+addressv_state ::= SAMPLER_ADDRESS_V ASSIGN ADDRESS_V SEMI_COLON.
+addressw_state ::= SAMPLER_ADDRESS_W ASSIGN ADDRESS_V SEMI_COLON.
+
+fill_mode ::= RASTERIZER_FILL_MODE ASSIGN fill_mode_values SEMI_COLON.
+
+fill_mode_values ::= [FILL_WIREFRAME | FILL_SOLID].
+
+tmp ::= [ BLEND_ALPHA_TO_COVERAGE_ENABLE | BLEND_BLEND_ENABLE | VALUE].
+
+filter_state_values ::= [FILTER_MIN_MAG_MIP_POINT | FILTER_MIN_MAG_POINT_MIP_LINEAR | FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT |
+	FILTER_MIN_POINT_MAG_MIP_LINEAR | FILTER_MIN_LINEAR_MAG_MIP_POINT | FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR |
+	FILTER_MIN_MAG_LINEAR_MIP_POINT | FILTER_MIN_MAG_MIP_LINEAR | FILTER_ANISOTROPIC |
+	FILTER_COMPARISON_MIN_MAG_MIP_POINT | FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR | FILTER_COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT |
+	FILTER_COMPARISON_MIN_POINT_MAG_MIP_LINEAR | COMPARISON_MIN_LINEAR_MAG_MIP_POINT | FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR |
+	FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT | FILTER_COMPARISON_MIN_MAG_MIP_LINEAR | FILTER_COMPARISON_ANISOTROPIC |
+	FILTER_TEXT_1BIT].
+	
+taddress_values ::= [TADDRESS_CLAMP | TADDRESS_WRAP | TADDRESS_MIRROR | TADDRESS_BORDER | TADDRESS_MIRROR_ONCE].
+	
+blend_state_values ::= [BLEND_SRC_BLEND | BLEND_DEST_BLEND | BLEND_BLEND_OP | BLEND_SRC_BLEND_ALPHA |
+	BLEND_DEST_BLEND_ALPHA | BLEND_BLEND_OP_ALPHA | BLEND_RENDER_TARGET_WRITE_MASK].
+
+rasterizer_state_values ::= [RASTERIZER_FRONT_COUNTER_CLOCKWISE | RASTERIZER_DEPTH_BIAS | RASTERIZER_DEPTH_BIAS_CLAMP |
+	RASTERIZER_SLOPE_SCALED_DEPTH_BIAS | RASTERIZER_DEPTH_CLIP_ENABLE | RASTERIZER_SCISSOR_ENABLE |
+	RASTERIZER_MULTISAMPLE_ENABLE | RASTERIZER_ANTIALIASED_LINE_ENABLE].
+
+sampler_state_values ::= [SAMPLER_FILTER | SAMPLER_ADDRESS_U | SAMPLER_ADDRESS_V | SAMPLER_ADDRESS_W |
+	SAMPLER_MIP_LODBIAS | SAMPLER_MAX_ANISOTROPY | SAMPLER_COMPARISON_FUNC | SAMPLER_BORDER_COLOR |
+	SAMPLER_MIN_LOD | SAMPLER_MAX_LOD].
+	
+dss_values ::= [ DEPTHSTENCIL_DEPTH_ENABLE | DEPTHSTENCIL_DEPTH_WRITE_MASK | DEPTHSTENCIL_DEPTH_FUNC |
+	DEPTHSTENCIL_STENCIL_ENABLE | DEPTHSTENCIL_STENCIL_READ_MASK | DEPTHSTENCIL_STENCIL_WRITE_MASK |
+	DEPTHSTENCIL_FRONT_FACE_STENCIL_FAIL | DEPTHSTENCIL_FRONT_FACE_STENCIL_DEPTH_FAIL |
+	DEPTHSTENCIL_FRONT_FACE_STENCIL_PASS | DEPTHSTENCIL_FRONT_FACE_STENCIL_FUNC |
+	DEPTHSTENCIL_BACK_FACE_STENCIL_FAIL | DEPTHSTENCIL_BACK_FACE_STENCIL_DEPTH_FAIL |
+	DEPTHSTENCIL_BACK_FACE_STENCIL_PASS | DEPTHSTENCIL_BACK_FACE_STENCIL_FUNC].
