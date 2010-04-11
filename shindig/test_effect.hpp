@@ -15,10 +15,12 @@ struct TestEffect
 
 	void states_loaded(const ResourceManager::BlendStates& states);
 	void vs_loaded(EffectWrapper* effect);
+	void ps_loaded(EffectWrapper* effect);
 
 	Scene _scene;
 	CComPtr<ID3D11BlendState> _blend_state;
-	EffectWrapper* _effect;
+	EffectWrapper* _vs_effect;
+	EffectWrapper* _ps_effect;
 	ID3D11InputLayout* _layout;
 };
 

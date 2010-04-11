@@ -34,8 +34,8 @@ bool App::init(HINSTANCE hinstance)
   _width = 800;
   _height = 600;
   create_window();
-  RETURN_ON_FAIL_BOOL(System::instance().init(), ErrorPredicate<bool>, LOG_WARNING_LN);
-  RETURN_ON_FAIL_BOOL(Graphics::instance().init(_hwnd, _width, _height), ErrorPredicate<bool>, LOG_WARNING_LN);
+  RETURN_ON_FAIL_BOOL(System::instance().init(), ErrorPredicate<bool>, LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(Graphics::instance().init(_hwnd, _width, _height), ErrorPredicate<bool>, LOG_ERROR_LN);
 
 	_test_effect = new TestEffect();
 	_test_effect->init();
@@ -47,8 +47,8 @@ bool App::close()
 {
 	delete _test_effect;
 
-  RETURN_ON_FAIL_BOOL(Graphics::instance().close(), ErrorPredicate<bool>, LOG_WARNING_LN);
-  RETURN_ON_FAIL_BOOL(System::instance().close(), ErrorPredicate<bool>, LOG_WARNING_LN);
+  RETURN_ON_FAIL_BOOL(Graphics::instance().close(), ErrorPredicate<bool>, LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(System::instance().close(), ErrorPredicate<bool>, LOG_ERROR_LN);
 	return true;
 }
 

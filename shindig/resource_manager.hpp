@@ -26,8 +26,7 @@ private:
 	DISALLOW_COPY_AND_ASSIGN(ResourceManager);
 
 	bool reload_effect_states(const std::string& filename);
-	bool reload_vertex_shader(const char* filename);
-	bool reload_pixel_shader(const char* filename);
+	bool reload_shader(const char* filename, const bool vertex_shader);
 
 	ResourceManager();
 	~ResourceManager();
@@ -39,8 +38,17 @@ private:
 	// workaround for C4503, 'identifier' : decorated name length exceeded, name was truncated
 	struct Callbacks { typedef std::vector<fnStateLoaded> E; E e; };
 	typedef stdext::hash_map< Filename, Callbacks > StateCallbacks;
-	typedef std::vector< std::pair< ShaderName, fnEffectLoaded> > NameAndCallbacks;
-	typedef stdext::hash_map< Filename, NameAndCallbacks > ShaderCallbacks;
+
+	struct CallbackData
+	{
+		CallbackData(const std::string& filename, const std::string& entry_point, const fnEffectLoaded& fn) 
+			: _filename(filename), _entry_point(entry_point), _effect_loaded(fn) {}
+		std::string _filename;
+		std::string _entry_point;
+		fnEffectLoaded _effect_loaded;
+	};
+	//typedef std::vector< std::pair< ShaderName, fnEffectLoaded> > NameAndCallbacks;
+	typedef stdext::hash_map< Filename, std::vector<CallbackData> > ShaderCallbacks;
 
 	ShaderCallbacks _shader_callbacks;
 	StateCallbacks _state_callbacks;

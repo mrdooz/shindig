@@ -11,14 +11,21 @@ class EffectWrapper
 public:
   EffectWrapper();
   ~EffectWrapper();
-  bool	load(const char* filename, const char* entry_point);
+
+	bool	load_vertex_shader(const char* filename, const char* entry_point);
+	bool	load_pixel_shader(const char* filename, const char* entry_point);
 
   template<typename T> 
 	bool	set_variable(const std::string& name, const T& value);
   void  unmap_buffers();
   bool  set_resource(const std::string& name, ID3D11ShaderResourceView* resource);
 
+	void set_cbuffer();
+
 	ID3D11InputLayout*	create_input_layout(const std::vector<D3D11_INPUT_ELEMENT_DESC>& elems);
+
+	ID3D11VertexShader* vertex_shader() { return _vertex_shader; }
+	ID3D11PixelShader* pixel_shader() { return _pixel_shader; }
 
 private:
 
@@ -53,6 +60,7 @@ private:
   typedef std::map< BufferName, ConstantBuffer* > ConstantBuffers;
   typedef stdext::hash_map< VariableName, BufferVariable* > BufferVariables;
 
+	bool	load_inner(const char* filename, const char* entry_point, bool vertex_shader);
 	bool do_reflection();
 
   std::string _filename;
@@ -60,8 +68,8 @@ private:
   BufferVariables _buffer_variables;
 
 	CComPtr<ID3DBlob> _shader_blob;
-	CComPtr<ID3D11VertexShader> _shader;
-
+	CComPtr<ID3D11VertexShader> _vertex_shader;
+	CComPtr<ID3D11PixelShader> _pixel_shader;
 };
 
 template<typename T> bool EffectWrapper::set_variable(const std::string& name, const T& value)
@@ -82,7 +90,8 @@ template<typename T> bool EffectWrapper::set_variable(const std::string& name, c
 
 	// map the buffer
 	if (!var->_buffer->_mapped) {
-		Graphics::instance().context()->Map(var->_buffer->_buffer, 0, D3D11_MAP_WRITE, 0, &var->_buffer->_resource);
+		var->_buffer->_mapped = true;
+		Graphics::instance().context()->Map(var->_buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &var->_buffer->_resource);
 	}
 
 	// set

@@ -13,7 +13,7 @@
 start ::= state(_states)*
 	.
 
-state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_state].
+state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_state(a._rasterizer_descs)].
 
 #	state ::= [blend_states | depth_stencil_states | rasterizer_state | sampler_states | 
 #render_target_view | depth_stencil_view | generate_mips | vertex_shader | pixel_shader | 
@@ -72,7 +72,8 @@ ds_stencil_ref ::= PASS_DS_STENCIL_REF.
 ab_blend_factor ::= PASS_AB_BLEND_FACTOR.
 ab_sample_mask ::= PASS_AB_SAMPLE_MASK.
 
-rasterizer_state ::= RASTERIZER_STATE_K.
+#blend_states(a) : BlendDescs& ::= BLEND_STATE_K ID L_BRACE blend_state(a[$ID$._str]) R_BRACE SEMI_COLON.
+rasterizer_state(a) : RasterizerDescs& ::= RASTERIZER_STATE_K ID L_BRACE R_BRACE SEMI_COLON.
 
 
 render_target_view ::= RENDER_TARGET_VIEW.

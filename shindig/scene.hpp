@@ -16,6 +16,7 @@ struct Camera
 
 struct Scene
 {
+	Scene();
   const D3DXVECTOR3& get_extents() const { return _extents; }
 
 	typedef std::vector<Mesh*> Meshes;

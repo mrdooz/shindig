@@ -1,7 +1,7 @@
 
 #ifndef _MR_PARSER_HPP_
 #define _MR_PARSER_HPP_
-#include "d:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
+#include "c:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
 class StateParser
 {
 public:
@@ -688,7 +688,7 @@ bool match_start( )
 
 bool match_state(BigState&  a)
 {
-    // state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_state]
+    // state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_state(a._rasterizer_descs)]
     
     
     push_idx();
@@ -700,7 +700,7 @@ bool match_state(BigState&  a)
 
 
     push_idx();
-    if (match_rasterizer_state() ) {
+    if (match_rasterizer_state(a._rasterizer_descs) ) {
         
         return true;
     }
@@ -1597,14 +1597,42 @@ bool match_ab_sample_mask( )
 }
 
 
-bool match_rasterizer_state( )
+bool match_rasterizer_state(RasterizerDescs&  a)
 {
-    // rasterizer_state ::= RASTERIZER_STATE_K
+    // rasterizer_state(a) : RasterizerDescs& ::= RASTERIZER_STATE_K ID L_BRACE R_BRACE SEMI_COLON
     
     
     
     
     if (!match_rasterizer_state_k_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_id_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_l_brace_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_r_brace_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_semi_colon_t()) {
         
         return false;
     }

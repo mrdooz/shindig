@@ -49,36 +49,41 @@ int make_hex(const char* ts, const char* te)
 
 bool ResourceManager::load_vertex_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
 {
-	_shader_callbacks[filename].push_back(std::make_pair(shader_name, fn));
-	return reload_vertex_shader(filename);
+	char buf[MAX_PATH];
+	sprintf(buf, "[VS] - %s::%s", filename, shader_name);
+	_shader_callbacks[buf].push_back(CallbackData(filename, shader_name, fn));
+	return reload_shader(buf, true);
 }
 
-bool ResourceManager::reload_vertex_shader(const char* filename)
+bool ResourceManager::load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
+{
+	char buf[MAX_PATH];
+	sprintf(buf, "[PS] - %s::%s", filename, shader_name);
+	_shader_callbacks[buf].push_back(CallbackData(filename, shader_name, fn));
+	return reload_shader(buf, false);
+}
+
+bool ResourceManager::reload_shader(const char* filename, const bool vertex_shader)
 {
 	// find all the callbacks that use this file
 	if (_shader_callbacks.find(filename) == _shader_callbacks.end()) {
 		return true;
 	}
 
-	NameAndCallbacks& n = _shader_callbacks[filename];
-	for (NameAndCallbacks::iterator i = n.begin(), e = n.end(); i != e; ++i) {
-		const std::string& shader_name = i->first;
-		fnEffectLoaded fn = i->second;
+	const std::vector<CallbackData>& n = _shader_callbacks[filename];
+	for (std::vector<CallbackData>::const_iterator i = n.begin(), e = n.end(); i != e; ++i) {
+		const std::string& filename = i->_filename;
+		const std::string& entry_point = i->_entry_point;
+		fnEffectLoaded fn = i->_effect_loaded;
 
     EffectWrapper* effect = new EffectWrapper();
-		effect->load(filename, shader_name.c_str());
+		if (vertex_shader) {
+			effect->load_vertex_shader(filename.c_str(), entry_point.c_str());
+		} else {
+			effect->load_pixel_shader(filename.c_str(), entry_point.c_str());
+		}
 		fn(effect);
 	}
-	return true;
-}
-
-bool ResourceManager::load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
-{
-	return true;
-}
-
-bool ResourceManager::reload_pixel_shader(const char* filename)
-{
 	return true;
 }
 
