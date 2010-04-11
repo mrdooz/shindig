@@ -191,6 +191,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\mesh.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\redux_loader.cpp"
 				>
 			</File>
@@ -266,6 +270,10 @@
 			</File>
 			<File
 				RelativePath=".\graphics.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\mesh.hpp"
 				>
 			</File>
 			<File

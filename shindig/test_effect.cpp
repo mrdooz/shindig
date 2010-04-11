@@ -3,12 +3,14 @@
 #include "redux_loader.hpp"
 #include "system.hpp"
 #include "scene.hpp"
+#include "mesh.hpp"
 
 TestEffect::TestEffect()
   : _effect(NULL)
 {
-
+	container_delete(_scene._meshes);
 }
+
 bool TestEffect::init()
 {
   System& sys = System::instance();
@@ -17,9 +19,8 @@ bool TestEffect::init()
   r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded));
 	r.load_vertex_shader(sys.convert_path("effects/SystemVS.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded));
 
-  Scene scene;
-  ReduxLoader loader(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox), &scene, NULL);
-  loader.load();
+  ReduxLoader loader(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox), &_scene, NULL);
+	loader.load();
 	return true;
 }
 

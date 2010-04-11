@@ -13,36 +13,12 @@ public:
   ~EffectWrapper();
   bool	load(const char* filename, const char* entry_point);
 
-  template<typename T> bool set_variable(const std::string& name, const T& value)
-  {
-    // find variable
-    BufferVariables::iterator it = _buffer_variables.find(name);
-    if (it == _buffer_variables.end()) {
-      LOG_WARNING_LN("Variable not found: %s", name.c_str());
-      return false;
-    }
-
-    BufferVariable* var = it->second;
-    // check the size
-    if (var->_var_desc.Size != sizeof(T)) {
-      LOG_WARNING_LN("Variable size doesn't match: %s", name.c_str());
-      return false;
-    }
-
-    // map the buffer
-    if (!var->_buffer->_mapped) {
-      Graphics::instance().context()->Map(var->_buffer->_buffer, 0, D3D11_MAP_WRITE, 0, &var->_buffer->_resource);
-    }
-
-    // set
-    memcpy((uint8_t*)var->_buffer->_resource.pData + var->_var_desc.StartOffset, &value, sizeof(T));
-
-    return true;
-
-  }
+  template<typename T> 
+	bool	set_variable(const std::string& name, const T& value);
   void  unmap_buffers();
-
   bool  set_resource(const std::string& name, ID3D11ShaderResourceView* resource);
+
+	ID3D11InputLayout*	create_input_layout(const std::vector<D3D11_INPUT_ELEMENT_DESC>& elems);
 
 private:
 
@@ -77,12 +53,43 @@ private:
   typedef std::map< BufferName, ConstantBuffer* > ConstantBuffers;
   typedef stdext::hash_map< VariableName, BufferVariable* > BufferVariables;
 
-	void	do_reflection(ID3DBlob* blob_out);
+	bool do_reflection();
 
   std::string _filename;
   ConstantBuffers _constant_buffers;
   BufferVariables _buffer_variables;
 
+	CComPtr<ID3DBlob> _shader_blob;
+	CComPtr<ID3D11VertexShader> _shader;
+
 };
+
+template<typename T> bool EffectWrapper::set_variable(const std::string& name, const T& value)
+{
+	// find variable
+	BufferVariables::iterator it = _buffer_variables.find(name);
+	if (it == _buffer_variables.end()) {
+		LOG_WARNING_LN("Variable not found: %s", name.c_str());
+		return false;
+	}
+
+	BufferVariable* var = it->second;
+	// check the size
+	if (var->_var_desc.Size != sizeof(T)) {
+		LOG_WARNING_LN("Variable size doesn't match: %s", name.c_str());
+		return false;
+	}
+
+	// map the buffer
+	if (!var->_buffer->_mapped) {
+		Graphics::instance().context()->Map(var->_buffer->_buffer, 0, D3D11_MAP_WRITE, 0, &var->_buffer->_resource);
+	}
+
+	// set
+	memcpy((uint8_t*)var->_buffer->_resource.pData + var->_var_desc.StartOffset, &value, sizeof(T));
+
+	return true;
+
+}
 
 #endif

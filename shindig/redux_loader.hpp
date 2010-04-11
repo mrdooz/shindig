@@ -4,7 +4,7 @@
 class ChunkIo;
 class MaterialManager;
 struct SystemInterface;
-class Scene;
+struct Scene;
 class AnimationNode;
 class AnimationManager;
 
@@ -12,9 +12,9 @@ class ReduxLoader
 {
 public:
   ReduxLoader(const std::string& filename, Scene* scene, AnimationManager* animation_manager);
-  void load();
+  bool	load();
 private:
-  void load_camera(ChunkIo& reader);
+  void	load_camera(ChunkIo& reader);
   void  load_mesh(ChunkIo& reader);
   void  load_hierarchy_inner(ChunkIo& reader, AnimationNode* parent);
   void  load_hierarchy(ChunkIo& reader);

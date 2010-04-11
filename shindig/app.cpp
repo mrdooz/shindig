@@ -27,7 +27,6 @@ App& App::instance()
 	return *_instance;
 }
 
-#define LOGGED_RETURN(x) if (!(x)) { assert(!#x); return false; }
 
 bool App::init(HINSTANCE hinstance)
 {

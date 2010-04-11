@@ -2,17 +2,6 @@
 #include "effect_wrapper.hpp"
 #include "graphics.hpp"
 
-bool tester(bool value, const char* str)
-{
-  return value;
-}
-
-bool tester(HRESULT hr, const char* str)
-{
-  return SUCCEEDED(hr);
-}
-
-#define LOGGED_ERR_BOOL(x) if (!tester(x, #x)) {	DebugBreak(); return false; } 
 
 
 EffectWrapper::EffectWrapper()
@@ -28,48 +17,28 @@ EffectWrapper::~EffectWrapper()
 
 bool EffectWrapper::load(const char* filename, const char* entry_point)
 {
-
 	uint8_t* buf = NULL;
 	uint32_t len = 0;
 	load_file(buf, len, filename);
 
 	ID3DBlob* error_blob = NULL;
-	ID3DBlob* blob_out = NULL;
 
-	LOGGED_ERR_BOOL(D3DCompile(buf, len, "none", NULL, NULL, entry_point, "vs_4_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &blob_out, &error_blob));
-	int t = blob_out->GetBufferSize();
-	ID3D11VertexShader* shader = NULL;
-	Graphics::instance().device()->CreateVertexShader(blob_out->GetBufferPointer(), blob_out->GetBufferSize(), NULL, &shader);
+	LOGGED_ERR_BOOL(D3DCompile(buf, len, "none", NULL, NULL, entry_point, "vs_4_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob));
+	Graphics::instance().device()->CreateVertexShader(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), NULL, &_shader);
 
-	do_reflection(blob_out);
+	do_reflection();
 
   _filename = filename;
-  //g_system->watch_file(filename, fastdelegate::bind(&EffectWrapper::file_changed, this));
   return true;
 }
 
 
-void EffectWrapper::do_reflection(ID3DBlob* blob_out)
+bool EffectWrapper::do_reflection()
 {
 	ID3D11ShaderReflection* pReflector = NULL; 
-	D3DReflect(blob_out->GetBufferPointer(), blob_out->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector);
+	LOGGED_ERR_BOOL(D3DReflect(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector));
 	D3D11_SHADER_DESC shader_desc;
 	pReflector->GetDesc(&shader_desc);
-
-	static D3D_FEATURE_LEVEL levels[] = 
-	{
-		D3D_FEATURE_LEVEL_9_1,
-		D3D_FEATURE_LEVEL_9_2,
-		D3D_FEATURE_LEVEL_9_3,
-		D3D_FEATURE_LEVEL_10_0,
-		D3D_FEATURE_LEVEL_10_1,
-		D3D_FEATURE_LEVEL_11_0,
-	};
-
-	for (int i = 0; i < ELEMS_IN_ARRAY(levels); ++i) {
-		HRESULT hr = pReflector->GetMinFeatureLevel(&levels[i]);
-		int a = 10;
-	}
 
 	D3D11_SHADER_BUFFER_DESC d;
 	D3D11_SHADER_VARIABLE_DESC vd;
@@ -82,7 +51,7 @@ void EffectWrapper::do_reflection(ID3DBlob* blob_out)
 		rcb->GetDesc(&d);
 		CD3D11_BUFFER_DESC bb(d.Size, D3D11_BIND_CONSTANT_BUFFER);
 		ID3D11Buffer *cb = NULL;
-		HRESULT hr = Graphics::instance().device()->CreateBuffer(&bb, NULL, &cb);
+		LOGGED_ERR_BOOL(Graphics::instance().device()->CreateBuffer(&bb, NULL, &cb));
     ConstantBuffer* cur_cb = new ConstantBuffer(d.Name, cb, bb);
     
 		for (UINT j = 0; j < d.Variables; ++j) {
@@ -95,7 +64,7 @@ void EffectWrapper::do_reflection(ID3DBlob* blob_out)
 		}
     _constant_buffers.insert(std::make_pair(cur_cb->_name, cur_cb ));
 	}
-
+	return true;
 }
 
 
@@ -122,4 +91,15 @@ void EffectWrapper::unmap_buffers()
       context->Unmap(b->_buffer, 0);
     }
   }
+}
+
+ID3D11InputLayout* EffectWrapper::create_input_layout(const std::vector<D3D11_INPUT_ELEMENT_DESC>& elems)
+{
+	ID3D11InputLayout* layout = NULL;
+	const HRESULT hr = Graphics::instance().device()->CreateInputLayout(&elems[0], elems.size(), 
+		_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), &layout);
+	if (FAILED(hr)) {
+		LOG_ERROR_LN("Error creating input layout");
+	}
+	return layout;
 }

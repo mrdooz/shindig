@@ -5,6 +5,7 @@
 
 class FreeFlyCamera;
 class DebugRenderer;
+struct Mesh;
 
 
 struct Camera
@@ -13,15 +14,15 @@ struct Camera
   virtual const D3DXMATRIX proj_matrix() const = 0;
 };
 
-class Scene
+struct Scene
 {
-public:
   const D3DXVECTOR3& get_extents() const { return _extents; }
 
-private:
+	typedef std::vector<Mesh*> Meshes;
 
   D3DXVECTOR3 _extents;
 
+	Meshes _meshes;
   FreeFlyCamera* _free_fly_camera;
   DebugRenderer* _debug_renderer;
 

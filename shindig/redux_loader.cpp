@@ -1,22 +1,8 @@
 #include "StdAfx.h"
-//#include "../system/SystemInterface.hpp"
 #include "redux_loader.hpp"
-#include <celsus/ErrorHandling.hpp>
-#include <celsus/ChunkIO.hpp>
-//#include "Mesh.hpp"
-//#include "AnimationManager.hpp"
-#include "Scene.hpp"
-//#include "Camera.hpp"
-
-#include <boost/filesystem.hpp>
-#include <celsus/CelsusExtra.hpp>
-#include <celsus/path_utils.hpp>
-#include <libs/json_spirit/json_spirit.h>
-#include <fstream>
+#include "scene.hpp"
 #include "graphics.hpp"
-
-//using namespace std;
-//using namespace boost::filesystem;
+#include "mesh.hpp"
 
 namespace json = json_spirit;
 
@@ -46,52 +32,59 @@ ReduxLoader::ReduxLoader(const std::string& filename, Scene* scene, AnimationMan
 {
 }
 
-void ReduxLoader::load()
+bool ReduxLoader::load()
 {
-  Path rdx_path(filename_);
-  std::string rdx_filename(rdx_path.replace_extension("rdx").str());
+	try {
+		Path rdx_path(filename_);
+		std::string rdx_filename(rdx_path.replace_extension("rdx").str());
 
-  uint8_t* data = 0;
-  uint32_t data_len = 0;
-  ENFORCE(load_file(data, data_len, rdx_filename.c_str()))(rdx_filename);
+		uint8_t* data = 0;
+		uint32_t data_len = 0;
+		ENFORCE(load_file(data, data_len, rdx_filename.c_str()))(rdx_filename);
 
-  ChunkIo reader;
-  reader.init_reader(data, data_len);
-  while (!reader.is_eof()) {
-    ChunkHeader header = reader.cur_header();
-    switch ( header.id_) {
-      case ChunkHeader::Info: 
-        {
-        }
-        break;
-      case ChunkHeader::Hierarchy:
-        {
-          load_hierarchy(reader);
-        }
-        break;
-      case ChunkHeader::Mesh:
-        {
-          load_mesh(reader);
-        }
-        break;
-      case ChunkHeader::Light:
-        {
-        }
-        break;
-      case ChunkHeader::Camera:
-        {
-          load_camera(reader);
-        }
-        break;
+		ChunkIo reader;
+		reader.init_reader(data, data_len);
+		while (!reader.is_eof()) {
+			ChunkHeader header = reader.cur_header();
+			switch ( header.id_) {
+			case ChunkHeader::Info: 
+				{
+				}
+				break;
+			case ChunkHeader::Hierarchy:
+				{
+					load_hierarchy(reader);
+				}
+				break;
+			case ChunkHeader::Mesh:
+				{
+					load_mesh(reader);
+				}
+				break;
+			case ChunkHeader::Light:
+				{
+				}
+				break;
+			case ChunkHeader::Camera:
+				{
+					load_camera(reader);
+				}
+				break;
 
-      case ChunkHeader::Animation:
-        {
-          load_animation(reader);
-        }
-        break;
-    }
-    reader.next();
-  }
+			case ChunkHeader::Animation:
+				{
+					load_animation(reader);
+				}
+				break;
+			}
+			reader.next();
+		}
+	} catch (std::runtime_error& e) {
+		LOG_WARNING_LN(e.what());
+		return false;
+	}
+	return true;
+
 }
 
 void ReduxLoader::load_camera(ChunkIo& reader)
@@ -185,25 +178,6 @@ void ReduxLoader::load_animation(ChunkIo& reader)
 */
 }
 
-struct Mesh
-{
-	Mesh(const std::string& name) : _name(name) {}
-	std::string _name;
-	std::string _transform_name;
-	std::vector<D3D11_INPUT_ELEMENT_DESC> _input_element_descs;
-
-	DXGI_FORMAT _index_buffer_format;
-
-	int32_t _index_count;
-	int32_t _vertex_buffer_stride;
-	D3DXVECTOR3 _bounding_sphere_center;
-	float _bounding_sphere_radius;
-
-	CComPtr<ID3D11Buffer> _vertex_buffer; 
-	CComPtr<ID3D11Buffer> _index_buffer;
-};
-
-
 void ReduxLoader::load_mesh(ChunkIo& reader)
 {
   ID3D11Device* device = Graphics::instance().device();
@@ -243,6 +217,8 @@ void ReduxLoader::load_mesh(ChunkIo& reader)
 
   mesh->_bounding_sphere_center = reader.read_generic<D3DXVECTOR3>();
   mesh->_bounding_sphere_radius = reader.read_generic<float>();
+
+	scene_->_meshes.push_back(mesh);
 
   //scene_->meshes_.push_back(MeshSPtr(mesh));
 }

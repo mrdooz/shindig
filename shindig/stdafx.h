@@ -31,16 +31,23 @@
 #include <crtdefs.h>
 #include <stdint.h>
 #include <atlbase.h>
+#include <fstream>
 
 #include <boost/scoped_array.hpp>
 #include <boost/signals2.hpp>
+//#include <boost/filesystem.hpp>
 
 #include <celsus/celsus.hpp>
 #include <celsus/logger.hpp>
 #include <Celsus/DX11Utils.hpp>
 #include <celsus/CelsusExtra.hpp>
-
+#include <celsus/ErrorHandling.hpp>
+#include <celsus/ChunkIO.hpp>
+#include <celsus/CelsusExtra.hpp>
+#include <celsus/path_utils.hpp>
+#include <celsus/string_utils.hpp>
 
 #include "fast_delegate.hpp"
 #include "fast_delegate_bind.hpp"
 
+#include <libs/json_spirit/json_spirit.h>
