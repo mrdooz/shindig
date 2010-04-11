@@ -203,13 +203,13 @@ void System::enum_known_folders()
   // See https://cfx.svn.codeplex.com/svn/Visual%20Studio%202008/CppShellKnownFolders/ReadMe.txt
   // for a good description of how this stuff works
   CComPtr<IKnownFolderManager> pkfm;
-  RETURN_ON_FAIL(CoCreateInstance(CLSID_KnownFolderManager, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pkfm)));
+  RETURN_ON_FAIL_VOID(CoCreateInstance(CLSID_KnownFolderManager, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pkfm)), ErrorPredicate<HRESULT>, LOG_WARNING_LN);
   KNOWNFOLDERID id;
-  RETURN_ON_FAIL(pkfm->FolderIdFromCsidl(CSIDL_MYDOCUMENTS, &id));
+  RETURN_ON_FAIL_VOID(pkfm->FolderIdFromCsidl(CSIDL_MYDOCUMENTS, &id), ErrorPredicate<HRESULT>, LOG_WARNING_LN);
   CComPtr<IKnownFolder> k;
-  RETURN_ON_FAIL(pkfm->GetFolder(id, &k));
+  RETURN_ON_FAIL_VOID(pkfm->GetFolder(id, &k), ErrorPredicate<HRESULT>, LOG_WARNING_LN);
   KNOWNFOLDER_DEFINITION kfd;
-  RETURN_ON_FAIL(k->GetFolderDefinition(&kfd));
+  RETURN_ON_FAIL_VOID(k->GetFolderDefinition(&kfd), ErrorPredicate<HRESULT>, LOG_WARNING_LN);
   PWSTR pszPath = NULL;
   if (SUCCEEDED(k->GetPath(0, &pszPath))) {
     char* str = NULL;

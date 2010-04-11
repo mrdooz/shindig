@@ -46,6 +46,7 @@
 #include <celsus/CelsusExtra.hpp>
 #include <celsus/path_utils.hpp>
 #include <celsus/string_utils.hpp>
+#include <celsus/error2.hpp>
 
 #include "fast_delegate.hpp"
 #include "fast_delegate_bind.hpp"

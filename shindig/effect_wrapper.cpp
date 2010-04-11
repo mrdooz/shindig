@@ -2,8 +2,6 @@
 #include "effect_wrapper.hpp"
 #include "graphics.hpp"
 
-
-
 EffectWrapper::EffectWrapper()
 {
 }
@@ -23,8 +21,10 @@ bool EffectWrapper::load(const char* filename, const char* entry_point)
 
 	ID3DBlob* error_blob = NULL;
 
-	LOGGED_ERR_BOOL(D3DCompile(buf, len, "none", NULL, NULL, entry_point, "vs_4_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob));
-	Graphics::instance().device()->CreateVertexShader(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), NULL, &_shader);
+  RETURN_ON_FAIL_BOOL(D3DCompile(buf, len, "none", NULL, NULL, entry_point, "vs_4_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob),
+    ErrorPredicate<HRESULT>, LOG_WARNING_LN);
+	RETURN_ON_FAIL_BOOL(Graphics::instance().device()->CreateVertexShader(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), NULL, &_shader),
+    ErrorPredicate<HRESULT>, LOG_WARNING_LN);
 
 	do_reflection();
 
@@ -36,7 +36,8 @@ bool EffectWrapper::load(const char* filename, const char* entry_point)
 bool EffectWrapper::do_reflection()
 {
 	ID3D11ShaderReflection* pReflector = NULL; 
-	LOGGED_ERR_BOOL(D3DReflect(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector));
+	RETURN_ON_FAIL_BOOL(D3DReflect(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector),
+    ErrorPredicate<HRESULT>, LOG_WARNING_LN);
 	D3D11_SHADER_DESC shader_desc;
 	pReflector->GetDesc(&shader_desc);
 
@@ -51,7 +52,7 @@ bool EffectWrapper::do_reflection()
 		rcb->GetDesc(&d);
 		CD3D11_BUFFER_DESC bb(d.Size, D3D11_BIND_CONSTANT_BUFFER);
 		ID3D11Buffer *cb = NULL;
-		LOGGED_ERR_BOOL(Graphics::instance().device()->CreateBuffer(&bb, NULL, &cb));
+		RETURN_ON_FAIL_BOOL(Graphics::instance().device()->CreateBuffer(&bb, NULL, &cb), ErrorPredicate<HRESULT>, LOG_WARNING_LN);
     ConstantBuffer* cur_cb = new ConstantBuffer(d.Name, cb, bb);
     
 		for (UINT j = 0; j < d.Variables; ++j) {

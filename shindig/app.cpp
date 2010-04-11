@@ -34,8 +34,8 @@ bool App::init(HINSTANCE hinstance)
   _width = 800;
   _height = 600;
   create_window();
-	LOGGED_RETURN(System::instance().init());
-	LOGGED_RETURN(Graphics::instance().init(_hwnd, _width, _height));
+  RETURN_ON_FAIL_BOOL(System::instance().init(), ErrorPredicate<bool>, LOG_WARNING_LN);
+  RETURN_ON_FAIL_BOOL(Graphics::instance().init(_hwnd, _width, _height), ErrorPredicate<bool>, LOG_WARNING_LN);
 
 	_test_effect = new TestEffect();
 	_test_effect->init();
@@ -47,8 +47,8 @@ bool App::close()
 {
 	delete _test_effect;
 
-	LOGGED_RETURN(Graphics::instance().close());
-	LOGGED_RETURN(System::instance().close());
+  RETURN_ON_FAIL_BOOL(Graphics::instance().close(), ErrorPredicate<bool>, LOG_WARNING_LN);
+  RETURN_ON_FAIL_BOOL(System::instance().close(), ErrorPredicate<bool>, LOG_WARNING_LN);
 	return true;
 }
 
@@ -81,7 +81,8 @@ bool App::create_window()
   wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
   wcex.lpszClassName  = kClassName;
 
-	LOGGED_RETURN(RegisterClassExA(&wcex));
+
+  RETURN_ON_FAIL_BOOL(RegisterClassExA(&wcex), ErrorPredicate<int>, LOG_WARNING_LN);
 
   const uint32_t window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
 
