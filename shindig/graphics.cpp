@@ -66,10 +66,28 @@ bool Graphics::init_directx(const HWND hwnd, const int width, const int height)
 	CComPtr<ID3D11Texture2D> back_buffer;
 	RETURN_ON_FAIL_BOOL(_swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer)), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 	RETURN_ON_FAIL_BOOL(_device->CreateRenderTargetView(back_buffer, NULL, &_render_target_view), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
-	ID3D11RenderTargetView* render_targets[] = { _render_target_view };
-	_immediate_context->OMSetRenderTargets(1, render_targets, NULL);
 
-	CD3D11_VIEWPORT vp((float)width, (float)height, 0, 1, 0, 0);
+	// depth buffer
+	D3D11_TEXTURE2D_DESC depthBufferDesc;
+	depthBufferDesc.Width = width;
+	depthBufferDesc.Height = height;
+	depthBufferDesc.MipLevels = 1;
+	depthBufferDesc.ArraySize = 1;
+	depthBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthBufferDesc.SampleDesc.Count = 1;
+	depthBufferDesc.SampleDesc.Quality = 0;
+	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthBufferDesc.CPUAccessFlags = 0;
+	depthBufferDesc.MiscFlags = 0;
+
+	RETURN_ON_FAIL_BOOL(_device->CreateTexture2D(&depthBufferDesc, NULL, &_depth_stencil), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(_device->CreateDepthStencilView(_depth_stencil, NULL, &_depth_stencil_view), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
+
+	ID3D11RenderTargetView* render_targets[] = { _render_target_view };
+	_immediate_context->OMSetRenderTargets(1, render_targets, _depth_stencil_view);
+
+	CD3D11_VIEWPORT vp(0.0f, 0.0f, (float)width, (float)height);
 	_immediate_context->RSSetViewports(1, &vp);
 /*
 	EffectWrapper e(_device);
@@ -98,10 +116,15 @@ bool Graphics::close_directx()
 	return true;
 }
 
-void Graphics::tick()
+void Graphics::clear()
 {
-	float ClearColor[4] = { 0, 1.0f, 1.0f, 1.0f };
+	float ClearColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	_immediate_context->ClearRenderTargetView(_render_target_view, ClearColor);
+	_immediate_context->ClearDepthStencilView(_depth_stencil_view, D3D11_CLEAR_DEPTH, 1.0f, 0 );
+}
+
+void Graphics::present()
+{
 	_swap_chain->Present(0,0);
 }
 

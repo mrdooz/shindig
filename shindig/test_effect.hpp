@@ -18,10 +18,14 @@ struct TestEffect
 	void ps_loaded(EffectWrapper* effect);
 
 	Scene _scene;
-	CComPtr<ID3D11BlendState> _blend_state;
+	//CComPtr<ID3D11BlendState> _blend_state;
 	EffectWrapper* _vs_effect;
 	EffectWrapper* _ps_effect;
 	ID3D11InputLayout* _layout;
+
+	ID3D11RasterizerState* _rasterizer_state;
+	ID3D11BlendState* _blend_state;
+	ID3D11DepthStencilState* _depth_state;
 };
 
 #endif

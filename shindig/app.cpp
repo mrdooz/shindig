@@ -106,9 +106,12 @@ void App::run()
       DispatchMessage(&msg);
     } else {
 			System::instance().tick();
-			Graphics::instance().tick();
+			Graphics::instance().clear();
 
 			_test_effect->render();
+
+			Graphics::instance().present();
+
     }
   }
 

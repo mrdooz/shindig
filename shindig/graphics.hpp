@@ -9,7 +9,9 @@ public:
 
 	bool init(const HWND hwnd, const int width, const int height);
 	bool close();
-	void tick();
+//	void tick();
+	void	clear();
+	void	present();
 	void resize(const int width, const int height);
 
 	ID3D11Device* device() { return _device; }
@@ -33,6 +35,8 @@ private:
 	CComPtr<IDXGISwapChain> _swap_chain;
 	CComPtr<ID3D11DeviceContext> _immediate_context;
 	CComPtr<ID3D11RenderTargetView> _render_target_view;
+	CComPtr<ID3D11Texture2D> _depth_stencil;
+	CComPtr<ID3D11DepthStencilView> _depth_stencil_view;
 	boost::signals2::connection _con;
 
 };
