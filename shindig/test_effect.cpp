@@ -55,7 +55,6 @@ TestEffect::TestEffect()
   : _vs_effect(NULL)
 	, _ps_effect(NULL)
 {
-	container_delete(_scene._meshes);
 }
 
 bool TestEffect::init()
@@ -65,13 +64,18 @@ bool TestEffect::init()
 
   RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
+	
 	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
+	
 	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::ps_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-  ReduxLoader loader(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox), &_scene, NULL);
-	RETURN_ON_FAIL_BOOL(loader.load(), ErrorPredicate<bool>, LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(r.load_scene(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::scene_loaded)),
+		ErrorPredicate<bool>, LOG_ERROR_LN);
+
+	RETURN_ON_FAIL_BOOL(r.load_materials(sys.convert_path("data/scenes/diskette.json", System::kDirDropBox).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::materials_loaded)),
+		ErrorPredicate<bool>, LOG_ERROR_LN);
 
 
 	D3D11_RASTERIZER_DESC raster_desc;
@@ -89,13 +93,14 @@ bool TestEffect::init()
 	device->CreateDepthStencilState(&depth_desc, &_depth_state);
 
 	// connect the meshes to the effect
-	_layout = _vs_effect->create_input_layout(_scene._meshes[0]->_input_element_descs);
+	_layout = _vs_effect->create_input_layout(_scene->meshes()[0]->_input_element_descs);
 
 	return true;
 }
 
 bool TestEffect::close()
 {
+	_scene->release();
 	SAFE_DELETE(_vs_effect);
 	SAFE_DELETE(_ps_effect);
 	//_blend_state.Release();
@@ -132,8 +137,8 @@ bool TestEffect::render()
 	_vs_effect->set_cbuffer();
 
 	// rendar!
-	for (int i = 0; i < _scene._meshes.size(); ++i) {
-		Mesh* m = _scene._meshes[i];
+	for (size_t i = 0; i < _scene->meshes().size(); ++i) {
+		Mesh* m = _scene->meshes()[i];
 		UINT ofs = 0;
 		UINT strides = m->_vertex_buffer_stride;
 		ID3D11Buffer* bufs[1] = { m->_vertex_buffer };
@@ -162,4 +167,15 @@ void TestEffect::ps_loaded(EffectWrapper* effect)
 {
 	SAFE_DELETE(_ps_effect);
 	_ps_effect = effect;
+}
+
+void TestEffect::scene_loaded(Scene* scene)
+{
+	_scene = scene;
+	_scene->add_ref();
+}
+
+void TestEffect::materials_loaded(int)
+{
+
 }

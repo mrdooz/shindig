@@ -3,8 +3,7 @@
 
 class ChunkIo;
 class MaterialManager;
-struct SystemInterface;
-struct Scene;
+class Scene;
 class AnimationNode;
 class AnimationManager;
 

@@ -277,6 +277,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\object.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\redux_loader.hpp"
 				>
 			</File>

@@ -2,6 +2,8 @@
 #include "resource_manager.hpp"
 #include "parser/state_parser.hpp"
 #include "graphics.hpp"
+#include "redux_loader.hpp"
+#include "scene.hpp"
 #include "effect_wrapper.hpp"
 
 ResourceManager* ResourceManager::_instance = NULL;
@@ -51,7 +53,8 @@ bool ResourceManager::load_vertex_shader(const char* filename, const char* shade
 {
 	char buf[MAX_PATH];
 	sprintf(buf, "[VS] - %s::%s", filename, shader_name);
-	_shader_callbacks[buf].push_back(CallbackData(filename, shader_name, fn));
+	SUPER_ASSERT(_shader_callbacks.find(buf) == _shader_callbacks.end());
+	_shader_callbacks[buf].push_back(ShaderCallbackData(filename, shader_name, fn));
 	return reload_shader(buf, true);
 }
 
@@ -59,7 +62,8 @@ bool ResourceManager::load_pixel_shader(const char* filename, const char* shader
 {
 	char buf[MAX_PATH];
 	sprintf(buf, "[PS] - %s::%s", filename, shader_name);
-	_shader_callbacks[buf].push_back(CallbackData(filename, shader_name, fn));
+	SUPER_ASSERT(_shader_callbacks.find(buf) == _shader_callbacks.end());
+	_shader_callbacks[buf].push_back(ShaderCallbackData(filename, shader_name, fn));
 	return reload_shader(buf, false);
 }
 
@@ -70,8 +74,8 @@ bool ResourceManager::reload_shader(const char* filename, const bool vertex_shad
 		return true;
 	}
 
-	const std::vector<CallbackData>& n = _shader_callbacks[filename];
-	for (std::vector<CallbackData>::const_iterator i = n.begin(), e = n.end(); i != e; ++i) {
+	const std::vector<ShaderCallbackData>& n = _shader_callbacks[filename];
+	for (std::vector<ShaderCallbackData>::const_iterator i = n.begin(), e = n.end(); i != e; ++i) {
 		const std::string& filename = i->_filename;
 		const std::string& entry_point = i->_entry_point;
 		fnEffectLoaded fn = i->_effect_loaded;
@@ -89,7 +93,8 @@ bool ResourceManager::reload_shader(const char* filename, const bool vertex_shad
 
 bool ResourceManager::load_effect_states(const char* filename, const fnStateLoaded& fn)
 {
-	_state_callbacks[filename].e.push_back(fn);
+	SUPER_ASSERT(_state_callbacks.find(filename) == _state_callbacks.end());
+	_state_callbacks[filename].push_back(fn);
 	return reload_effect_states(filename);
 }
 
@@ -111,18 +116,73 @@ bool ResourceManager::reload_effect_states(const std::string& filename)
 	}
 	BigState b = p._states;
 
+	BlendStates blend_states;
 	for (BlendDescs::iterator i = b._blend_descs.begin(), e = b._blend_descs.end(); i != e; ++i) {
 		ID3D11BlendState* s;
 		Graphics::instance().device()->CreateBlendState(&i->second, &s);
-		_blend_states.insert(std::make_pair(i->first, s));
+		blend_states.insert(std::make_pair(i->first, s));
 	}
 
 	// call the callbacks that are watching this file
-	Callbacks& callbacks = _state_callbacks[filename];
-	for (Callbacks::E::iterator i = callbacks.e.begin(), e = callbacks.e.end(); i != e; ++i) {
-		(*i)(_blend_states);
+	std::vector<fnStateLoaded>& callbacks = _state_callbacks[filename];
+	for (std::vector<fnStateLoaded>::iterator i = callbacks.begin(), e = callbacks.end(); i != e; ++i) {
+		(*i)(blend_states);
 	}
 
 	return true;
+}
 
+bool ResourceManager::load_scene(const char* filename, const fnSceneLoaded& fn)
+{
+	SUPER_ASSERT(_scene_callbacks.find(filename) == _scene_callbacks.end());
+	_scene_callbacks[filename].push_back(fn);
+	return reload_scene(filename);
+}
+
+bool ResourceManager::load_materials(const char* filename, const fnMaterialsLoaded& fn)
+{
+	SUPER_ASSERT(_material_callbacks.find(filename) == _material_callbacks.end());
+	_material_callbacks[filename].push_back(fn);
+	return reload_material(filename);
+}
+
+namespace json = json_spirit;
+
+bool ResourceManager::reload_material(const char* filename)
+{
+	std::ifstream is(filename);
+	json_spirit::mValue value;
+	if (!json_spirit::read( is, value )) {
+		return false;
+	}
+	//const json_spirit::mArray& addr_array = value.get_array();
+	const json_spirit::mObject& addr_array = value.get_obj();
+
+	for (json_spirit::mObject::const_iterator i = addr_array.begin(), e = addr_array.end(); i != e; ++i) {
+		const json::mValue v = i->second;
+		int a = 10;
+	}
+
+	return true;
+}
+
+bool ResourceManager::reload_scene(const char* filename)
+{
+	Scene* scene = new Scene();
+	ReduxLoader loader(filename, scene, NULL);
+	RETURN_ON_FAIL_BOOL(loader.load(), ErrorPredicate<bool>, LOG_ERROR_LN);
+
+	SceneCallbacks::iterator it = _scene_callbacks.find(filename);
+	if (it == _scene_callbacks.end()) {
+		LOG_WARNING_LN("unable to find callbacks for scene: %s", filename);
+		return false;
+	}
+
+	for (std::vector<fnSceneLoaded>::iterator i = it->second.begin(), e = it->second.end(); i != e; ++i) {
+		(*i)(scene);
+	}
+
+	scene->release();
+
+	return true;
 }

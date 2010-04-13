@@ -45,6 +45,7 @@ bool App::init(HINSTANCE hinstance)
 
 bool App::close()
 {
+	_test_effect->close();
 	delete _test_effect;
 
   RETURN_ON_FAIL_BOOL(Graphics::instance().close(), ErrorPredicate<bool>, LOG_ERROR_LN);
