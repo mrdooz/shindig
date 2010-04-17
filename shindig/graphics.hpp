@@ -19,6 +19,8 @@ public:
 
 	void set_default_render_target();
 
+  D3D_FEATURE_LEVEL feature_level() const { return _feature_level; }
+
 private:
 	DISALLOW_COPY_AND_ASSIGN(Graphics);
 
@@ -36,6 +38,7 @@ private:
 	int _height;
 	D3D11_VIEWPORT _viewport;
 	DXGI_FORMAT _buffer_format;
+  D3D_FEATURE_LEVEL _feature_level;
 	CComPtr<ID3D11Device> _device;
 	CComPtr<IDXGISwapChain> _swap_chain;
 	CComPtr<ID3D11DeviceContext> _immediate_context;

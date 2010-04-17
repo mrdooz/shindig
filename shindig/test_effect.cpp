@@ -111,7 +111,7 @@ bool TestEffect::render()
 	ID3D11Device* device = Graphics::instance().device();
 	ID3D11DeviceContext* context = Graphics::instance().context();
 
-	_rt.set();
+	//_rt.set();
 
 	// set shaders
 	context->VSSetShader(_vs_effect->vertex_shader(), NULL, 0);
@@ -156,7 +156,7 @@ bool TestEffect::render()
 		context->DrawIndexed(m->_index_count, 0, 0);
 	}
 
-	Graphics::instance().set_default_render_target();
+	//Graphics::instance().set_default_render_target();
 
 	return true;
 }

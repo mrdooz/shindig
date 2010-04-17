@@ -30,8 +30,28 @@ bool EffectWrapper::load_inner(const char* filename, const char* entry_point, bo
 
 	ID3DBlob* error_blob = NULL;
 
+  // Must use ps_4_0_level_9_3 or ps_4_0_level_9_1
+  // Set shader version depending on feature level
+  std::string vs, ps;
+  switch(Graphics::instance().feature_level()) {
+  case D3D_FEATURE_LEVEL_9_1:
+    vs = "vs_4_0_level_9_1";
+    ps = "ps_4_0_level_9_1";
+    break;
+  case D3D_FEATURE_LEVEL_9_2:
+  case D3D_FEATURE_LEVEL_9_3:
+    vs = "vs_4_0_level_9_3";
+    ps = "ps_4_0_level_9_3";
+    break;
+  default:
+    vs = "vs_4_0";
+    ps = "ps_4_0";
+    break;
+  }
+
 	if (vertex_shader) {
-		if (FAILED(D3DCompile(buf, len, filename, NULL, NULL, entry_point, "vs_4_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob))) {
+
+		if (FAILED(D3DCompile(buf, len, filename, NULL, NULL, entry_point, vs.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob))) {
 			LOG_ERROR_LN("%s", error_blob->GetBufferPointer());
 			return false;
 		}
@@ -39,7 +59,7 @@ bool EffectWrapper::load_inner(const char* filename, const char* entry_point, bo
 			ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 
 	} else {
-		if (FAILED(D3DCompile(buf, len, filename, NULL, NULL, entry_point, "ps_4_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob))) {
+		if (FAILED(D3DCompile(buf, len, filename, NULL, NULL, entry_point, ps.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob))) {
 			LOG_ERROR_LN("%s", error_blob->GetBufferPointer());
 			return false;
 		}

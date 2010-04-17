@@ -1,5 +1,5 @@
 
-#line 1 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 1 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,7 +12,7 @@
 // HLSL RasterizerState parser
 
 
-#line 2 "C:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
+#line 2 "D:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
 static const char _rasta_man_actions[] = {
 	0, 1, 2, 1, 3, 1, 60, 1, 
 	61, 1, 62, 1, 63, 1, 64, 1, 
@@ -1620,7 +1620,7 @@ static const int rasta_man_error = 0;
 static const int rasta_man_en_main = 11;
 
 
-#line 15 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 15 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 
 
 extern char* make_string(const char* ts, const char* te);
@@ -1633,7 +1633,7 @@ int parse_tokens(Tokens& tokens, char* str)
   char *ts, *te, *tm = 0, *eof = 0;  
 
   
-#line 1608 "C:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
+#line 1608 "D:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
 	{
 	cs = rasta_man_start;
 	ts = 0;
@@ -1641,7 +1641,7 @@ int parse_tokens(Tokens& tokens, char* str)
 	act = 0;
 	}
 
-#line 1614 "C:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
+#line 1614 "D:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -1662,7 +1662,7 @@ _resume:
 #line 1 "NONE"
 	{ts = p;}
 	break;
-#line 1633 "C:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
+#line 1633 "D:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
 		}
 	}
 
@@ -1733,307 +1733,307 @@ _eof_trans:
 	{te = p+1;}
 	break;
 	case 4:
-#line 166 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 166 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 6;}
 	break;
 	case 5:
-#line 167 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 167 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 7;}
 	break;
 	case 6:
-#line 168 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 168 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 8;}
 	break;
 	case 7:
-#line 169 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 169 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 9;}
 	break;
 	case 8:
-#line 171 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 171 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 10;}
 	break;
 	case 9:
-#line 172 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 172 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 11;}
 	break;
 	case 10:
-#line 174 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 174 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 12;}
 	break;
 	case 11:
-#line 176 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 176 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 13;}
 	break;
 	case 12:
-#line 177 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 177 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 14;}
 	break;
 	case 13:
-#line 178 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 178 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 15;}
 	break;
 	case 14:
-#line 179 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 179 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 16;}
 	break;
 	case 15:
-#line 180 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 180 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 17;}
 	break;
 	case 16:
-#line 181 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 181 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 18;}
 	break;
 	case 17:
-#line 182 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 182 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 19;}
 	break;
 	case 18:
-#line 183 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 183 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 20;}
 	break;
 	case 19:
-#line 185 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 185 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 21;}
 	break;
 	case 20:
-#line 186 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 186 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 22;}
 	break;
 	case 21:
-#line 188 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 188 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 24;}
 	break;
 	case 22:
-#line 189 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 189 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 25;}
 	break;
 	case 23:
-#line 191 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 191 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 26;}
 	break;
 	case 24:
-#line 192 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 192 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 27;}
 	break;
 	case 25:
-#line 197 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 197 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 31;}
 	break;
 	case 26:
-#line 198 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 198 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 32;}
 	break;
 	case 27:
-#line 199 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 199 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 33;}
 	break;
 	case 28:
-#line 200 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 200 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 34;}
 	break;
 	case 29:
-#line 203 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 203 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 36;}
 	break;
 	case 30:
-#line 204 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 204 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 37;}
 	break;
 	case 31:
-#line 205 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 205 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 38;}
 	break;
 	case 32:
-#line 207 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 207 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 40;}
 	break;
 	case 33:
-#line 208 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 208 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 41;}
 	break;
 	case 34:
-#line 209 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 209 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 42;}
 	break;
 	case 35:
-#line 210 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 210 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 43;}
 	break;
 	case 36:
-#line 211 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 211 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 44;}
 	break;
 	case 37:
-#line 212 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 212 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 45;}
 	break;
 	case 38:
-#line 213 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 213 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 46;}
 	break;
 	case 39:
-#line 214 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 214 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 47;}
 	break;
 	case 40:
-#line 215 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 215 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 48;}
 	break;
 	case 41:
-#line 216 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 216 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 49;}
 	break;
 	case 42:
-#line 217 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 217 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 50;}
 	break;
 	case 43:
-#line 218 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 218 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 51;}
 	break;
 	case 44:
-#line 220 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 220 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 52;}
 	break;
 	case 45:
-#line 221 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 221 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 53;}
 	break;
 	case 46:
-#line 222 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 222 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 54;}
 	break;
 	case 47:
-#line 224 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 224 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 56;}
 	break;
 	case 48:
-#line 226 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 226 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 57;}
 	break;
 	case 49:
-#line 227 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 227 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 58;}
 	break;
 	case 50:
-#line 228 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 228 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 59;}
 	break;
 	case 51:
-#line 230 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 230 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 60;}
 	break;
 	case 52:
-#line 231 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 231 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 61;}
 	break;
 	case 53:
-#line 233 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 233 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 63;}
 	break;
 	case 54:
-#line 235 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 235 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 64;}
 	break;
 	case 55:
-#line 236 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 236 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 65;}
 	break;
 	case 56:
-#line 238 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 238 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 66;}
 	break;
 	case 57:
-#line 240 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 240 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 68;}
 	break;
 	case 58:
-#line 241 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 241 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 69;}
 	break;
 	case 59:
-#line 244 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 244 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{act = 70;}
 	break;
 	case 60:
-#line 159 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 159 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(INDEX, atoi(ts+1))); }}
 	break;
 	case 61:
-#line 160 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 160 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(L_BRACE, 0)); }}
 	break;
 	case 62:
-#line 161 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 161 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(R_BRACE, 0)); }}
 	break;
 	case 63:
-#line 162 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 162 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(SEMI_COLON, 0)); }}
 	break;
 	case 64:
-#line 163 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 163 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(ASSIGN, 0)); }}
 	break;
 	case 65:
-#line 202 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 202 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p+1;{ tokens.push_back(Token(ASSIGN, 0)); tokens.push_back(Token(BLEND_V, D3D11_BLEND_ZERO)); }}
 	break;
 	case 66:
-#line 187 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 187 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(ADDRESS_V, D3D11_TEXTURE_ADDRESS_MIRROR)); }}
 	break;
 	case 67:
-#line 193 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 193 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(SRC_BLEND_K,0));}}
 	break;
 	case 68:
-#line 194 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 194 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(DEST_BLEND_K,0));}}
 	break;
 	case 69:
-#line 195 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 195 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(BLEND_OP_K,0));}}
 	break;
 	case 70:
-#line 206 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 206 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(BLEND_V, D3D11_BLEND_SRC_ALPHA)); }}
 	break;
 	case 71:
-#line 223 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 223 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(BLEND_OP_V, D3D11_BLEND_OP_MIN)); }}
 	break;
 	case 72:
-#line 232 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 232 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(CULL_MODE_V, D3D11_CULL_FRONT)); }}
 	break;
 	case 73:
-#line 238 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 238 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(VALUE, atoi(ts))); }}
 	break;
 	case 74:
-#line 239 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 239 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(FLOAT_VALUE, (float)atof(ts))); }}
 	break;
 	case 75:
-#line 240 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 240 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(VALUE, make_hex(ts, te))); }}
 	break;
 	case 76:
-#line 241 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 241 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ tokens.push_back(Token(ID, (int)make_string(ts, te))); }}
 	break;
 	case 77:
-#line 244 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 244 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{te = p;p--;{ }}
 	break;
 	case 78:
-#line 238 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 238 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{{p = ((te))-1;}{ tokens.push_back(Token(VALUE, atoi(ts))); }}
 	break;
 	case 79:
-#line 241 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 241 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 	{{p = ((te))-1;}{ tokens.push_back(Token(ID, (int)make_string(ts, te))); }}
 	break;
 	case 80:
@@ -2213,7 +2213,7 @@ _eof_trans:
 	}
 	}
 	break;
-#line 2105 "C:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
+#line 2105 "D:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
 		}
 	}
 
@@ -2230,7 +2230,7 @@ _again:
 #line 1 "NONE"
 	{act = 0;}
 	break;
-#line 2119 "C:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
+#line 2119 "D:\\projects\\shindig\\shindig\\parser\\state_parser_lexer.cpp"
 		}
 	}
 
@@ -2250,7 +2250,7 @@ _again:
 	_out: {}
 	}
 
-#line 249 "C:\\projects\\shindig\\shindig\\parser\\parser.rl"
+#line 249 "D:\\projects\\shindig\\shindig\\parser\\parser.rl"
 
  
   return 1;

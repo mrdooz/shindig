@@ -18,6 +18,8 @@ bool RenderTarget::create(const int width, const int height)
 	RETURN_ON_FAIL_BOOL(device->CreateRenderTargetView(_render_target, NULL, &_render_target_view), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 
 	desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+  desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+  desc.MipLevels = 1;
 	RETURN_ON_FAIL_BOOL(device->CreateTexture2D(&desc, NULL, &_depth_stencil), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 	RETURN_ON_FAIL_BOOL(device->CreateDepthStencilView(_depth_stencil, NULL, &_depth_stencil_view), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 

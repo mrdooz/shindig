@@ -55,13 +55,13 @@ bool Graphics::init_directx(const HWND hwnd, const int width, const int height)
 	sd.Windowed = TRUE;
 
 	const int flags = D3D11_CREATE_DEVICE_DEBUG;
-	D3D_FEATURE_LEVEL feature_level;
 
 	RETURN_ON_FAIL_BOOL(D3D11CreateDeviceAndSwapChain(
-		NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, NULL, 0, D3D11_SDK_VERSION, &sd, &_swap_chain, &_device, &feature_level, &_immediate_context),
+		NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, NULL, 0, D3D11_SDK_VERSION, &sd, &_swap_chain, &_device, &_feature_level, &_immediate_context),
     ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 
-	if (feature_level < D3D_FEATURE_LEVEL_9_3) {
+	if (_feature_level < D3D_FEATURE_LEVEL_9_3) {
+    LOG_ERROR_LN("Card must support at least D3D_FEATURE_LEVEL_9_3");
 		return false;
 	}
 
@@ -75,7 +75,7 @@ bool Graphics::init_directx(const HWND hwnd, const int width, const int height)
 	depthBufferDesc.Height = height;
 	depthBufferDesc.MipLevels = 1;
 	depthBufferDesc.ArraySize = 1;
-	depthBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthBufferDesc.SampleDesc.Count = 1;
 	depthBufferDesc.SampleDesc.Quality = 0;
 	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
