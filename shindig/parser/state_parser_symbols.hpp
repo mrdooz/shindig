@@ -141,16 +141,15 @@ union {
 };
 typedef std::vector<Token> Tokens;
 
-struct DD3D11_SAMPLER_DESC : public CD3D11_SAMPLER_DESC
-{
-	DD3D11_SAMPLER_DESC() : CD3D11_SAMPLER_DESC(D3D11_DEFAULT) {}
-
-};
-
 #include <map>
 #include <string>
-typedef std::map< std::string, CD3D11_BLEND_DESC> BlendDescs;
-typedef std::map< std::string, CD3D11_RASTERIZER_DESC> RasterizerDescs;
+
+struct DD3D11_BLEND_DESC : public CD3D11_BLEND_DESC { DD3D11_BLEND_DESC() : CD3D11_BLEND_DESC(D3D11_DEFAULT) {} };
+struct DD3D11_RASTERIZER_DESC : public CD3D11_RASTERIZER_DESC { DD3D11_RASTERIZER_DESC() : CD3D11_RASTERIZER_DESC(D3D11_DEFAULT) {} };
+struct DD3D11_SAMPLER_DESC : public CD3D11_SAMPLER_DESC { DD3D11_SAMPLER_DESC() : CD3D11_SAMPLER_DESC(D3D11_DEFAULT) {Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; } };
+
+typedef std::map< std::string, DD3D11_BLEND_DESC> BlendDescs;
+typedef std::map< std::string, DD3D11_RASTERIZER_DESC> RasterizerDescs;
 typedef std::map< std::string, DD3D11_SAMPLER_DESC> SamplerDescs;
 
 struct BigState

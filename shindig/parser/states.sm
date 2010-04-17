@@ -25,7 +25,7 @@ state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_states(a._ra
 sampler_states(a) : SamplerDescs& ::= SAMPLER_K ID ASSIGN SAMPLER_STATE_K L_BRACE sampler_state(a[$ID$._str]) R_BRACE SEMI_COLON.
 sampler_state(a) : D3D11_SAMPLER_DESC& ::= [texture_state(a) | min_filter_state(a) | mag_filter_state(a) | mip_filter_state(a)]*.
 
-# DX11 uses a bitmask for filter states, 2 bits per min/mag/map, 00 = point, 01 = linear
+# DX11 uses a bitmask for filter states, 2 bits per min/mag/mip, 00 = point, 01 = linear
 texture_state(a) : D3D11_SAMPLER_DESC& ::= TEXTURE_K ASSIGN L_CLAMP ID R_CLAMP SEMI_COLON.
 min_filter_state(a) : D3D11_SAMPLER_DESC& ::= MINFILTER_K ASSIGN FILTER_V SEMI_COLON
 	@pass{ a.Filter = (D3D11_FILTER)(a.Filter + ($FILTER_V$.extra << 4)); }.
