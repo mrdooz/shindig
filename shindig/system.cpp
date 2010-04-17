@@ -11,20 +11,6 @@ using namespace boost::signals2;
 
 System* System::_instance = NULL;
 
-#define GEN_NAME2(prefix, line) prefix##line
-#define GEN_NAME(prefix, line) GEN_NAME2(prefix, line)
-#define MAKE_SCOPED(type) type GEN_NAME(ANON, __LINE__)
-
-struct ScopedCs
-{
-	ScopedCs(CRITICAL_SECTION* cs) : _cs(cs) { EnterCriticalSection(_cs); }
-	~ScopedCs() { LeaveCriticalSection(_cs); }
-	CRITICAL_SECTION* _cs;
-};
-
-#define SCOPED_CS(x) MAKE_SCOPED(ScopedCs)(x);
-
-
 enum {
 	COMPLETION_KEY_NONE         =   0,
 	COMPLETION_KEY_SHUTDOWN     =   1,

@@ -14,13 +14,13 @@ Graphics& Graphics::instance()
 }
 
 Graphics::Graphics()
+	: _width(-1)
+	, _height(-1)
 {
-
 }
 
 Graphics::~Graphics()
 {
-
 }
 
 bool Graphics::init(const HWND hwnd, const int width, const int height)
@@ -36,6 +36,8 @@ bool Graphics::init(const HWND hwnd, const int width, const int height)
 
 bool Graphics::init_directx(const HWND hwnd, const int width, const int height)
 {
+	_width = width;
+	_height = height;
 	_buffer_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	DXGI_SWAP_CHAIN_DESC sd;
@@ -84,17 +86,17 @@ bool Graphics::init_directx(const HWND hwnd, const int width, const int height)
 	RETURN_ON_FAIL_BOOL(_device->CreateTexture2D(&depthBufferDesc, NULL, &_depth_stencil), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 	RETURN_ON_FAIL_BOOL(_device->CreateDepthStencilView(_depth_stencil, NULL, &_depth_stencil_view), ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 
+	_viewport = CD3D11_VIEWPORT (0.0f, 0.0f, (float)_width, (float)_height);
+	set_default_render_target();
+
+	return true;
+}
+
+void Graphics::set_default_render_target()
+{
 	ID3D11RenderTargetView* render_targets[] = { _render_target_view };
 	_immediate_context->OMSetRenderTargets(1, render_targets, _depth_stencil_view);
-
-	CD3D11_VIEWPORT vp(0.0f, 0.0f, (float)width, (float)height);
-	_immediate_context->RSSetViewports(1, &vp);
-/*
-	EffectWrapper e(_device);
-	e.load_states("/projects/shindig/effects/states.fx");
-	e.load("/projects/shindig/effects/systemVS.fx");
-*/
-	return true;
+	_immediate_context->RSSetViewports(1, &_viewport);
 }
 
 bool Graphics::close()
@@ -109,6 +111,8 @@ bool Graphics::close()
 
 bool Graphics::close_directx()
 {
+	_depth_stencil_view.Release();
+	_depth_stencil.Release();
 	_render_target_view.Release();
 	_immediate_context.Release();
 	_swap_chain.Release();

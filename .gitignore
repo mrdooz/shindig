@@ -15,3 +15,7 @@ data/scenes/
 *.zip
 *.obj
 *.exe
+*.opensdf
+*.psess
+*.sdf
+*.vsp

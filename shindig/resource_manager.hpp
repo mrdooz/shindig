@@ -7,6 +7,7 @@
 
 class EffectWrapper;
 class Scene;
+struct MaterialFile;
 
 class ResourceManager
 {
@@ -19,7 +20,7 @@ public:
   typedef fastdelegate::FastDelegate1<const BlendStates& > fnStateLoaded;
 	typedef fastdelegate::FastDelegate1<EffectWrapper*> fnEffectLoaded;
 	typedef fastdelegate::FastDelegate1<Scene* > fnSceneLoaded;
-	typedef fastdelegate::FastDelegate1<int> fnMaterialsLoaded;
+	typedef fastdelegate::FastDelegate1<const MaterialFile&> fnMaterialsLoaded;
 
 	// All the loading functions are synchronous, but the given callback can be
 	// called multiple times if the specified file is modified
@@ -34,7 +35,7 @@ private:
 	DISALLOW_COPY_AND_ASSIGN(ResourceManager);
 
 	// The inner funtions are called both from the "file changed" signal, and directly from the load_xxx methods
-	bool reload_effect_states(const std::string& filename);
+	bool reload_effect_states(const char* filename);
 	bool reload_shader(const char* filename, const bool vertex_shader);
 	bool reload_material(const char* filename);
 	bool reload_scene(const char* filename);

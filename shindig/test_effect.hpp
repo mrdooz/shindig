@@ -4,6 +4,7 @@
 #include "resource_manager.hpp"
 #include "effect_wrapper.hpp"
 #include "scene.hpp"
+#include "render_target.hpp"
 
 struct TestEffect
 {
@@ -17,17 +18,18 @@ struct TestEffect
 	void vs_loaded(EffectWrapper* effect);
 	void ps_loaded(EffectWrapper* effect);
 	void scene_loaded(Scene* scene);
-	void materials_loaded(int);
+	void materials_loaded(const MaterialFile& materials);
 
-	Scene* _scene;
-	//CComPtr<ID3D11BlendState> _blend_state;
+	RefPtr<Scene> _scene;
+	MaterialFile _materials;
 	EffectWrapper* _vs_effect;
 	EffectWrapper* _ps_effect;
-	ID3D11InputLayout* _layout;
+	CComPtr<ID3D11InputLayout> _layout;
 
-	ID3D11RasterizerState* _rasterizer_state;
-	ID3D11BlendState* _blend_state;
-	ID3D11DepthStencilState* _depth_state;
+	RenderTarget _rt;
+	CComPtr<ID3D11RasterizerState> _rasterizer_state;
+	CComPtr<ID3D11BlendState> _blend_state;
+	CComPtr<ID3D11DepthStencilState> _depth_state;
 };
 
 #endif

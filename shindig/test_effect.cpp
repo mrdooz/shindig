@@ -8,7 +8,7 @@
 
 void depth_stencil_default(D3D11_DEPTH_STENCIL_DESC* desc)
 {
-	desc->DepthEnable = FALSE;
+	desc->DepthEnable = TRUE;
 	desc->DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	desc->DepthFunc = D3D11_COMPARISON_LESS;
 	desc->StencilEnable = FALSE;
@@ -19,7 +19,7 @@ void depth_stencil_default(D3D11_DEPTH_STENCIL_DESC* desc)
 	desc->FrontFace = defaultStencilOp;
 	desc->BackFace = defaultStencilOp;
 }
-
+/*
 void blend_default(D3D11_BLEND_DESC* desc)
 {
 	desc->AlphaToCoverageEnable = FALSE;
@@ -35,7 +35,7 @@ void blend_default(D3D11_BLEND_DESC* desc)
 		desc->RenderTarget[ i ] = defaultRenderTargetBlendDesc;
 
 }
-
+*/
 void rasterizer_default(D3D11_RASTERIZER_DESC* desc)
 {
 	desc->FillMode = D3D11_FILL_SOLID;
@@ -81,19 +81,18 @@ bool TestEffect::init()
 	D3D11_RASTERIZER_DESC raster_desc;
 	rasterizer_default(&raster_desc);
 
-	D3D11_BLEND_DESC blend_desc;
-	blend_default(&blend_desc);
+	//D3D11_BLEND_DESC blend_desc;
+	//blend_default(&blend_desc);
 
 	D3D11_DEPTH_STENCIL_DESC depth_desc;
 	depth_stencil_default(&depth_desc);
 
 	ID3D11Device* device = Graphics::instance().device();
 	device->CreateRasterizerState(&raster_desc, &_rasterizer_state);
-	device->CreateBlendState(&blend_desc, &_blend_state);
 	device->CreateDepthStencilState(&depth_desc, &_depth_state);
+	_layout.Attach(_vs_effect->create_input_layout(_scene->meshes()[0]->_input_element_descs));
 
-	// connect the meshes to the effect
-	_layout = _vs_effect->create_input_layout(_scene->meshes()[0]->_input_element_descs);
+	RETURN_ON_FAIL_BOOL(_rt.create(512, 512), ErrorPredicate<bool>, LOG_ERROR_LN);
 
 	return true;
 }
@@ -111,6 +110,8 @@ bool TestEffect::render()
 {
 	ID3D11Device* device = Graphics::instance().device();
 	ID3D11DeviceContext* context = Graphics::instance().context();
+
+	_rt.set();
 
 	// set shaders
 	context->VSSetShader(_vs_effect->vertex_shader(), NULL, 0);
@@ -139,22 +140,31 @@ bool TestEffect::render()
 	// rendar!
 	for (size_t i = 0; i < _scene->meshes().size(); ++i) {
 		Mesh* m = _scene->meshes()[i];
+
+		const auto& material_connection = _materials.material_connections[m->_name];
+		const auto& material = _materials.materials[material_connection.material_name];
+		_ps_effect->set_variable("diffuse", material.diffuse);
+		_ps_effect->unmap_buffers();
+		_ps_effect->set_cbuffer();
+
 		UINT ofs = 0;
 		UINT strides = m->_vertex_buffer_stride;
-		ID3D11Buffer* bufs[1] = { m->_vertex_buffer };
+		ID3D11Buffer* bufs[] = { m->_vertex_buffer };
 		context->IASetVertexBuffers(0, 1, &bufs[0], &strides, &ofs);
 		context->IASetIndexBuffer(m->_index_buffer, m->_index_buffer_format, ofs);
 
 		context->DrawIndexed(m->_index_count, 0, 0);
 	}
 
+	Graphics::instance().set_default_render_target();
+
 	return true;
 }
 
 void TestEffect::states_loaded(const ResourceManager::BlendStates& states)
 {
-	//_blend_state.Release();
-	//_blend_state = states.find("AdditiveBlending")->second;
+	_blend_state.Release();
+	_blend_state = states.find("AdditiveBlending")->second;
 }
 
 void TestEffect::vs_loaded(EffectWrapper* effect)
@@ -175,7 +185,7 @@ void TestEffect::scene_loaded(Scene* scene)
 	_scene->add_ref();
 }
 
-void TestEffect::materials_loaded(int)
+void TestEffect::materials_loaded(const MaterialFile& materials)
 {
-
+	_materials = materials;
 }

@@ -13,13 +13,15 @@
 start ::= state(_states)*
 	.
 
-state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_state(a._rasterizer_descs)].
+state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_states(a._rasterizer_descs)].
 
 #	state ::= [blend_states | depth_stencil_states | rasterizer_state | sampler_states | 
 #render_target_view | depth_stencil_view | generate_mips | vertex_shader | pixel_shader | 
 #	geometry_shader | ds_stencil_ref | ab_blend_factor | ab_sample_mask].
 
-# blend states
+############################################################################################
+# Blend states
+############################################################################################
 blend_states(a) : BlendDescs& ::= BLEND_STATE_K ID L_BRACE blend_state(a[$ID$._str]) R_BRACE SEMI_COLON.
 blend_state(a) : D3D11_BLEND_DESC& ::= [ 
 	alpha_to_coverage_state(a.AlphaToCoverageEnable) | 
@@ -55,7 +57,31 @@ dest_blend_alpha_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= DEST_BLEND_ALPHA
 blend_op_alpha_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= BLEND_OP_ALPHA_K ASSIGN BLEND_OP_V SEMI_COLON
 	@pass{ a[0].BlendOpAlpha = (D3D11_BLEND_OP)$BLEND_OP_V$.extra; }.
 
-render_target_write_mask_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= RENDER_TARGET_WRITE_MASK_K INDEX ASSIGN VALUE SEMI_COLON.
+render_target_write_mask_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= RENDER_TARGET_WRITE_MASK_K INDEX ASSIGN VALUE SEMI_COLON
+	@pass{ a[0].RenderTargetWriteMask = $VALUE$.extra; }.
+
+############################################################################################
+# Rasterizer states
+############################################################################################
+rasterizer_states(a) : RasterizerDescs& ::= RASTERIZER_STATE_K ID L_BRACE rasterizer_state(a[$ID$._str]) R_BRACE SEMI_COLON.
+rasterizer_state(a) : D3D11_RASTERIZER_DESC& ::= [
+	fill_mode_state(a) |
+	cull_mode_state(a)
+	]*
+.
+
+fill_mode_state(a) : D3D11_RASTERIZER_DESC& ::= FILL_MODE_K ASSIGN FILL_MODE_V SEMI_COLON
+	@pass{ a.FillMode = (D3D11_FILL_MODE)$FILL_MODE_V$.extra; }.
+
+cull_mode_state(a) : D3D11_RASTERIZER_DESC& ::= CULL_MODE_K ASSIGN CULL_MODE_V SEMI_COLON
+	@pass{ a.CullMode = (D3D11_CULL_MODE)$CULL_MODE_V$.extra; }.
+
+front_counter_clockwise_state(a) : D3D11_RASTERIZER_DESC& ::= FRONT_COUNTER_CLOCKWISE_K ASSIGN BOOL_V SEMI_COLON
+	@pass{ a.FrontCounterClockwise = $BOOL_V$.extra; }.
+
+depth_bias_state(a) : D3D11_RASTERIZER_DESC& ::= DEPTH_BIAS_K ASSIGN VALUE SEMI_COLON
+	@pass{ a.DepthBias = $VALUE$.extra; }.
+
 
 # depth stencil states
 depth_stencil_states ::= DEPTH_STENCIL_STATE_K ID L_BRACE depth_stencil_state R_BRACE SEMI_COLON.
@@ -73,7 +99,6 @@ ab_blend_factor ::= PASS_AB_BLEND_FACTOR.
 ab_sample_mask ::= PASS_AB_SAMPLE_MASK.
 
 #blend_states(a) : BlendDescs& ::= BLEND_STATE_K ID L_BRACE blend_state(a[$ID$._str]) R_BRACE SEMI_COLON.
-rasterizer_state(a) : RasterizerDescs& ::= RASTERIZER_STATE_K ID L_BRACE R_BRACE SEMI_COLON.
 
 
 render_target_view ::= RENDER_TARGET_VIEW.
@@ -95,7 +120,7 @@ fill_mode ::= RASTERIZER_FILL_MODE ASSIGN fill_mode_values SEMI_COLON.
 
 fill_mode_values ::= [FILL_WIREFRAME | FILL_SOLID].
 
-tmp ::= [ BLEND_ALPHA_TO_COVERAGE_ENABLE | BLEND_BLEND_ENABLE | VALUE].
+tmp ::= [ BLEND_ALPHA_TO_COVERAGE_ENABLE | BLEND_BLEND_ENABLE | VALUE | FLOAT_VALUE].
 
 filter_state_values ::= [FILTER_MIN_MAG_MIP_POINT | FILTER_MIN_MAG_POINT_MIP_LINEAR | FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT |
 	FILTER_MIN_POINT_MAG_MIP_LINEAR | FILTER_MIN_LINEAR_MAG_MIP_POINT | FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR |

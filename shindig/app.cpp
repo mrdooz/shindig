@@ -40,6 +40,9 @@ bool App::init(HINSTANCE hinstance)
 	_test_effect = new TestEffect();
 	_test_effect->init();
 
+	_key_signal.connect(fastdelegate::MakeDelegate(this, &App::key_slot));
+	_mouse_signal.connect(fastdelegate::MakeDelegate(this, &App::mouse_slot));
+
 	return true;
 }
 
@@ -98,6 +101,37 @@ bool App::create_window()
 	return true;
 }
 
+void App::tick()
+{
+	// process the key and mouse buffers
+	{
+		SCOPED_CS(&_cs_queue);
+		for (auto i = _key_buffer.begin(), e = _key_buffer.end(); i != e; ++i) {
+
+		}
+		_key_buffer.clear();
+
+		for (auto i = _mouse_buffer.begin(), e = _mouse_buffer.end(); i != e; ++i) {
+
+		}
+		_mouse_buffer.clear();
+	}
+
+}
+
+void App::key_slot(const IoKey& k)
+{
+	SCOPED_CS(&_cs_queue);
+	_key_buffer.push_back(k);
+}
+
+void App::mouse_slot(const IoMouse& m)
+{
+	SCOPED_CS(&_cs_queue);
+	_mouse_buffer.push_back(m);
+}
+
+
 void App::run()
 {
   MSG msg = {0};
@@ -109,7 +143,9 @@ void App::run()
 			System::instance().tick();
 			Graphics::instance().clear();
 
-			_test_effect->render();
+			if (_test_effect) {
+				_test_effect->render();
+			}
 
 			Graphics::instance().present();
 
@@ -145,19 +181,19 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     break;
 
   case WM_LBUTTONDOWN:
-    //g_derived_system->input_.left_button_down = true;
+		App::instance()._mouse_signal(IoMouse(IoMouse::kLeftButtonDown, LOWORD(lParam), HIWORD(lParam)));
     break;
 
   case WM_LBUTTONUP:
-    ///g_derived_system->input_.left_button_down = false;
+		App::instance()._mouse_signal(IoMouse(IoMouse::kLeftButtonUp, LOWORD(lParam), HIWORD(lParam)));
     break;
 
   case WM_RBUTTONDOWN:
-    //g_derived_system->input_.right_button_down = true;
+		App::instance()._mouse_signal(IoMouse(IoMouse::kRightButtonDown, LOWORD(lParam), HIWORD(lParam)));
     break;
 
   case WM_RBUTTONUP:
-    //g_derived_system->input_.right_button_down  = false;
+		App::instance()._mouse_signal(IoMouse(IoMouse::kRightButtonUp, LOWORD(lParam), HIWORD(lParam)));
     break;
 
   case WM_MOUSEMOVE:
@@ -180,17 +216,18 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     break;
 
   case WM_KEYDOWN:
-    //g_derived_system->input_.key_status[wParam & 255] = true;
-    break;
+		App::instance()._key_signal(IoKey(wParam, lParam));
+		break;
 
   case WM_KEYUP:
     switch (wParam) 
     {
-
     case VK_ESCAPE:
       PostQuitMessage( 0 );
       break;
-
+		default:
+			App::instance()._key_signal(IoKey(wParam, lParam));
+			break;
     }
     break;
 
@@ -200,4 +237,3 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
   return 0;
 
 }
-

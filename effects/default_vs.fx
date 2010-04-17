@@ -1,3 +1,8 @@
+cbuffer tjong
+{
+	float4 diffuse;
+};
+
 cbuffer main
 {
 	matrix mWorldViewProj;	
@@ -24,5 +29,6 @@ VS_OUTPUT vsMain( in VS_INPUT v )
 
 float4 psMain( in VS_OUTPUT p) : SV_Target
 {
-	return float4(1,1,1,1);
+	return diffuse;
+	//return float4(1,1,1,1);
 }

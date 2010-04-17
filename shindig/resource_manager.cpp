@@ -75,7 +75,7 @@ bool ResourceManager::reload_shader(const char* filename, const bool vertex_shad
 	}
 
 	const std::vector<ShaderCallbackData>& n = _shader_callbacks[filename];
-	for (std::vector<ShaderCallbackData>::const_iterator i = n.begin(), e = n.end(); i != e; ++i) {
+	for (auto i = n.begin(), e = n.end(); i != e; ++i) {
 		const std::string& filename = i->_filename;
 		const std::string& entry_point = i->_entry_point;
 		fnEffectLoaded fn = i->_effect_loaded;
@@ -98,11 +98,11 @@ bool ResourceManager::load_effect_states(const char* filename, const fnStateLoad
 	return reload_effect_states(filename);
 }
 
-bool ResourceManager::reload_effect_states(const std::string& filename)
+bool ResourceManager::reload_effect_states(const char* filename)
 {
 	// load the effect state file
 	uint32_t len = 0;
-	uint8_t* buf = load_file(filename.c_str(), true, &len);
+	uint8_t* buf = load_file(filename, true, &len);
 	if (buf == NULL) {
 		return false;
 	}
@@ -117,15 +117,16 @@ bool ResourceManager::reload_effect_states(const std::string& filename)
 	BigState b = p._states;
 
 	BlendStates blend_states;
-	for (BlendDescs::iterator i = b._blend_descs.begin(), e = b._blend_descs.end(); i != e; ++i) {
-		ID3D11BlendState* s;
-		Graphics::instance().device()->CreateBlendState(&i->second, &s);
+	ID3D11Device* device = Graphics::instance().device();
+	for (auto i = b._blend_descs.begin(), e = b._blend_descs.end(); i != e; ++i) {
+		CComPtr<ID3D11BlendState> s;
+		device->CreateBlendState(&i->second, &s);
 		blend_states.insert(std::make_pair(i->first, s));
 	}
 
 	// call the callbacks that are watching this file
-	std::vector<fnStateLoaded>& callbacks = _state_callbacks[filename];
-	for (std::vector<fnStateLoaded>::iterator i = callbacks.begin(), e = callbacks.end(); i != e; ++i) {
+	auto callbacks = _state_callbacks[filename];
+	for (auto i = callbacks.begin(), e = callbacks.end(); i != e; ++i) {
 		(*i)(blend_states);
 	}
 
@@ -148,19 +149,88 @@ bool ResourceManager::load_materials(const char* filename, const fnMaterialsLoad
 
 namespace json = json_spirit;
 
+template<class T, class U>
+bool find_obj(const T& obj, const std::string& name, U** out)
+{
+	for (auto i = obj.begin(), e = obj.end(); i != e; ++i) {
+		if (i->first == name) {
+			*out = &(i->second);
+			return true;
+		}
+	}
+	return false;
+}
+
+D3DXCOLOR array_to_color(const json_spirit::mValue::Array& arr)
+{
+	return D3DXCOLOR((float)arr[0].get_real(), (float)arr[1].get_real(), (float)arr[2].get_real(), (float)arr[3].get_real());
+}
+
 bool ResourceManager::reload_material(const char* filename)
 {
-	std::ifstream is(filename);
-	json_spirit::mValue value;
-	if (!json_spirit::read( is, value )) {
+	MaterialCallbacks::iterator it = _material_callbacks.find(filename);
+	if (it == _material_callbacks.end()) {
+		LOG_WARNING_LN("unable to find callbacks for scene: %s", filename);
 		return false;
 	}
-	//const json_spirit::mArray& addr_array = value.get_array();
-	const json_spirit::mObject& addr_array = value.get_obj();
 
-	for (json_spirit::mObject::const_iterator i = addr_array.begin(), e = addr_array.end(); i != e; ++i) {
-		const json::mValue v = i->second;
-		int a = 10;
+	std::ifstream is(filename);
+	json_spirit::mValue global;
+	if (!json_spirit::read(is, global)) {
+		return false;
+	}
+
+	MaterialFile material_file;
+	const json_spirit::mValue* materials = NULL;
+	const json_spirit::mValue* material_connections = NULL;
+	const json_spirit::mValue* effect_connections = NULL;
+	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "materials", &materials), ErrorPredicate<bool>, LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "material_connections", &material_connections), ErrorPredicate<bool>, LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "effect_connections", &effect_connections), ErrorPredicate<bool>, LOG_ERROR_LN);
+
+	// parse the materials
+	for (auto i = materials->get_array().begin(), e = materials->get_array().end(); i != e; ++i) {
+		// parse a single material
+		auto single_material = i->get_obj();
+		const json_spirit::mValue* name = NULL;
+		const json_spirit::mValue* values = NULL;
+		RETURN_ON_FAIL_BOOL(find_obj(single_material, "name", &name), ErrorPredicate<bool>, LOG_ERROR_LN);
+		RETURN_ON_FAIL_BOOL(find_obj(single_material, "values", &values), ErrorPredicate<bool>, LOG_ERROR_LN);
+		MaterialFile::Material m;
+		m.name = name->get_str();
+		for (auto i = values->get_array().begin(), e = values->get_array().end(); i != e; ++i) {
+			auto single_value = *i;
+			const json_spirit::mValue* name = NULL;
+			const json_spirit::mValue* type = NULL;
+			const json_spirit::mValue* value = NULL;
+			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "name", &name), ErrorPredicate<bool>, LOG_ERROR_LN);
+			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "type", &type), ErrorPredicate<bool>, LOG_ERROR_LN);
+			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "value", &value), ErrorPredicate<bool>, LOG_ERROR_LN);
+			if (*name == "transparency") {
+				m.transparency = (float)value->get_real();
+			} else if (*name == "ambient_color") {
+				m.ambient = array_to_color(value->get_array());
+			} else if (*name == "diffuse_color") {
+				m.diffuse = array_to_color(value->get_array());
+			} else if (*name == "emissive_color") {
+				m.emissive = array_to_color(value->get_array());
+			}
+		}
+		material_file.materials.insert(std::make_pair(m.name, m));
+	}
+
+	// parse the material connections
+	for (auto i = material_connections->get_array().begin(), e = material_connections->get_array().end(); i != e; ++i) {
+		auto single_connection = i->get_obj();
+		const json_spirit::mValue* mesh = NULL;
+		const json_spirit::mValue* material = NULL;
+		RETURN_ON_FAIL_BOOL(find_obj(single_connection, "mesh", &mesh), ErrorPredicate<bool>, LOG_ERROR_LN);
+		RETURN_ON_FAIL_BOOL(find_obj(single_connection, "material", &material), ErrorPredicate<bool>, LOG_ERROR_LN);
+		material_file.material_connections.insert(std::make_pair(mesh->get_str(), MaterialFile::MaterialConnection(mesh->get_str(), material->get_str())));
+	}
+
+	for (auto i = it->second.begin(), e = it->second.end(); i != e; ++i) {
+		(*i)(material_file);
 	}
 
 	return true;
@@ -178,7 +248,7 @@ bool ResourceManager::reload_scene(const char* filename)
 		return false;
 	}
 
-	for (std::vector<fnSceneLoaded>::iterator i = it->second.begin(), e = it->second.end(); i != e; ++i) {
+	for (auto i = it->second.begin(), e = it->second.end(); i != e; ++i) {
 		(*i)(scene);
 	}
 

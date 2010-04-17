@@ -17,10 +17,12 @@ enum TokenTag
 struct Token
 {
   Token(const TokenTag tag, const int extra = 0) : tag(tag), extra(extra) {}
+  Token(const TokenTag tag, const float extra = 0) : tag(tag), extra_float(extra) {}
   TokenTag tag;
 union {
   int extra;
-const char* _str;
+  const char* _str;
+  float extra_float;
 };
 };
 typedef std::vector<Token> Tokens;

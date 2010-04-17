@@ -1,7 +1,7 @@
 
 #ifndef _MR_PARSER_HPP_
 #define _MR_PARSER_HPP_
-#include "c:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
+#include "C:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
 class StateParser
 {
 public:
@@ -27,6 +27,12 @@ bool match_rasterizer_depth_bias_t()
 }
 
 
+bool match_cull_mode_v_t()
+{
+	return match(CULL_MODE_V);
+}
+
+
 bool match_blend_src_blend_t()
 {
 	return match(BLEND_SRC_BLEND);
@@ -48,6 +54,12 @@ bool match_pass_ab_sample_mask_t()
 bool match_filter_min_linear_mag_mip_point_t()
 {
 	return match(FILTER_MIN_LINEAR_MAG_MIP_POINT);
+}
+
+
+bool match_cull_mode_k_t()
+{
+	return match(CULL_MODE_K);
 }
 
 
@@ -114,6 +126,12 @@ bool match_rasterizer_fill_mode_t()
 bool match_render_target_view_t()
 {
 	return match(RENDER_TARGET_VIEW);
+}
+
+
+bool match_front_counter_clockwise_k_t()
+{
+	return match(FRONT_COUNTER_CLOCKWISE_K);
 }
 
 
@@ -411,6 +429,12 @@ bool match_depthstencil_stencil_write_mask_t()
 }
 
 
+bool match_filter_anisotropic_t()
+{
+	return match(FILTER_ANISOTROPIC);
+}
+
+
 bool match_depthstencil_front_face_stencil_depth_fail_t()
 {
 	return match(DEPTHSTENCIL_FRONT_FACE_STENCIL_DEPTH_FAIL);
@@ -441,9 +465,9 @@ bool match_filter_min_mag_linear_mip_point_t()
 }
 
 
-bool match_filter_anisotropic_t()
+bool match_fill_mode_k_t()
 {
-	return match(FILTER_ANISOTROPIC);
+	return match(FILL_MODE_K);
 }
 
 
@@ -456,6 +480,12 @@ bool match_filter_comparison_min_mag_linear_mip_point_t()
 bool match_taddress_wrap_t()
 {
 	return match(TADDRESS_WRAP);
+}
+
+
+bool match_fill_mode_v_t()
+{
+	return match(FILL_MODE_V);
 }
 
 
@@ -528,6 +558,12 @@ bool match_blend_op_k_t()
 bool match_blend_op_v_t()
 {
 	return match(BLEND_OP_V);
+}
+
+
+bool match_float_value_t()
+{
+	return match(FLOAT_VALUE);
 }
 
 
@@ -627,6 +663,12 @@ bool match_value_t()
 }
 
 
+bool match_depth_bias_k_t()
+{
+	return match(DEPTH_BIAS_K);
+}
+
+
 bool match_id_t()
 {
 	return match(ID);
@@ -688,7 +730,7 @@ bool match_start( )
 
 bool match_state(BigState&  a)
 {
-    // state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_state(a._rasterizer_descs)]
+    // state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_states(a._rasterizer_descs)]
     
     
     push_idx();
@@ -700,7 +742,7 @@ bool match_state(BigState&  a)
 
 
     push_idx();
-    if (match_rasterizer_state(a._rasterizer_descs) ) {
+    if (match_rasterizer_states(a._rasterizer_descs) ) {
         
         return true;
     }
@@ -1221,45 +1263,292 @@ bool match_blend_op_alpha_state(D3D11_RENDER_TARGET_BLEND_DESC*  a)
 
 bool match_render_target_write_mask_state(D3D11_RENDER_TARGET_BLEND_DESC*  a)
 {
-    // render_target_write_mask_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= RENDER_TARGET_WRITE_MASK_K INDEX ASSIGN VALUE SEMI_COLON
+    // render_target_write_mask_state(a) : D3D11_RENDER_TARGET_BLEND_DESC* ::= RENDER_TARGET_WRITE_MASK_K INDEX ASSIGN VALUE SEMI_COLON@pass{ a[0].RenderTargetWriteMask = $VALUE$.extra; }
+    std::map<TokenTag, int> back_refs;
     
     
-    
-    
+    back_refs[RENDER_TARGET_WRITE_MASK_K] = _idx;
     if (!match_render_target_write_mask_k_t()) {
         
         return false;
     }
 
 
-    
+    back_refs[INDEX] = _idx;
     if (!match_index_t()) {
         
         return false;
     }
 
 
-    
+    back_refs[ASSIGN] = _idx;
     if (!match_assign_t()) {
         
         return false;
     }
 
 
-    
+    back_refs[VALUE] = _idx;
     if (!match_value_t()) {
         
         return false;
     }
 
 
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a[0].RenderTargetWriteMask = _tokens[back_refs[VALUE]].extra;
+    return true;
+}
+
+
+bool match_rasterizer_states(RasterizerDescs&  a)
+{
+    // rasterizer_states(a) : RasterizerDescs& ::= RASTERIZER_STATE_K ID L_BRACE rasterizer_state(a[$ID$._str]) R_BRACE SEMI_COLON
+    std::map<TokenTag, int> back_refs;
     
+    
+    back_refs[RASTERIZER_STATE_K] = _idx;
+    if (!match_rasterizer_state_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ID] = _idx;
+    if (!match_id_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[L_BRACE] = _idx;
+    if (!match_l_brace_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_rasterizer_state(a[_tokens[back_refs[ID]]._str])) {
+        
+        return false;
+    }
+
+
+    back_refs[R_BRACE] = _idx;
+    if (!match_r_brace_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
     if (!match_semi_colon_t()) {
         
         return false;
     }
 
     
+    return true;
+}
+
+
+bool match_rasterizer_state_inner(D3D11_RASTERIZER_DESC&  a)
+{
+    // rasterizer_state(a) : D3D11_RASTERIZER_DESC& ::= [fill_mode_state(a) |cull_mode_state(a)]*
+    
+    
+    push_idx();
+    if (match_fill_mode_state(a) ) {
+        
+        return true;
+    }
+    pop_idx();
+
+
+    push_idx();
+    if (match_cull_mode_state(a) ) {
+        
+        return true;
+    }
+    pop_idx();
+
+    
+    return false;
+}
+
+
+bool match_rasterizer_state(D3D11_RASTERIZER_DESC&  a)
+{
+    // rasterizer_state(a) : D3D11_RASTERIZER_DESC& ::= [fill_mode_state(a) |cull_mode_state(a)]*
+    
+    int count = 0;
+    while (match_rasterizer_state_inner(a)) {
+        ++count;
+    }
+    if (count >= 0) {
+        
+        return true;
+    } else {
+        
+        return false;
+    }
+}
+
+
+bool match_fill_mode_state(D3D11_RASTERIZER_DESC&  a)
+{
+    // fill_mode_state(a) : D3D11_RASTERIZER_DESC& ::= FILL_MODE_K ASSIGN FILL_MODE_V SEMI_COLON@pass{ a.FillMode = (D3D11_FILL_MODE)$FILL_MODE_V$.extra; }
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[FILL_MODE_K] = _idx;
+    if (!match_fill_mode_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[FILL_MODE_V] = _idx;
+    if (!match_fill_mode_v_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a.FillMode = (D3D11_FILL_MODE)_tokens[back_refs[FILL_MODE_V]].extra;
+    return true;
+}
+
+
+bool match_cull_mode_state(D3D11_RASTERIZER_DESC&  a)
+{
+    // cull_mode_state(a) : D3D11_RASTERIZER_DESC& ::= CULL_MODE_K ASSIGN CULL_MODE_V SEMI_COLON@pass{ a.CullMode = (D3D11_CULL_MODE)$CULL_MODE_V$.extra; }
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[CULL_MODE_K] = _idx;
+    if (!match_cull_mode_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[CULL_MODE_V] = _idx;
+    if (!match_cull_mode_v_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a.CullMode = (D3D11_CULL_MODE)_tokens[back_refs[CULL_MODE_V]].extra;
+    return true;
+}
+
+
+bool match_front_counter_clockwise_state(D3D11_RASTERIZER_DESC&  a)
+{
+    // front_counter_clockwise_state(a) : D3D11_RASTERIZER_DESC& ::= FRONT_COUNTER_CLOCKWISE_K ASSIGN BOOL_V SEMI_COLON@pass{ a.FrontCounterClockwise = $BOOL_V$.extra; }
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[FRONT_COUNTER_CLOCKWISE_K] = _idx;
+    if (!match_front_counter_clockwise_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[BOOL_V] = _idx;
+    if (!match_bool_v_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a.FrontCounterClockwise = _tokens[back_refs[BOOL_V]].extra;
+    return true;
+}
+
+
+bool match_depth_bias_state(D3D11_RASTERIZER_DESC&  a)
+{
+    // depth_bias_state(a) : D3D11_RASTERIZER_DESC& ::= DEPTH_BIAS_K ASSIGN VALUE SEMI_COLON@pass{ a.DepthBias = $VALUE$.extra; }
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[DEPTH_BIAS_K] = _idx;
+    if (!match_depth_bias_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[VALUE] = _idx;
+    if (!match_value_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a.DepthBias = _tokens[back_refs[VALUE]].extra;
     return true;
 }
 
@@ -1588,51 +1877,6 @@ bool match_ab_sample_mask( )
     
     
     if (!match_pass_ab_sample_mask_t()) {
-        
-        return false;
-    }
-
-    
-    return true;
-}
-
-
-bool match_rasterizer_state(RasterizerDescs&  a)
-{
-    // rasterizer_state(a) : RasterizerDescs& ::= RASTERIZER_STATE_K ID L_BRACE R_BRACE SEMI_COLON
-    
-    
-    
-    
-    if (!match_rasterizer_state_k_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_id_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_l_brace_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_r_brace_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_semi_colon_t()) {
         
         return false;
     }
@@ -1978,7 +2222,7 @@ bool match_fill_mode_values( )
 
 bool match_tmp( )
 {
-    // tmp ::= [ BLEND_ALPHA_TO_COVERAGE_ENABLE | BLEND_BLEND_ENABLE | VALUE]
+    // tmp ::= [ BLEND_ALPHA_TO_COVERAGE_ENABLE | BLEND_BLEND_ENABLE | VALUE | FLOAT_VALUE]
     
     
     push_idx();
@@ -1999,6 +2243,14 @@ bool match_tmp( )
 
     push_idx();
     if (match_value_t() ) {
+        
+        return true;
+    }
+    pop_idx();
+
+
+    push_idx();
+    if (match_float_value_t() ) {
         
         return true;
     }

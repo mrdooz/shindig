@@ -52,3 +52,8 @@
 #include "fast_delegate_bind.hpp"
 
 #include <libs/json_spirit/json_spirit.h>
+
+#include <D3DX10math.h>
+#include <hash_map>
+
+#include <agents.h>

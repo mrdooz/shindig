@@ -106,10 +106,20 @@ bool EffectWrapper::set_resource(const std::string& name, ID3D11ShaderResourceVi
 void EffectWrapper::set_cbuffer()
 {
 	ID3D11DeviceContext* context = Graphics::instance().context();
-	for (ConstantBuffers::iterator i = _constant_buffers.begin(), e = _constant_buffers.end(); i != e; ++i) {
-		ConstantBuffer* b = i->second;
-		ID3D11Buffer* buf[1] = { b->_buffer };
-		context->VSSetConstantBuffers(0, 1, buf);
+	if (_vertex_shader) {
+		for (ConstantBuffers::iterator i = _constant_buffers.begin(), e = _constant_buffers.end(); i != e; ++i) {
+			ConstantBuffer* b = i->second;
+			ID3D11Buffer* buf[1] = { b->_buffer };
+			context->VSSetConstantBuffers(0, 1, buf);
+		}
+
+	} else {
+		for (ConstantBuffers::iterator i = _constant_buffers.begin(), e = _constant_buffers.end(); i != e; ++i) {
+			ConstantBuffer* b = i->second;
+			ID3D11Buffer* buf[1] = { b->_buffer };
+			context->PSSetConstantBuffers(0, 1, buf);
+		}
+
 	}
 }
 

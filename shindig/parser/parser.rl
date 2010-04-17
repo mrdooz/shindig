@@ -223,7 +223,20 @@ int parse_tokens(Tokens& tokens, char* str)
 		min_k => { tokens.push_back(Token(BLEND_OP_V, D3D11_BLEND_OP_MIN)); };
 		max_k => { tokens.push_back(Token(BLEND_OP_V, D3D11_BLEND_OP_MAX)); };
 
+		fillmode_k => { tokens.push_back(Token(FILL_MODE_K, 0)); };
+		solid_k => { tokens.push_back(Token(FILL_MODE_V, D3D11_FILL_SOLID)); };
+		wireframe_k => { tokens.push_back(Token(FILL_MODE_V, D3D11_FILL_WIREFRAME)); };
+
+		cullmode_k => { tokens.push_back(Token(CULL_MODE_K, 0)); };
+		none_k => { tokens.push_back(Token(CULL_MODE_V, D3D11_CULL_NONE)); };
+		front_k => { tokens.push_back(Token(CULL_MODE_V, D3D11_CULL_FRONT)); };
+		back_k => { tokens.push_back(Token(CULL_MODE_V, D3D11_CULL_BACK)); };
+
+		frontcounterclockwise_k => { tokens.push_back(Token(FRONT_COUNTER_CLOCKWISE_K, 0)); };
+		depthbias_k => { tokens.push_back(Token(DEPTH_BIAS_K, 0)); };
+
 		[0-9]+ => { tokens.push_back(Token(VALUE, atoi(ts))); };
+		[0-9]+'.'[0-9]+ => { tokens.push_back(Token(FLOAT_VALUE, (float)atof(ts))); };
 		'0'[xX]/[0-9][a-zA-z]/+ => { tokens.push_back(Token(VALUE, make_hex(ts, te))); };
 		[a-zA-z][a-zA-Z_0-9]* => { tokens.push_back(Token(ID, (int)make_string(ts, te))); };
 
