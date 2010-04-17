@@ -13,11 +13,30 @@
 start ::= state(_states)*
 	.
 
-state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_states(a._rasterizer_descs)].
+state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_states(a._rasterizer_descs) | sampler_states(a._sampler_descs)].
 
 #	state ::= [blend_states | depth_stencil_states | rasterizer_state | sampler_states | 
 #render_target_view | depth_stencil_view | generate_mips | vertex_shader | pixel_shader | 
 #	geometry_shader | ds_stencil_ref | ab_blend_factor | ab_sample_mask].
+
+############################################################################################
+# Sampler states
+############################################################################################
+sampler_states(a) : SamplerDescs& ::= SAMPLER_K ID ASSIGN SAMPLER_STATE_K L_BRACE sampler_state(a[$ID$._str]) R_BRACE SEMI_COLON.
+sampler_state(a) : D3D11_SAMPLER_DESC& ::= [texture_state(a) | min_filter_state(a) | mag_filter_state(a) | mip_filter_state(a)]*.
+
+# DX11 uses a bitmask for filter states, 2 bits per min/mag/map, 00 = point, 01 = linear
+texture_state(a) : D3D11_SAMPLER_DESC& ::= TEXTURE_K ASSIGN L_CLAMP ID R_CLAMP SEMI_COLON.
+min_filter_state(a) : D3D11_SAMPLER_DESC& ::= MINFILTER_K ASSIGN FILTER_V SEMI_COLON
+	@pass{ a.Filter = (D3D11_FILTER)(a.Filter + ($FILTER_V$.extra << 4)); }.
+mag_filter_state(a) : D3D11_SAMPLER_DESC& ::= MAGFILTER_K ASSIGN FILTER_V SEMI_COLON
+	@pass{ a.Filter = (D3D11_FILTER)(a.Filter + ($FILTER_V$.extra << 2)); }.
+mip_filter_state(a) : D3D11_SAMPLER_DESC& ::= MIPFILTER_K ASSIGN FILTER_V SEMI_COLON
+	@pass{ a.Filter = (D3D11_FILTER)(a.Filter + ($FILTER_V$.extra << 0)); }.
+
+addressu_state ::= SAMPLER_ADDRESS_U ASSIGN ADDRESS_V SEMI_COLON.
+addressv_state ::= SAMPLER_ADDRESS_V ASSIGN ADDRESS_V SEMI_COLON.
+addressw_state ::= SAMPLER_ADDRESS_W ASSIGN ADDRESS_V SEMI_COLON.
 
 ############################################################################################
 # Blend states
@@ -90,10 +109,6 @@ depth_stencil_state ::= [depth_enable_state | depth_write_mask_state]*.
 depth_enable_state ::= DEPTHSTENCIL_DEPTH_ENABLE_K ASSIGN BOOL_V SEMI_COLON.
 depth_write_mask_state ::= DEPTHSTENCIL_DEPTH_WRITE_MASK ASSIGN DEPTH_WRITE_MASK_V SEMI_COLON.
 
-# sampler states
-sampler_states ::= SAMPLER_STATE_K ID L_BRACE sampler_state R_BRACE SEMI_COLON.
-sampler_state ::= [filter_state | addressu_state | addressv_state | addressw_state]*.
-
 ds_stencil_ref ::= PASS_DS_STENCIL_REF.
 ab_blend_factor ::= PASS_AB_BLEND_FACTOR.
 ab_sample_mask ::= PASS_AB_SAMPLE_MASK.
@@ -109,12 +124,6 @@ pixel_shader ::= PIXEL_SHADER.
 geometry_shader ::= GEOMETRY_SHADER.
 cull_mode ::= RASTERIZER_CULL_MODE.
 
-
-
-filter_state ::= FILTER ASSIGN FILTER_V SEMI_COLON.
-addressu_state ::= SAMPLER_ADDRESS_U ASSIGN ADDRESS_V SEMI_COLON.
-addressv_state ::= SAMPLER_ADDRESS_V ASSIGN ADDRESS_V SEMI_COLON.
-addressw_state ::= SAMPLER_ADDRESS_W ASSIGN ADDRESS_V SEMI_COLON.
 
 fill_mode ::= RASTERIZER_FILL_MODE ASSIGN fill_mode_values SEMI_COLON.
 

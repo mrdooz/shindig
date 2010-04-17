@@ -29,9 +29,9 @@ typedef std::vector<Token> Tokens;
 
 #include <map>
 #include <string>
-typedef std::map< std::string, D3D11_BLEND_DESC> BlendDescs;
-typedef std::map< std::string, D3D11_RASTERIZER_DESC> RasterizerDescs;
-typedef std::map< std::string, D3D11_SAMPLER_DESC> SamplerDescs;
+typedef std::map< std::string, CD3D11_BLEND_DESC> BlendDescs;
+typedef std::map< std::string, CD3D11_RASTERIZER_DESC> RasterizerDescs;
+typedef std::map< std::string, CD3D11_SAMPLER_DESC> SamplerDescs;
 
 struct BigState
 {

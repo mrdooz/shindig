@@ -9,15 +9,23 @@ class EffectWrapper;
 class Scene;
 struct MaterialFile;
 
+
 class ResourceManager
 {
 public:
 	static ResourceManager& instance();
 
 	typedef stdext::hash_map< std::string, CComPtr<ID3D11BlendState> > BlendStates;
+	typedef stdext::hash_map< std::string, CComPtr<ID3D11SamplerState> > SamplerStates;
+
+	struct EffectStates
+	{
+		BlendStates blend_states;
+		SamplerStates sampler_states;
+	};
 
 	// callbacks
-  typedef fastdelegate::FastDelegate1<const BlendStates& > fnStateLoaded;
+  typedef fastdelegate::FastDelegate1<const EffectStates& > fnStateLoaded;
 	typedef fastdelegate::FastDelegate1<EffectWrapper*> fnEffectLoaded;
 	typedef fastdelegate::FastDelegate1<Scene* > fnSceneLoaded;
 	typedef fastdelegate::FastDelegate1<const MaterialFile&> fnMaterialsLoaded;

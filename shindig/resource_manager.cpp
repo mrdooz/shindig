@@ -116,18 +116,30 @@ bool ResourceManager::reload_effect_states(const char* filename)
 	}
 	BigState b = p._states;
 
-	BlendStates blend_states;
 	ID3D11Device* device = Graphics::instance().device();
+
+	EffectStates effect_states;
+
+	// Collect blend states
 	for (auto i = b._blend_descs.begin(), e = b._blend_descs.end(); i != e; ++i) {
 		CComPtr<ID3D11BlendState> s;
 		device->CreateBlendState(&i->second, &s);
-		blend_states.insert(std::make_pair(i->first, s));
+		effect_states.blend_states.insert(std::make_pair(i->first, s));
 	}
+
+	// Collect sampler states
+	SamplerStates sampler_states;
+	for (auto i = b._sampler_descs.begin(), e = b._sampler_descs.end(); i != e; ++i) {
+		CComPtr<ID3D11SamplerState> s;
+		device->CreateSamplerState(&i->second, &s);
+		effect_states.sampler_states.insert(std::make_pair(i->first, s));
+	}
+
 
 	// call the callbacks that are watching this file
 	auto callbacks = _state_callbacks[filename];
 	for (auto i = callbacks.begin(), e = callbacks.end(); i != e; ++i) {
-		(*i)(blend_states);
+		(*i)(effect_states);
 	}
 
 	return true;

@@ -14,7 +14,9 @@ struct TestEffect
 	bool close();
 	bool render();
 
-	void states_loaded(const ResourceManager::BlendStates& states);
+	void states_loaded(const ResourceManager::EffectStates& states);
+	void post_vs_loaded(EffectWrapper* effect);
+	void post_ps_loaded(EffectWrapper* effect);
 	void vs_loaded(EffectWrapper* effect);
 	void ps_loaded(EffectWrapper* effect);
 	void scene_loaded(Scene* scene);
@@ -25,6 +27,11 @@ struct TestEffect
 	EffectWrapper* _vs_effect;
 	EffectWrapper* _ps_effect;
 	CComPtr<ID3D11InputLayout> _layout;
+
+	CComPtr<ID3D11Buffer> _full_screen_vb;
+	CComPtr<ID3D11Buffer> _full_screen_ib;
+	EffectWrapper* _vs_fs;
+	EffectWrapper* _ps_fs;
 
 	RenderTarget _rt;
 	CComPtr<ID3D11RasterizerState> _rasterizer_state;

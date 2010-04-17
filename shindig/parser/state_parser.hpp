@@ -1,7 +1,7 @@
 
 #ifndef _MR_PARSER_HPP_
 #define _MR_PARSER_HPP_
-#include "D:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
+#include "C:\projects\shindig\shindig\parser\/state_parser_symbols.hpp"
 class StateParser
 {
 public:
@@ -33,9 +33,21 @@ bool match_cull_mode_v_t()
 }
 
 
+bool match_blend_src_blend_alpha_t()
+{
+	return match(BLEND_SRC_BLEND_ALPHA);
+}
+
+
 bool match_blend_src_blend_t()
 {
 	return match(BLEND_SRC_BLEND);
+}
+
+
+bool match_sampler_k_t()
+{
+	return match(SAMPLER_K);
 }
 
 
@@ -99,6 +111,12 @@ bool match_filter_min_mag_mip_linear_t()
 }
 
 
+bool match_mipfilter_k_t()
+{
+	return match(MIPFILTER_K);
+}
+
+
 bool match_depthstencil_back_face_stencil_fail_t()
 {
 	return match(DEPTHSTENCIL_BACK_FACE_STENCIL_FAIL);
@@ -141,12 +159,6 @@ bool match_depthstencil_depth_write_mask_t()
 }
 
 
-bool match_sampler_address_w_t()
-{
-	return match(SAMPLER_ADDRESS_W);
-}
-
-
 bool match_l_brace_t()
 {
 	return match(L_BRACE);
@@ -180,6 +192,12 @@ bool match_sampler_border_color_t()
 bool match_filter_min_mag_point_mip_linear_t()
 {
 	return match(FILTER_MIN_MAG_POINT_MIP_LINEAR);
+}
+
+
+bool match_blend_dest_blend_alpha_t()
+{
+	return match(BLEND_DEST_BLEND_ALPHA);
 }
 
 
@@ -237,12 +255,6 @@ bool match_src_blend_alpha_k_t()
 }
 
 
-bool match_alpha_to_coverage_enable_k_t()
-{
-	return match(ALPHA_TO_COVERAGE_ENABLE_K);
-}
-
-
 bool match_address_v_t()
 {
 	return match(ADDRESS_V);
@@ -261,15 +273,21 @@ bool match_rasterizer_multisample_enable_t()
 }
 
 
-bool match_blend_dest_blend_alpha_t()
+bool match_alpha_to_coverage_enable_k_t()
 {
-	return match(BLEND_DEST_BLEND_ALPHA);
+	return match(ALPHA_TO_COVERAGE_ENABLE_K);
 }
 
 
 bool match_comparison_min_linear_mag_mip_point_t()
 {
 	return match(COMPARISON_MIN_LINEAR_MAG_MIP_POINT);
+}
+
+
+bool match_depthstencil_depth_func_t()
+{
+	return match(DEPTHSTENCIL_DEPTH_FUNC);
 }
 
 
@@ -288,6 +306,12 @@ bool match_blend_dest_blend_t()
 bool match_rasterizer_front_counter_clockwise_t()
 {
 	return match(RASTERIZER_FRONT_COUNTER_CLOCKWISE);
+}
+
+
+bool match_texture_k_t()
+{
+	return match(TEXTURE_K);
 }
 
 
@@ -321,12 +345,6 @@ bool match_depthstencil_back_face_stencil_depth_fail_t()
 }
 
 
-bool match_filter_t()
-{
-	return match(FILTER);
-}
-
-
 bool match_blend_alpha_to_coverage_enable_t()
 {
 	return match(BLEND_ALPHA_TO_COVERAGE_ENABLE);
@@ -357,9 +375,9 @@ bool match_depthstencil_back_face_stencil_pass_t()
 }
 
 
-bool match_blend_src_blend_alpha_t()
+bool match_sampler_address_w_t()
 {
-	return match(BLEND_SRC_BLEND_ALPHA);
+	return match(SAMPLER_ADDRESS_W);
 }
 
 
@@ -372,6 +390,12 @@ bool match_sampler_address_v_t()
 bool match_pass_generate_mips_t()
 {
 	return match(PASS_GENERATE_MIPS);
+}
+
+
+bool match_magfilter_k_t()
+{
+	return match(MAGFILTER_K);
 }
 
 
@@ -420,6 +444,12 @@ bool match_taddress_mirror_t()
 bool match_fill_solid_t()
 {
 	return match(FILL_SOLID);
+}
+
+
+bool match_minfilter_k_t()
+{
+	return match(MINFILTER_K);
 }
 
 
@@ -645,9 +675,15 @@ bool match_depthstencil_stencil_read_mask_t()
 }
 
 
-bool match_depthstencil_depth_func_t()
+bool match_r_clamp_t()
 {
-	return match(DEPTHSTENCIL_DEPTH_FUNC);
+	return match(R_CLAMP);
+}
+
+
+bool match_l_clamp_t()
+{
+	return match(L_CLAMP);
 }
 
 
@@ -730,7 +766,7 @@ bool match_start( )
 
 bool match_state(BigState&  a)
 {
-    // state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_states(a._rasterizer_descs)]
+    // state(a) : BigState& ::= [blend_states(a._blend_descs) | rasterizer_states(a._rasterizer_descs) | sampler_states(a._sampler_descs)]
     
     
     push_idx();
@@ -748,8 +784,421 @@ bool match_state(BigState&  a)
     }
     pop_idx();
 
+
+    push_idx();
+    if (match_sampler_states(a._sampler_descs) ) {
+        
+        return true;
+    }
+    pop_idx();
+
     
     return false;
+}
+
+
+bool match_sampler_states(SamplerDescs&  a)
+{
+    // sampler_states(a) : SamplerDescs& ::= SAMPLER_K ID ASSIGN SAMPLER_STATE_K L_BRACE sampler_state(a[$ID$._str]) R_BRACE SEMI_COLON
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[SAMPLER_K] = _idx;
+    if (!match_sampler_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ID] = _idx;
+    if (!match_id_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SAMPLER_STATE_K] = _idx;
+    if (!match_sampler_state_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[L_BRACE] = _idx;
+    if (!match_l_brace_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_sampler_state(a[_tokens[back_refs[ID]]._str])) {
+        
+        return false;
+    }
+
+
+    back_refs[R_BRACE] = _idx;
+    if (!match_r_brace_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    
+    return true;
+}
+
+
+bool match_sampler_state_inner(D3D11_SAMPLER_DESC&  a)
+{
+    // sampler_state(a) : D3D11_SAMPLER_DESC& ::= [texture_state(a) | min_filter_state(a) | mag_filter_state(a) | mip_filter_state(a)]*
+    
+    
+    push_idx();
+    if (match_texture_state(a) ) {
+        
+        return true;
+    }
+    pop_idx();
+
+
+    push_idx();
+    if (match_min_filter_state(a) ) {
+        
+        return true;
+    }
+    pop_idx();
+
+
+    push_idx();
+    if (match_mag_filter_state(a) ) {
+        
+        return true;
+    }
+    pop_idx();
+
+
+    push_idx();
+    if (match_mip_filter_state(a) ) {
+        
+        return true;
+    }
+    pop_idx();
+
+    
+    return false;
+}
+
+
+bool match_sampler_state(D3D11_SAMPLER_DESC&  a)
+{
+    // sampler_state(a) : D3D11_SAMPLER_DESC& ::= [texture_state(a) | min_filter_state(a) | mag_filter_state(a) | mip_filter_state(a)]*
+    
+    int count = 0;
+    while (match_sampler_state_inner(a)) {
+        ++count;
+    }
+    if (count >= 0) {
+        
+        return true;
+    } else {
+        
+        return false;
+    }
+}
+
+
+bool match_texture_state(D3D11_SAMPLER_DESC&  a)
+{
+    // texture_state(a) : D3D11_SAMPLER_DESC& ::= TEXTURE_K ASSIGN L_CLAMP ID R_CLAMP SEMI_COLON
+    
+    
+    
+    
+    if (!match_texture_k_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_l_clamp_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_id_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_r_clamp_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    
+    return true;
+}
+
+
+bool match_min_filter_state(D3D11_SAMPLER_DESC&  a)
+{
+    // min_filter_state(a) : D3D11_SAMPLER_DESC& ::= MINFILTER_K ASSIGN FILTER_V SEMI_COLON@pass{ a.Filter = (D3D11_FILTER)(a.Filter + ($FILTER_V$.extra << 4)); }
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[MINFILTER_K] = _idx;
+    if (!match_minfilter_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[FILTER_V] = _idx;
+    if (!match_filter_v_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a.Filter = (D3D11_FILTER)(a.Filter + (_tokens[back_refs[FILTER_V]].extra << 4));
+    return true;
+}
+
+
+bool match_mag_filter_state(D3D11_SAMPLER_DESC&  a)
+{
+    // mag_filter_state(a) : D3D11_SAMPLER_DESC& ::= MAGFILTER_K ASSIGN FILTER_V SEMI_COLON@pass{ a.Filter = (D3D11_FILTER)(a.Filter + ($FILTER_V$.extra << 2)); }
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[MAGFILTER_K] = _idx;
+    if (!match_magfilter_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[FILTER_V] = _idx;
+    if (!match_filter_v_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a.Filter = (D3D11_FILTER)(a.Filter + (_tokens[back_refs[FILTER_V]].extra << 2));
+    return true;
+}
+
+
+bool match_mip_filter_state(D3D11_SAMPLER_DESC&  a)
+{
+    // mip_filter_state(a) : D3D11_SAMPLER_DESC& ::= MIPFILTER_K ASSIGN FILTER_V SEMI_COLON@pass{ a.Filter = (D3D11_FILTER)(a.Filter + ($FILTER_V$.extra << 0)); }
+    std::map<TokenTag, int> back_refs;
+    
+    
+    back_refs[MIPFILTER_K] = _idx;
+    if (!match_mipfilter_k_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[ASSIGN] = _idx;
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[FILTER_V] = _idx;
+    if (!match_filter_v_t()) {
+        
+        return false;
+    }
+
+
+    back_refs[SEMI_COLON] = _idx;
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    a.Filter = (D3D11_FILTER)(a.Filter + (_tokens[back_refs[FILTER_V]].extra << 0));
+    return true;
+}
+
+
+bool match_addressu_state( )
+{
+    // addressu_state ::= SAMPLER_ADDRESS_U ASSIGN ADDRESS_V SEMI_COLON
+    
+    
+    
+    
+    if (!match_sampler_address_u_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_address_v_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    
+    return true;
+}
+
+
+bool match_addressv_state( )
+{
+    // addressv_state ::= SAMPLER_ADDRESS_V ASSIGN ADDRESS_V SEMI_COLON
+    
+    
+    
+    
+    if (!match_sampler_address_v_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_address_v_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    
+    return true;
+}
+
+
+bool match_addressw_state( )
+{
+    // addressw_state ::= SAMPLER_ADDRESS_W ASSIGN ADDRESS_V SEMI_COLON
+    
+    
+    
+    
+    if (!match_sampler_address_w_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_assign_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_address_v_t()) {
+        
+        return false;
+    }
+
+
+    
+    if (!match_semi_colon_t()) {
+        
+        return false;
+    }
+
+    
+    return true;
 }
 
 
@@ -1724,117 +2173,6 @@ bool match_depth_write_mask_state( )
 }
 
 
-bool match_sampler_states( )
-{
-    // sampler_states ::= SAMPLER_STATE_K ID L_BRACE sampler_state R_BRACE SEMI_COLON
-    
-    
-    
-    
-    if (!match_sampler_state_k_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_id_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_l_brace_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_sampler_state()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_r_brace_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_semi_colon_t()) {
-        
-        return false;
-    }
-
-    
-    return true;
-}
-
-
-bool match_sampler_state_inner( )
-{
-    // sampler_state ::= [filter_state | addressu_state | addressv_state | addressw_state]*
-    
-    
-    push_idx();
-    if (match_filter_state() ) {
-        
-        return true;
-    }
-    pop_idx();
-
-
-    push_idx();
-    if (match_addressu_state() ) {
-        
-        return true;
-    }
-    pop_idx();
-
-
-    push_idx();
-    if (match_addressv_state() ) {
-        
-        return true;
-    }
-    pop_idx();
-
-
-    push_idx();
-    if (match_addressw_state() ) {
-        
-        return true;
-    }
-    pop_idx();
-
-    
-    return false;
-}
-
-
-bool match_sampler_state( )
-{
-    // sampler_state ::= [filter_state | addressu_state | addressv_state | addressw_state]*
-    
-    int count = 0;
-    while (match_sampler_state_inner()) {
-        ++count;
-    }
-    if (count >= 0) {
-        
-        return true;
-    } else {
-        
-        return false;
-    }
-}
-
-
 bool match_ds_stencil_ref( )
 {
     // ds_stencil_ref ::= PASS_DS_STENCIL_REF
@@ -1996,158 +2334,6 @@ bool match_cull_mode( )
     
     
     if (!match_rasterizer_cull_mode_t()) {
-        
-        return false;
-    }
-
-    
-    return true;
-}
-
-
-bool match_filter_state( )
-{
-    // filter_state ::= FILTER ASSIGN FILTER_V SEMI_COLON
-    
-    
-    
-    
-    if (!match_filter_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_assign_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_filter_v_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_semi_colon_t()) {
-        
-        return false;
-    }
-
-    
-    return true;
-}
-
-
-bool match_addressu_state( )
-{
-    // addressu_state ::= SAMPLER_ADDRESS_U ASSIGN ADDRESS_V SEMI_COLON
-    
-    
-    
-    
-    if (!match_sampler_address_u_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_assign_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_address_v_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_semi_colon_t()) {
-        
-        return false;
-    }
-
-    
-    return true;
-}
-
-
-bool match_addressv_state( )
-{
-    // addressv_state ::= SAMPLER_ADDRESS_V ASSIGN ADDRESS_V SEMI_COLON
-    
-    
-    
-    
-    if (!match_sampler_address_v_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_assign_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_address_v_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_semi_colon_t()) {
-        
-        return false;
-    }
-
-    
-    return true;
-}
-
-
-bool match_addressw_state( )
-{
-    // addressw_state ::= SAMPLER_ADDRESS_W ASSIGN ADDRESS_V SEMI_COLON
-    
-    
-    
-    
-    if (!match_sampler_address_w_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_assign_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_address_v_t()) {
-        
-        return false;
-    }
-
-
-    
-    if (!match_semi_colon_t()) {
         
         return false;
     }

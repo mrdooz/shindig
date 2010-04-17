@@ -27,6 +27,7 @@ int parse_tokens(Tokens& tokens, char* str)
   
 		rasterizerstate_k =  [Rr][Aa][Ss][Tt][Ee][Rr][Ii][Zz][Ee][Rr]'_'?[Ss][Tt][Aa][Tt][Ee];
 		depthstencilstate_k =  [Dd][Ee][Pp][Tt][Hh]'_'?[Ss][Tt][Ee][Nn][Cc][Ii][Ll]'_'?[Ss][Tt][Aa][Tt][Ee];
+		sampler_k =  [Ss][Aa][Mm][Pp][Ll][Ee][Rr];
 		samplerstate_k =  [Ss][Aa][Mm][Pp][Ll][Ee][Rr]'_'?[Ss][Tt][Aa][Tt][Ee];
 		blendstate_k =  [Bb][Ll][Ee][Nn][Dd]'_'?[Ss][Tt][Aa][Tt][Ee];
 		rendertargetview_k =  [Rr][Ee][Nn][Dd][Ee][Rr]'_'?[Tt][Aa][Rr][Gg][Ee][Tt]'_'?[Vv][Ii][Ee][Ww];
@@ -88,6 +89,11 @@ int parse_tokens(Tokens& tokens, char* str)
 		all_k =  [Aa][Ll][Ll];
 		wireframe_k =  [Ww][Ii][Rr][Ee][Ff][Rr][Aa][Mm][Ee];
 		solid_k =  [Ss][Oo][Ll][Ii][Dd];
+		minfilter_k =  [Mm][Ii][Nn][Ff][Ii][Ll][Tt][Ee][Rr];
+		magfilter_k =  [Mm][Aa][Gg][Ff][Ii][Ll][Tt][Ee][Rr];
+		mipfilter_k =  [Mm][Ii][Pp][Ff][Ii][Ll][Tt][Ee][Rr];
+		point_k =  [Pp][Oo][Ii][Nn][Tt];
+		linear_k =  [Ll][Ii][Nn][Ee][Aa][Rr];
 		min_mag_mip_point_k =  [Mm][Ii][Nn]'_'?[Mm][Aa][Gg]'_'?[Mm][Ii][Pp]'_'?[Pp][Oo][Ii][Nn][Tt];
 		min_mag_point_mip_linear_k =  [Mm][Ii][Nn]'_'?[Mm][Aa][Gg]'_'?[Pp][Oo][Ii][Nn][Tt]'_'?[Mm][Ii][Pp]'_'?[Ll][Ii][Nn][Ee][Aa][Rr];
 		min_point_mag_linear_mip_point_k =  [Mm][Ii][Nn]'_'?[Pp][Oo][Ii][Nn][Tt]'_'?[Mm][Aa][Gg]'_'?[Ll][Ii][Nn][Ee][Aa][Rr]'_'?[Mm][Ii][Pp]'_'?[Pp][Oo][Ii][Nn][Tt];
@@ -159,6 +165,8 @@ int parse_tokens(Tokens& tokens, char* str)
 		'[' space* [0-9] space* ']' => { tokens.push_back(Token(INDEX, atoi(ts+1))); };
 		"{" => { tokens.push_back(Token(L_BRACE, 0)); };
 		"}" => { tokens.push_back(Token(R_BRACE, 0)); };
+		"<" => { tokens.push_back(Token(L_CLAMP, 0)); };
+		">" => { tokens.push_back(Token(R_CLAMP, 0)); };
 		";" => { tokens.push_back(Token(SEMI_COLON, 0)); };
 		assign => { tokens.push_back(Token(ASSIGN, 0)); };
 		
@@ -167,11 +175,19 @@ int parse_tokens(Tokens& tokens, char* str)
 		rasterizerstate_k => { tokens.push_back(Token(RASTERIZER_STATE_K,0));};
 		blendstate_k	=> { tokens.push_back(Token(BLEND_STATE_K,0));};
 		samplerstate_k	=> { tokens.push_back(Token(SAMPLER_STATE_K,0));};
+		sampler_k	=> { tokens.push_back(Token(SAMPLER_K,0));};
 
 		false_k => { tokens.push_back(Token(BOOL_V, 0)); };
 		true_k => { tokens.push_back(Token(BOOL_V, 1)); };
 		
 		all_k => { tokens.push_back(Token(DEPTH_WRITE_MASK_V, D3D11_DEPTH_WRITE_MASK_ALL)); };
+
+		texture_k => { tokens.push_back(Token(TEXTURE_K, 0)); };
+		minfilter_k => { tokens.push_back(Token(MINFILTER_K, 0)); };
+		magfilter_k => { tokens.push_back(Token(MAGFILTER_K, 0)); };
+		mipfilter_k => { tokens.push_back(Token(MIPFILTER_K, 0)); };
+		point_k => { tokens.push_back(Token(FILTER_V, D3D11_FILTER_TYPE_POINT)); };
+		linear_k => { tokens.push_back(Token(FILTER_V, D3D11_FILTER_TYPE_LINEAR)); };
 
 		min_mag_mip_point_k => { tokens.push_back(Token(FILTER_V, D3D11_FILTER_MIN_MAG_MIP_POINT)); };
 		min_mag_point_mip_linear_k => { tokens.push_back(Token(FILTER_V, D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR)); };

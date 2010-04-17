@@ -54,6 +54,8 @@ void rasterizer_default(D3D11_RASTERIZER_DESC* desc)
 TestEffect::TestEffect()
   : _vs_effect(NULL)
 	, _ps_effect(NULL)
+	, _vs_fs(NULL)
+	, _ps_fs(NULL)
 {
 }
 
@@ -62,12 +64,12 @@ bool TestEffect::init()
   System& sys = System::instance();
 	ResourceManager& r = ResourceManager::instance();
 
-  RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded)),
+  RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states2.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 	
 	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
-	
+
 	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::ps_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
@@ -77,6 +79,12 @@ bool TestEffect::init()
 	RETURN_ON_FAIL_BOOL(r.load_materials(sys.convert_path("data/scenes/diskette.json", System::kDirDropBox).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::materials_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
+
+	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::post_vs_loaded)),
+		ErrorPredicate<bool>, LOG_ERROR_LN);
+
+	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::post_ps_loaded)),
+		ErrorPredicate<bool>, LOG_ERROR_LN);
 
 	D3D11_RASTERIZER_DESC raster_desc;
 	rasterizer_default(&raster_desc);
@@ -94,6 +102,24 @@ bool TestEffect::init()
 
 	RETURN_ON_FAIL_BOOL(_rt.create(512, 512), ErrorPredicate<bool>, LOG_ERROR_LN);
 
+	struct
+	{
+		D3DXVECTOR3 pos;
+		D3DXVECTOR2 tex;
+	} vtx[] = {
+		// 0, 1  screen space. [0, 1, 2] [2, 1, 3]
+		// 2, 3
+		{ D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 0) },
+		{ D3DXVECTOR3(1, 0, 0), D3DXVECTOR2(1, 0) },
+		{ D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 1) },
+		{ D3DXVECTOR3(1, 1, 0), D3DXVECTOR2(1, 1) },
+	};
+
+	int indices[] = { 0, 1, 2, 2, 1, 3};
+
+	create_static_vertex_buffer(device, 4, sizeof(vtx[0]), (uint8_t*)vtx, &_full_screen_vb);
+	create_static_index_buffer(device, 6, sizeof(indices[0]), (uint8_t*)indices, &_full_screen_ib);
+
 	return true;
 }
 
@@ -102,6 +128,8 @@ bool TestEffect::close()
 	_scene->release();
 	SAFE_DELETE(_vs_effect);
 	SAFE_DELETE(_ps_effect);
+	SAFE_DELETE(_vs_fs);
+	SAFE_DELETE(_ps_fs);
 	//_blend_state.Release();
 	return true;
 }
@@ -161,10 +189,13 @@ bool TestEffect::render()
 	return true;
 }
 
-void TestEffect::states_loaded(const ResourceManager::BlendStates& states)
+void TestEffect::states_loaded(const ResourceManager::EffectStates& states)
 {
 	_blend_state.Release();
-	_blend_state = states.find("AdditiveBlending")->second;
+	auto i = states.blend_states.find("AdditiveBlending");
+	if (i != states.blend_states.end()) {
+		_blend_state = states.blend_states.find("AdditiveBlending")->second;
+	}
 }
 
 void TestEffect::vs_loaded(EffectWrapper* effect)
@@ -188,4 +219,16 @@ void TestEffect::scene_loaded(Scene* scene)
 void TestEffect::materials_loaded(const MaterialFile& materials)
 {
 	_materials = materials;
+}
+
+void TestEffect::post_vs_loaded(EffectWrapper* effect)
+{
+	SAFE_DELETE(_vs_fs);
+	_vs_fs = effect;
+}
+
+void TestEffect::post_ps_loaded(EffectWrapper* effect)
+{
+	SAFE_DELETE(_ps_fs);
+	_ps_fs = effect;
 }
