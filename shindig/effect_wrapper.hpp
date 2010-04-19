@@ -23,6 +23,7 @@ public:
 	void set_cbuffer();
 
 	ID3D11InputLayout*	create_input_layout(const std::vector<D3D11_INPUT_ELEMENT_DESC>& elems);
+	ID3D11InputLayout*	create_input_layout(const D3D11_INPUT_ELEMENT_DESC* elems, const int num_elems);
 
 	ID3D11VertexShader* vertex_shader() { return _vertex_shader; }
 	ID3D11PixelShader* pixel_shader() { return _pixel_shader; }
@@ -59,6 +60,8 @@ private:
   typedef std::string VariableName;
   typedef std::map< BufferName, ConstantBuffer* > ConstantBuffers;
   typedef stdext::hash_map< VariableName, BufferVariable* > BufferVariables;
+	typedef stdext::hash_map< std::string, D3D11_SHADER_INPUT_BIND_DESC > BoundTextures;
+	typedef stdext::hash_map< std::string, D3D11_SHADER_INPUT_BIND_DESC > BoundSamplers;
 
 	bool	load_inner(const char* filename, const char* entry_point, bool vertex_shader);
 	bool do_reflection();
@@ -66,6 +69,8 @@ private:
   std::string _filename;
   ConstantBuffers _constant_buffers;
   BufferVariables _buffer_variables;
+	BoundTextures _bound_textures;
+	BoundSamplers _bound_samplers;
 
 	CComPtr<ID3DBlob> _shader_blob;
 	CComPtr<ID3D11VertexShader> _vertex_shader;

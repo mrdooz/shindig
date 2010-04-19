@@ -76,11 +76,11 @@ bool EffectWrapper::load_inner(const char* filename, const char* entry_point, bo
 
 bool EffectWrapper::do_reflection()
 {
-	ID3D11ShaderReflection* pReflector = NULL; 
-	RETURN_ON_FAIL_BOOL(D3DReflect(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector),
+	ID3D11ShaderReflection* reflector = NULL; 
+	RETURN_ON_FAIL_BOOL(D3DReflect(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflector),
     ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 	D3D11_SHADER_DESC shader_desc;
-	pReflector->GetDesc(&shader_desc);
+	reflector->GetDesc(&shader_desc);
 
 	D3D11_SHADER_BUFFER_DESC d;
 	D3D11_SHADER_VARIABLE_DESC vd;
@@ -88,7 +88,7 @@ bool EffectWrapper::do_reflection()
 
 	// global constant buffer is called "$Globals"
 	for (UINT i = 0; i < shader_desc.ConstantBuffers; ++i) {
-		ID3D11ShaderReflectionConstantBuffer* rcb = pReflector->GetConstantBufferByIndex(i);
+		ID3D11ShaderReflectionConstantBuffer* rcb = reflector->GetConstantBufferByIndex(i);
 		// create constant buffer
 		rcb->GetDesc(&d);
 		CD3D11_BUFFER_DESC bb(d.Size, D3D11_BIND_CONSTANT_BUFFER, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
@@ -105,6 +105,21 @@ bool EffectWrapper::do_reflection()
       _buffer_variables.insert(std::make_pair(vd.Name, new BufferVariable(vd.Name, cur_cb, vd, td)));
 		}
     _constant_buffers.insert(std::make_pair(cur_cb->_name, cur_cb ));
+	}
+
+	// get bound resources
+	for (UINT i = 0; i < shader_desc.BoundResources; ++i) {
+		D3D11_SHADER_INPUT_BIND_DESC input_desc;
+		reflector->GetResourceBindingDesc(i, &input_desc);
+		switch (input_desc.Type) {
+		case D3D10_SIT_TEXTURE:
+			_bound_textures.insert(std::make_pair(input_desc.Name, input_desc));
+			break;
+		case D3D10_SIT_SAMPLER:
+			_bound_samplers.insert(std::make_pair(input_desc.Name, input_desc));
+			break;
+
+		}
 	}
 	return true;
 }
@@ -155,11 +170,16 @@ void EffectWrapper::unmap_buffers()
   }
 }
 
-ID3D11InputLayout* EffectWrapper::create_input_layout(const std::vector<D3D11_INPUT_ELEMENT_DESC>& elems)
+ID3D11InputLayout* EffectWrapper::create_input_layout(const D3D11_INPUT_ELEMENT_DESC* elems, const int num_elems)
 {
 	ID3D11InputLayout* layout = NULL;
 
-	RETURN_ON_FAIL_PTR(Graphics::instance().device()->CreateInputLayout(&elems[0], elems.size(), _shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), &layout),
+	RETURN_ON_FAIL_PTR(Graphics::instance().device()->CreateInputLayout(elems, num_elems, _shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), &layout),
 		ErrorPredicate<HRESULT>, LOG_ERROR_LN);
 	return layout;
+}
+
+ID3D11InputLayout* EffectWrapper::create_input_layout(const std::vector<D3D11_INPUT_ELEMENT_DESC>& elems)
+{
+	return create_input_layout(&elems[0], elems.size());
 }

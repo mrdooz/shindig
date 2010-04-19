@@ -64,9 +64,15 @@ bool TestEffect::init()
   System& sys = System::instance();
 	ResourceManager& r = ResourceManager::instance();
 
-  RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states2.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded)),
+  RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
-	
+
+	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::post_vs_loaded)),
+		ErrorPredicate<bool>, LOG_ERROR_LN);
+
+	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::post_ps_loaded)),
+		ErrorPredicate<bool>, LOG_ERROR_LN);
+
 	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
@@ -77,13 +83,6 @@ bool TestEffect::init()
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_materials(sys.convert_path("data/scenes/diskette.json", System::kDirDropBox).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::materials_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
-
-
-	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::post_vs_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
-
-	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::post_ps_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
 	D3D11_RASTERIZER_DESC raster_desc;
@@ -120,6 +119,12 @@ bool TestEffect::init()
 	create_static_vertex_buffer(device, 4, sizeof(vtx[0]), (uint8_t*)vtx, &_full_screen_vb);
 	create_static_index_buffer(device, 6, sizeof(indices[0]), (uint8_t*)indices, &_full_screen_ib);
 
+	D3D11_INPUT_ELEMENT_DESC fs_desc[] = { 
+		CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0),
+		CD3D11_INPUT_ELEMENT_DESC("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0),
+	};
+	_full_screen_layout.Attach(_vs_fs->create_input_layout(fs_desc, ELEMS_IN_ARRAY(fs_desc)));
+
 	return true;
 }
 
@@ -134,12 +139,10 @@ bool TestEffect::close()
 	return true;
 }
 
-bool TestEffect::render()
+void TestEffect::render_meshes()
 {
 	ID3D11Device* device = Graphics::instance().device();
 	ID3D11DeviceContext* context = Graphics::instance().context();
-
-	//_rt.set();
 
 	// set shaders
 	context->VSSetShader(_vs_effect->vertex_shader(), NULL, 0);
@@ -183,8 +186,49 @@ bool TestEffect::render()
 
 		context->DrawIndexed(m->_index_count, 0, 0);
 	}
+}
 
+bool TestEffect::render()
+{
+	ID3D11Device* device = Graphics::instance().device();
+	ID3D11DeviceContext* context = Graphics::instance().context();
+
+	//_rt.set();
+	//render_meshes();
 	//Graphics::instance().set_default_render_target();
+
+
+	context->VSSetShader(_vs_fs->vertex_shader(), NULL, 0);
+	context->PSSetShader(_ps_fs->pixel_shader(), NULL, 0);
+	context->GSSetShader(NULL, NULL, 0);
+
+	context->IASetInputLayout(_full_screen_layout);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// set blend state
+	float blend_factor[4] = {0,0,0,0};
+	UINT sample_mask = 0xffffffff;
+	context->OMSetBlendState(_blend_state, &blend_factor[0], sample_mask);
+	context->RSSetState(_rasterizer_state);
+	context->OMSetDepthStencilState(_depth_state, 0);
+
+
+	ID3D11Buffer* bufs[] = { _full_screen_vb };
+	const UINT strides[] = {sizeof(D3DXVECTOR3) + sizeof(D3DXVECTOR2)};
+	const UINT ofs [] = { 0 };
+	context->IASetVertexBuffers(0, 1, bufs, strides, ofs);
+	context->IASetIndexBuffer(_full_screen_ib, DXGI_FORMAT_R32_UINT, 0);
+
+	ID3D11ShaderResourceView* t[] = { _rt.shader_resource_view() };
+	context->PSSetShaderResources(0, 1, t);
+
+	ID3D11SamplerState* s[] = { _sampler_state };
+	context->PSSetSamplers(0, 1, s);
+
+	context->DrawIndexed(6, 0, 0);
+
+	ID3D11ShaderResourceView* null_textures[] = { NULL };
+	context->PSSetShaderResources(0, 1, null_textures);
 
 	return true;
 }
@@ -192,10 +236,21 @@ bool TestEffect::render()
 void TestEffect::states_loaded(const ResourceManager::EffectStates& states)
 {
 	_blend_state.Release();
-	auto i = states.blend_states.find("AdditiveBlending");
-	if (i != states.blend_states.end()) {
-		_blend_state = states.blend_states.find("AdditiveBlending")->second;
+	{
+		auto i = states.blend_states.find("AdditiveBlending");
+		if (i != states.blend_states.end()) {
+			_blend_state = i->second;
+		}
 	}
+
+	_sampler_state.Release();
+	{
+		auto i = states.sampler_states.find("MeshTextureSampler");
+		if (i != states.sampler_states.end()) {
+			_sampler_state = i->second;
+		}
+	}
+
 }
 
 void TestEffect::vs_loaded(EffectWrapper* effect)

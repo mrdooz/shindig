@@ -22,6 +22,8 @@ struct TestEffect
 	void scene_loaded(Scene* scene);
 	void materials_loaded(const MaterialFile& materials);
 
+	void	render_meshes();
+
 	RefPtr<Scene> _scene;
 	MaterialFile _materials;
 	EffectWrapper* _vs_effect;
@@ -30,6 +32,8 @@ struct TestEffect
 
 	CComPtr<ID3D11Buffer> _full_screen_vb;
 	CComPtr<ID3D11Buffer> _full_screen_ib;
+	CComPtr<ID3D11InputLayout> _full_screen_layout;
+	D3D11_VIEWPORT _viewport;
 	EffectWrapper* _vs_fs;
 	EffectWrapper* _ps_fs;
 
@@ -37,6 +41,7 @@ struct TestEffect
 	CComPtr<ID3D11RasterizerState> _rasterizer_state;
 	CComPtr<ID3D11BlendState> _blend_state;
 	CComPtr<ID3D11DepthStencilState> _depth_state;
+	CComPtr<ID3D11SamplerState> _sampler_state;
 };
 
 #endif
