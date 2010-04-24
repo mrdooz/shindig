@@ -78,24 +78,9 @@ DWORD WINAPI System::WatcherThread(void* param)
 			char tmp[MAX_PATH];
 			UnicodeToAnsiToBuffer(info[0].FileName, tmp, MAX_PATH);
 			const std::string filename(Path::make_canonical(Path::get_full_path_name(tmp)));
-
-/*
-			char filename[MAX_PATH];
-      UnicodeToAnsiToBuffer(info[0].FileName, filename, MAX_PATH);
-      // change '\' to '/'
-      char *ptr = filename;
-      while (*ptr) {
-        if (*ptr == '\\') {
-          *ptr = '/';
-        }
-        ++ptr;
-      }
-*/
 			System::instance().file_changed_internal(filename);
     }
-
   }
-
   return 0;
 }
 
@@ -234,4 +219,8 @@ std::string System::convert_path(const std::string& str, DirTag tag)
       break;
   }
   return res;
+}
+
+void System::add_error_message(const char* fmt, ...)
+{
 }

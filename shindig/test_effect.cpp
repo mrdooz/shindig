@@ -192,6 +192,10 @@ void TestEffect::render_meshes()
 
 bool TestEffect::render()
 {
+  if (!_vs_effect || !_vs_fs || !_ps_effect || !_ps_fs) {
+    return true;
+  }
+
 	ID3D11Device* device = Graphics::instance().device();
 	ID3D11DeviceContext* context = Graphics::instance().context();
 

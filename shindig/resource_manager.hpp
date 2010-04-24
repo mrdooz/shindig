@@ -65,7 +65,7 @@ private:
 	};
 
 	typedef std::string Filename;
-	typedef stdext::hash_map< Filename, std::vector<ShaderCallbackData> > ShaderCallbacks;
+	typedef std::map< std::pair<Filename, bool>, std::vector<ShaderCallbackData> > ShaderCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnStateLoaded> > StateCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnSceneLoaded> > SceneCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnMaterialsLoaded> > MaterialCallbacks;

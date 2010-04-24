@@ -144,7 +144,7 @@
     <CustomBuild Include="parser\states.sm">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)shaker_maker.py -o %(RootDir)%(Directory)/state_parser.hpp -s %(RootDir)%(Directory)/state_parser_symbols.hpp -g %(FullPath)
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)/state_parser.hpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)/state_parser.hpp;%(RootDir)%(Directory)/state_parser_symbols.hpp;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

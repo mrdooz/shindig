@@ -35,5 +35,6 @@ float4 psMain(vsOutput v) : SV_Target
 {
 	//return float4(0,1,1,0);
 	float4 tmp = g_MeshTexture.Sample(MeshTextureSampler, v.tex);
-	return g_MeshTexture.Sample(MeshTextureSampler, float2(v.tex.x + tmp.r / 100, v.tex.y + tmp.g / 100));
+	return tmp13;
+	return tmp + g_MeshTexture.Sample(MeshTextureSampler, float2(v.tex.x + tmp.r / 100, v.tex.y + tmp.g / 100));
 }

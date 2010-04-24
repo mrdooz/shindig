@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "effect_wrapper.hpp"
 #include "graphics.hpp"
+#include "system.hpp"
 
 EffectWrapper::EffectWrapper()
 {
@@ -26,7 +27,9 @@ bool EffectWrapper::load_inner(const char* filename, const char* entry_point, bo
 {
 	uint8_t* buf = NULL;
 	uint32_t len = 0;
-	load_file(buf, len, filename);
+	if (!load_file(buf, len, filename)) {
+    return false;
+  }
 
 	ID3DBlob* error_blob = NULL;
 
@@ -52,22 +55,30 @@ bool EffectWrapper::load_inner(const char* filename, const char* entry_point, bo
 	if (vertex_shader) {
 
 		if (FAILED(D3DCompile(buf, len, filename, NULL, NULL, entry_point, vs.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob))) {
-			LOG_ERROR_LN("%s", error_blob->GetBufferPointer());
-			return false;
+      const char *e = (const char *)error_blob->GetBufferPointer();
+      System::instance().add_error_message(e ? e : "Error loading vertex shader: %s", filename);
+      return false;
 		}
-		RETURN_ON_FAIL_BOOL(Graphics::instance().device()->CreateVertexShader(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), NULL, &_vertex_shader),
-			ErrorPredicate<HRESULT>, LOG_ERROR_LN);
-
+    if (FAILED(Graphics::instance().device()->CreateVertexShader(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), NULL, &_vertex_shader))) {
+      System::instance().add_error_message("Error loading shader vertex shader: %s", filename);
+      return false;
+    }
 	} else {
 		if (FAILED(D3DCompile(buf, len, filename, NULL, NULL, entry_point, ps.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0, &_shader_blob, &error_blob))) {
-			LOG_ERROR_LN("%s", error_blob->GetBufferPointer());
+      const char *e = (const char *)error_blob->GetBufferPointer();
+      System::instance().add_error_message(e ? e : "Error loading pixel shader: %s", filename);
 			return false;
 		}
-		RETURN_ON_FAIL_BOOL(Graphics::instance().device()->CreatePixelShader(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), NULL, &_pixel_shader),
-			ErrorPredicate<HRESULT>, LOG_ERROR_LN);
+    if (FAILED(Graphics::instance().device()->CreatePixelShader(_shader_blob->GetBufferPointer(), _shader_blob->GetBufferSize(), NULL, &_pixel_shader))) {
+      System::instance().add_error_message("Error loading pixel shader: %s", filename);
+      return false;
+    }
 	}
 
-	RETURN_ON_FAIL_BOOL(do_reflection(), ErrorPredicate<bool>, LOG_ERROR_LN);
+  if (!do_reflection()) {
+    System::instance().add_error_message("Error in reflection on : %s", filename);
+    return false;
+  }
 
   _filename = filename;
   return true;

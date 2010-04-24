@@ -52,21 +52,18 @@ int make_hex(const char* ts, const char* te)
 
 bool ResourceManager::load_vertex_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
 {
-	char buf[MAX_PATH];
-	sprintf(buf, "[VS] - %s::%s", filename, shader_name);
-	SUPER_ASSERT(_shader_callbacks.find(buf) == _shader_callbacks.end());
-	_shader_callbacks[buf].push_back(ShaderCallbackData(filename, shader_name, fn));
-	System::instance().add_file_changed(filename, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs));
-	return reload_shader(buf, true);
+  auto f = Path::make_canonical(Path::get_full_path_name(filename));
+	_shader_callbacks[std::make_pair(f, true)].push_back(ShaderCallbackData(f, shader_name, fn));
+	System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs));
+	return reload_shader(f.c_str(), true);
 }
 
 bool ResourceManager::load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
 {
-	char buf[MAX_PATH];
-	sprintf(buf, "[PS] - %s::%s", filename, shader_name);
-	SUPER_ASSERT(_shader_callbacks.find(buf) == _shader_callbacks.end());
-	_shader_callbacks[buf].push_back(ShaderCallbackData(filename, shader_name, fn));
-	return reload_shader(buf, false);
+  auto f = Path::make_canonical(Path::get_full_path_name(filename));
+	_shader_callbacks[std::make_pair(f, false)].push_back(ShaderCallbackData(f, shader_name, fn));
+  System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_ps));
+	return reload_shader(f.c_str(), false);
 }
 
 void ResourceManager::reload_vs(const std::string& filename)
@@ -82,11 +79,13 @@ void ResourceManager::reload_ps(const std::string& filename)
 bool ResourceManager::reload_shader(const char* filename, const bool vertex_shader)
 {
 	// find all the callbacks that use this file
-	if (_shader_callbacks.find(filename) == _shader_callbacks.end()) {
+  auto key = std::make_pair(filename, vertex_shader);
+  auto it = _shader_callbacks.find(key);
+	if (_shader_callbacks.find(key) == _shader_callbacks.end()) {
 		return true;
 	}
 
-	const std::vector<ShaderCallbackData>& n = _shader_callbacks[filename];
+	const std::vector<ShaderCallbackData>& n = it->second;
 	for (auto i = n.begin(), e = n.end(); i != e; ++i) {
 		const std::string& filename = i->_filename;
 		const std::string& entry_point = i->_entry_point;
@@ -94,9 +93,13 @@ bool ResourceManager::reload_shader(const char* filename, const bool vertex_shad
 
     EffectWrapper* effect = new EffectWrapper();
 		if (vertex_shader) {
-			effect->load_vertex_shader(filename.c_str(), entry_point.c_str());
+			if (!effect->load_vertex_shader(filename.c_str(), entry_point.c_str())) {
+        return false;
+      }
 		} else {
-			effect->load_pixel_shader(filename.c_str(), entry_point.c_str());
+			if (!effect->load_pixel_shader(filename.c_str(), entry_point.c_str())) {
+        return false;
+      }
 		}
 		fn(effect);
 	}

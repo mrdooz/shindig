@@ -26,6 +26,8 @@ public:
 
   std::string convert_path(const std::string& str, DirTag tag);
 
+  void add_error_message(const char* fmt, ...);
+
 private:
 	DISALLOW_COPY_AND_ASSIGN(System);
 	System();
