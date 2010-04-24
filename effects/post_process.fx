@@ -3,7 +3,7 @@ extern sampler MeshTextureSampler;
 
 struct vsInput
 {
-	float3 position : POSITION;
+	float4 position : SV_Position;
 	float2 tex : TEXCOORD0;
 };
 
@@ -16,13 +16,23 @@ struct vsOutput
 vsOutput vsMain( in vsInput v )
 {
 	vsOutput o = (vsOutput)0;
-	o.position = float4(v.position, 1.0f);	
+	o.position = v.position;	
 	o.tex = v.tex;
 	return o;
 }
 
-float4 psMain(vsOutput input) : SV_Target
+float4 Transform(in vsInput v) : SV_Position 
+{
+    return v.position;
+}
+
+float4 psMain2(float4 v : SV_Position) : SV_Target
 {
 	return float4(1,0,1,0);
-	return g_MeshTexture.Sample(MeshTextureSampler, input.tex);
+}
+
+float4 psMain(vsOutput v) : SV_Target
+{
+	return float4(1,0,1,0);
+	//return g_MeshTexture.Sample(MeshTextureSampler, input.tex);
 }

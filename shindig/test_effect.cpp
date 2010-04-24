@@ -67,10 +67,10 @@ bool TestEffect::init()
   RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::post_vs_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "Transform", fastdelegate::MakeDelegate(this, &TestEffect::post_vs_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::post_ps_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain2", fastdelegate::MakeDelegate(this, &TestEffect::post_ps_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded)),
@@ -106,12 +106,16 @@ bool TestEffect::init()
 		D3DXVECTOR3 pos;
 		D3DXVECTOR2 tex;
 	} vtx[] = {
-		// 0, 1  screen space. [0, 1, 2] [2, 1, 3]
+		// 0, 1  [0, 1, 2] [2, 1, 3]
 		// 2, 3
-		{ D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 0) },
-		{ D3DXVECTOR3(1, 0, 0), D3DXVECTOR2(1, 0) },
-		{ D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 1) },
-		{ D3DXVECTOR3(1, 1, 0), D3DXVECTOR2(1, 1) },
+//		{ D3DXVECTOR3(-1, +1, 0), D3DXVECTOR2(0, 0) },
+//		{ D3DXVECTOR3(+1, +1, 0), D3DXVECTOR2(1, 0) },
+//		{ D3DXVECTOR3(-1, -1, 0), D3DXVECTOR2(0, 1) },
+//		{ D3DXVECTOR3(+1, -1, 0), D3DXVECTOR2(1, 1) },
+		{ D3DXVECTOR3(0, 0, 0.5f), D3DXVECTOR2(0, 0) },
+		{ D3DXVECTOR3(+1, 0, 0.5f), D3DXVECTOR2(1, 0) },
+		{ D3DXVECTOR3(0, 1, 0.5f), D3DXVECTOR2(0, 1) },
+		{ D3DXVECTOR3(1, 1, 0.5f), D3DXVECTOR2(1, 1) },
 	};
 
 	int indices[] = { 0, 1, 2, 2, 1, 3};
@@ -119,8 +123,10 @@ bool TestEffect::init()
 	create_static_vertex_buffer(device, 4, sizeof(vtx[0]), (uint8_t*)vtx, &_full_screen_vb);
 	create_static_index_buffer(device, 6, sizeof(indices[0]), (uint8_t*)indices, &_full_screen_ib);
 
+	_viewport = CD3D11_VIEWPORT(0.0f, 0.0f, 1.0f, 1.0f);
+
 	D3D11_INPUT_ELEMENT_DESC fs_desc[] = { 
-		CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0),
+		CD3D11_INPUT_ELEMENT_DESC("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0),
 		CD3D11_INPUT_ELEMENT_DESC("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0),
 	};
 	_full_screen_layout.Attach(_vs_fs->create_input_layout(fs_desc, ELEMS_IN_ARRAY(fs_desc)));
@@ -210,6 +216,7 @@ bool TestEffect::render()
 	UINT sample_mask = 0xffffffff;
 	context->OMSetBlendState(_blend_state, &blend_factor[0], sample_mask);
 	context->RSSetState(_rasterizer_state);
+	context->RSSetViewports(1, &_viewport);
 	context->OMSetDepthStencilState(_depth_state, 0);
 
 
