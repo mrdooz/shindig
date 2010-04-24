@@ -7,8 +7,10 @@ public:
 	RenderTarget();
 	bool	create(const int width, const int height);
 	void	set();
+	void	clear(const D3DXCOLOR& c);
 
 	ID3D11RenderTargetView* render_target_view() const { return _render_target_view; }
+	ID3D11DepthStencilView* depth_stencil_view() const { return _depth_stencil_view; }
 	ID3D11ShaderResourceView* shader_resource_view() const { return _shader_resource_view; }
 private:
 	int	_width;

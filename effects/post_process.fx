@@ -33,6 +33,7 @@ float4 psMain2(float4 v : SV_Position) : SV_Target
 
 float4 psMain(vsOutput v) : SV_Target
 {
-	return float4(1,0,1,0);
-	//return g_MeshTexture.Sample(MeshTextureSampler, input.tex);
+	//return float4(0,1,1,0);
+	float4 tmp = g_MeshTexture.Sample(MeshTextureSampler, v.tex);
+	return g_MeshTexture.Sample(MeshTextureSampler, float2(v.tex.x + tmp.r / 100, v.tex.y + tmp.g / 100));
 }

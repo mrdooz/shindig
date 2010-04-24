@@ -1,7 +1,7 @@
 #ifndef _SYSTEM_HPP_
 #define _SYSTEM_HPP_
 
-typedef fastdelegate::FastDelegate< void (const std::string&) > fnFileChanged;
+typedef fastdelegate::FastDelegate1<const std::string&, void> fnFileChanged;
 
 class System
 {

@@ -36,3 +36,11 @@ void RenderTarget::set()
 	context->OMSetRenderTargets(1, render_targets, _depth_stencil_view);
 	context->RSSetViewports(1, &_viewport);
 }
+
+void RenderTarget::clear(const D3DXCOLOR& c)
+{
+	ID3D11DeviceContext* context = Graphics::instance().context();
+	context->ClearRenderTargetView(_render_target_view, c);
+	context->ClearDepthStencilView(_depth_stencil_view, D3D11_CLEAR_DEPTH, 1.0f, 0 );
+}
+

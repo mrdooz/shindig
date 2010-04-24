@@ -74,6 +74,12 @@ DWORD WINAPI System::WatcherThread(void* param)
     } else {
       info[0].FileName[info[0].FileNameLength/2+0] = 0;
       info[0].FileName[info[0].FileNameLength/2+1] = 0;
+			
+			char tmp[MAX_PATH];
+			UnicodeToAnsiToBuffer(info[0].FileName, tmp, MAX_PATH);
+			const std::string filename(Path::make_canonical(Path::get_full_path_name(tmp)));
+
+/*
 			char filename[MAX_PATH];
       UnicodeToAnsiToBuffer(info[0].FileName, filename, MAX_PATH);
       // change '\' to '/'
@@ -84,7 +90,7 @@ DWORD WINAPI System::WatcherThread(void* param)
         }
         ++ptr;
       }
-
+*/
 			System::instance().file_changed_internal(filename);
     }
 
@@ -170,11 +176,12 @@ boost::signals2::connection System::add_file_changed(const fnFileChanged& slot)
 
 boost::signals2::connection System::add_file_changed(const std::string& filename, const fnFileChanged& slot)
 {
-	SpecificSignals::iterator it = _specific_signals.find(filename);
+	auto f = Path::make_canonical(Path::get_full_path_name(filename));
+	SpecificSignals::iterator it = _specific_signals.find(f);
 	if (it == _specific_signals.end()) {
-		_specific_signals.insert(std::make_pair(filename, new sigFileChanged()));
+		_specific_signals.insert(std::make_pair(f, new sigFileChanged()));
 	}
-	return _specific_signals[filename]->connect(slot);
+	return _specific_signals[f]->connect(slot);
 }
 
 void System::enum_known_folders()

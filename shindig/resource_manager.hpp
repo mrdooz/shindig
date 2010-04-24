@@ -42,8 +42,10 @@ public:
 private:
 	DISALLOW_COPY_AND_ASSIGN(ResourceManager);
 
-	// The inner funtions are called both from the "file changed" signal, and directly from the load_xxx methods
+	// The inner functions are called both from the "file changed" signal, and directly from the load_xxx methods
 	bool reload_effect_states(const char* filename);
+	void	reload_vs(const std::string& filename);
+	void	reload_ps(const std::string& filename);
 	bool reload_shader(const char* filename, const bool vertex_shader);
 	bool reload_material(const char* filename);
 	bool reload_scene(const char* filename);

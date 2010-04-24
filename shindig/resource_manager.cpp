@@ -5,6 +5,7 @@
 #include "redux_loader.hpp"
 #include "scene.hpp"
 #include "effect_wrapper.hpp"
+#include "system.hpp"
 
 ResourceManager* ResourceManager::_instance = NULL;
 
@@ -55,6 +56,7 @@ bool ResourceManager::load_vertex_shader(const char* filename, const char* shade
 	sprintf(buf, "[VS] - %s::%s", filename, shader_name);
 	SUPER_ASSERT(_shader_callbacks.find(buf) == _shader_callbacks.end());
 	_shader_callbacks[buf].push_back(ShaderCallbackData(filename, shader_name, fn));
+	System::instance().add_file_changed(filename, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs));
 	return reload_shader(buf, true);
 }
 
@@ -65,6 +67,16 @@ bool ResourceManager::load_pixel_shader(const char* filename, const char* shader
 	SUPER_ASSERT(_shader_callbacks.find(buf) == _shader_callbacks.end());
 	_shader_callbacks[buf].push_back(ShaderCallbackData(filename, shader_name, fn));
 	return reload_shader(buf, false);
+}
+
+void ResourceManager::reload_vs(const std::string& filename)
+{
+	reload_shader(filename.c_str(), true);
+}
+
+void ResourceManager::reload_ps(const std::string& filename)
+{
+	reload_shader(filename.c_str(), false);
 }
 
 bool ResourceManager::reload_shader(const char* filename, const bool vertex_shader)
