@@ -1,7 +1,18 @@
 #ifndef _SYSTEM_HPP_
 #define _SYSTEM_HPP_
 
+#include <fmod.hpp>
+//#include "../spectrum/spectrum/bin/Debug/time.hpp"
+
 typedef fastdelegate::FastDelegate1<const std::string&, void> fnFileChanged;
+typedef fastdelegate::FastDelegate1<int, void> TimedCallback;
+
+namespace FMOD
+{
+	class System;
+	class Sound;
+	class Channel;
+}
 
 class System
 {
@@ -27,6 +38,12 @@ public:
   std::string convert_path(const std::string& str, DirTag tag);
 
   void add_error_message(const char* fmt, ...);
+	void add_timed_callback(const int idx, TimedCallback& fn);
+
+	bool start_mp3();
+	bool end_mp3();
+	bool paused();
+	void set_paused(const bool state);
 
 private:
 	DISALLOW_COPY_AND_ASSIGN(System);
@@ -55,6 +72,12 @@ private:
   std::string _my_documents;
   std::string _dropbox;
   std::string _working_dir;
+
+	uint32_t _time_idx;
+	TimedCallback _cb;
+	FMOD::System* _fmod_system;
+	FMOD::Channel* _channel;
+	FMOD::Sound* _sound;
 };
 
 #endif

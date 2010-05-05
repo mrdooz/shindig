@@ -24,6 +24,10 @@ struct TestEffect
 
 	void	render_meshes();
 
+	void	callback(const int idx);
+
+	bool _boom;
+
 	RefPtr<Scene> _scene;
 	MaterialFile _materials;
 	EffectWrapper* _vs_effect;
