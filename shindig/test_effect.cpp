@@ -56,6 +56,7 @@ TestEffect::TestEffect()
 	, _ps_effect(NULL)
 	, _vs_fs(NULL)
 	, _ps_fs(NULL)
+	, _boom(false)
 {
 }
 
@@ -127,7 +128,15 @@ bool TestEffect::init()
 	};
 	_full_screen_layout.Attach(_vs_fs->create_input_layout(fs_desc, ELEMS_IN_ARRAY(fs_desc)));
 
+	sys.add_timed_callback(0, fastdelegate::MakeDelegate(this, &TestEffect::callback));
+	sys.start_mp3();
+
 	return true;
+}
+
+void TestEffect::callback(const int idx)
+{
+	_boom = true;
 }
 
 bool TestEffect::close()
@@ -196,7 +205,12 @@ bool TestEffect::render()
 	ID3D11DeviceContext* context = Graphics::instance().context();
 
 	_rt.set();
-	_rt.clear(D3DXCOLOR(1, 1, 1, 1));
+	if (_boom)
+		_rt.clear(D3DXCOLOR(0, 0, 0, 1));
+	else
+		_rt.clear(D3DXCOLOR(1, 1, 1, 1));
+	_boom = false;
+
 	render_meshes();
 	Graphics::instance().set_default_render_target();
 

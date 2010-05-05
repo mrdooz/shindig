@@ -9,6 +9,136 @@
 
 using namespace boost::signals2;
 
+uint32_t timestamps[] = {
+	17540,
+	18508,
+	18609,
+	19216,
+	19838,
+	19989,
+	20767,
+	21052,
+	21665,
+	22278,
+	22437,
+	22747,
+	23204,
+	23506,
+	24113,
+	24434,
+	24727,
+	24885,
+	25951,
+	26416,
+	26894,
+	27028,
+	28303,
+	28404,
+	29010,
+	29632,
+	29783,
+	30847,
+	31188,
+	31462,
+	31783,
+	32073,
+	32232,
+	32542,
+	32999,
+	33301,
+	33944,
+	34419,
+	34522,
+	34680,
+	35459,
+	35648,
+	36086,
+	36211,
+	36823,
+	38053,
+	38198,
+	38805,
+	39420,
+	39577,
+	40545,
+	41254,
+	41571,
+	41867,
+	42026,
+	42994,
+	43097,
+	43413,
+	43702,
+	44318,
+	44475,
+	44784,
+	45538,
+	46152,
+	46636,
+	46765,
+	46923,
+	47848,
+	48599,
+	49215,
+	49372,
+	51049,
+	51662,
+	51820,
+	52127,
+	52588,
+	52780,
+	53496,
+	54112,
+	54269,
+	54579,
+	55208,
+	55332,
+	56718,
+	62675,
+	63291,
+	65126,
+	66352,
+	67583,
+	68187,
+	70023,
+	72477,
+	73083,
+	82781,
+	83493,
+	84587,
+	85330,
+	85798,
+	85933,
+	86405,
+	86552,
+	87017,
+	87169,
+	87775,
+	88259,
+	88390,
+	89472,
+	90100,
+	90225,
+	90781,
+	91903,
+	92536,
+	92677,
+	93457,
+	93767,
+	94588,
+	95734,
+	96347,
+	96647,
+	126109,
+	140226,
+	140410,
+	140559,
+	142772,
+	143106,
+	143418,
+};
+
+
 System* System::_instance = NULL;
 
 enum {
@@ -100,6 +230,10 @@ DWORD WINAPI System::WatcherThread(void* param)
 }
 
 System::System()
+	: _fmod_system(NULL)
+	, _channel(NULL)
+	, _sound(NULL)
+	, _time_idx(0)
 {
 }
 
@@ -123,6 +257,16 @@ bool System::init()
 	_watcher_thread = CreateThread(0, 0, WatcherThread, NULL, 0, &thread_id);
 	InitializeCriticalSection(&_cs_deferred_files);
 
+	if (FMOD::System_Create(&_fmod_system) != FMOD_OK)
+		return false;
+
+	if (_fmod_system->init(32, FMOD_INIT_NORMAL, 0) != FMOD_OK)
+		return false;
+
+	if (_fmod_system->createSound(convert_path("data/mp3/12 Session.mp3", System::kDirDropBox).c_str(), FMOD_HARDWARE, 0, &_sound) != FMOD_OK)
+		return false;
+
+
 	return true;
 }
 
@@ -142,22 +286,35 @@ bool System::tick()
 	// process the deferred files
 	SCOPED_CS(&_cs_deferred_files);
 
-	if (_deferred_files.empty()) {
-		return true;
+	if (!_deferred_files.empty()) {
+		for (DeferredFiles::iterator i = _deferred_files.begin(), e = _deferred_files.end(); i != e; ++i) {
+			const std::string& filename = *i;
+			_global_signals(filename);
+
+			for (SpecificSignals::iterator i = _specific_signals.begin(), e = _specific_signals.end(); i != e; ++i) {
+				if (i->first == filename) {
+					(*i->second)(filename);
+				}
+			}
+		}
+
+		_deferred_files.clear();
 	}
 
-	for (DeferredFiles::iterator i = _deferred_files.begin(), e = _deferred_files.end(); i != e; ++i) {
-		const std::string& filename = *i;
-		_global_signals(filename);
 
-		for (SpecificSignals::iterator i = _specific_signals.begin(), e = _specific_signals.end(); i != e; ++i) {
-			if (i->first == filename) {
-				(*i->second)(filename);
-			}
+	if (_channel) {
+		if (_cb) {
+			uint32_t pos;
+			_channel->getPosition(&pos, FMOD_TIMEUNIT_MS);
+			if (pos > timestamps[_time_idx])
+				_cb(0);
+
+			while (timestamps[_time_idx] < pos && _time_idx <= ARRAYSIZE(timestamps))
+				_time_idx++;
+
 		}
 	}
 
-	_deferred_files.clear();
 	return true;
 }
 
@@ -234,4 +391,48 @@ std::string System::convert_path(const std::string& str, DirTag tag)
       break;
   }
   return res;
+}
+
+
+bool System::start_mp3()
+{
+	if (!_sound)
+		return false;
+
+	_fmod_system->playSound(FMOD_CHANNEL_FREE, _sound, false, &_channel);
+
+	return true;
+}
+
+bool System::end_mp3()
+{
+	if (!_sound || !_channel)
+		return false;
+
+	return true;
+}
+
+bool System::paused()
+{
+	if (!_sound || !_channel)
+		return false;
+
+	bool p = false;
+	if (_channel->getPaused(&p) != FMOD_OK)
+		return false;
+
+	return p;
+}
+
+void System::set_paused(const bool state)
+{
+	if (!_sound || !_channel)
+		return;
+
+	_channel->setPaused(state);
+}
+
+void System::add_timed_callback(const int idx, TimedCallback& fn)
+{
+	_cb = fn;
 }
