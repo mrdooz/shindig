@@ -1,9 +1,15 @@
-Texture2D g_MeshTexture;              // Color texture for mesh
-extern sampler MeshTextureSampler;
+Texture2D texture;
+
+SamplerState linear_sampler
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
 
 struct vsInput
 {
-	float4 position : SV_Position;
+	float4 position : SV_POSITION;
 	float2 tex : TEXCOORD0;
 };
 
@@ -21,20 +27,17 @@ vsOutput vsMain( in vsInput v )
 	return o;
 }
 
-float4 Transform(in vsInput v) : SV_Position 
+float4 Transform(in vsInput v) : SV_POSITION 
 {
     return v.position;
 }
 
-float4 psMain2(float4 v : SV_Position) : SV_Target
+float4 psMain2(float4 v : SV_POSITION) : SV_TARGET
 {
 	return float4(1,0,1,0);
 }
 
-float4 psMain(vsOutput v) : SV_Target
+float4 psMain(vsOutput v) : SV_TARGET
 {
-	//return float4(0,1,1,0);
-	float4 tmp = g_MeshTexture.Sample(MeshTextureSampler, v.tex);
-	return tmp13;
-	return tmp + g_MeshTexture.Sample(MeshTextureSampler, float2(v.tex.x + tmp.r / 100, v.tex.y + tmp.g / 100));
+	return texture.sample(linear_sampler, v.tex);
 }
