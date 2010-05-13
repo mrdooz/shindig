@@ -1,4 +1,4 @@
-Texture2D texture;
+Texture2D my_texture;
 
 SamplerState linear_sampler
 {
@@ -39,5 +39,5 @@ float4 psMain2(float4 v : SV_POSITION) : SV_TARGET
 
 float4 psMain(vsOutput v) : SV_TARGET
 {
-	return texture.sample(linear_sampler, v.tex);
+	return my_texture.Sample(linear_sampler, v.tex);
 }

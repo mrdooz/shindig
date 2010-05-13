@@ -62,28 +62,29 @@ TestEffect::TestEffect()
 
 bool TestEffect::init()
 {
+  using namespace fastdelegate;
   System& sys = System::instance();
 	ResourceManager& r = ResourceManager::instance();
 
-  RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::states_loaded)),
+  RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), MakeDelegate(this, &TestEffect::states_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::post_vs_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "vsMain", MakeDelegate(this, &TestEffect::post_vs_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::post_ps_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain", MakeDelegate(this, &TestEffect::post_ps_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "vsMain", fastdelegate::MakeDelegate(this, &TestEffect::vs_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "vsMain", MakeDelegate(this, &TestEffect::vs_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "psMain", fastdelegate::MakeDelegate(this, &TestEffect::ps_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "psMain", MakeDelegate(this, &TestEffect::ps_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_scene(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::scene_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_scene(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox).c_str(), MakeDelegate(this, &TestEffect::scene_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	RETURN_ON_FAIL_BOOL(r.load_materials(sys.convert_path("data/scenes/diskette.json", System::kDirDropBox).c_str(), fastdelegate::MakeDelegate(this, &TestEffect::materials_loaded)),
+	RETURN_ON_FAIL_BOOL(r.load_materials(sys.convert_path("data/scenes/diskette.json", System::kDirDropBox).c_str(), MakeDelegate(this, &TestEffect::materials_loaded)),
 		ErrorPredicate<bool>, LOG_ERROR_LN);
 
 	D3D11_RASTERIZER_DESC raster_desc;
@@ -209,10 +210,8 @@ bool TestEffect::render()
 	ID3D11DeviceContext* context = Graphics::instance().context();
 
 	_rt.set();
-	if (_boom)
-		_rt.clear(D3DXCOLOR(0, 0, 0, 1));
-	else
-		_rt.clear(D3DXCOLOR(1, 1, 1, 1));
+  _rt.clear(D3DXCOLOR(_boom ? 1 : 0, _boom ? 1 : 0, _boom ? 1 : 0, 1));
+
 	_boom = false;
 
 	render_meshes();

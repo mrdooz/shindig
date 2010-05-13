@@ -9,136 +9,6 @@
 
 using namespace boost::signals2;
 
-uint32_t timestamps[] = {
-	17540,
-	18508,
-	18609,
-	19216,
-	19838,
-	19989,
-	20767,
-	21052,
-	21665,
-	22278,
-	22437,
-	22747,
-	23204,
-	23506,
-	24113,
-	24434,
-	24727,
-	24885,
-	25951,
-	26416,
-	26894,
-	27028,
-	28303,
-	28404,
-	29010,
-	29632,
-	29783,
-	30847,
-	31188,
-	31462,
-	31783,
-	32073,
-	32232,
-	32542,
-	32999,
-	33301,
-	33944,
-	34419,
-	34522,
-	34680,
-	35459,
-	35648,
-	36086,
-	36211,
-	36823,
-	38053,
-	38198,
-	38805,
-	39420,
-	39577,
-	40545,
-	41254,
-	41571,
-	41867,
-	42026,
-	42994,
-	43097,
-	43413,
-	43702,
-	44318,
-	44475,
-	44784,
-	45538,
-	46152,
-	46636,
-	46765,
-	46923,
-	47848,
-	48599,
-	49215,
-	49372,
-	51049,
-	51662,
-	51820,
-	52127,
-	52588,
-	52780,
-	53496,
-	54112,
-	54269,
-	54579,
-	55208,
-	55332,
-	56718,
-	62675,
-	63291,
-	65126,
-	66352,
-	67583,
-	68187,
-	70023,
-	72477,
-	73083,
-	82781,
-	83493,
-	84587,
-	85330,
-	85798,
-	85933,
-	86405,
-	86552,
-	87017,
-	87169,
-	87775,
-	88259,
-	88390,
-	89472,
-	90100,
-	90225,
-	90781,
-	91903,
-	92536,
-	92677,
-	93457,
-	93767,
-	94588,
-	95734,
-	96347,
-	96647,
-	126109,
-	140226,
-	140410,
-	140559,
-	142772,
-	143106,
-	143418,
-};
-
-
 System* System::_instance = NULL;
 
 enum {
@@ -219,11 +89,15 @@ System::System()
 	, _channel(NULL)
 	, _sound(NULL)
 	, _time_idx(0)
+  , _spectrum_left(new float[1024])
+  , _spectrum_right(new float[1024])
 {
 }
 
 System::~System()
 {
+  SAFE_ADELETE(_spectrum_left);
+  SAFE_ADELETE(_spectrum_right);
 }
 
 System& System::instance()
@@ -251,6 +125,7 @@ bool System::init()
 	if (_fmod_system->createSound(convert_path("data/mp3/12 Session.mp3", System::kDirDropBox).c_str(), FMOD_HARDWARE, 0, &_sound) != FMOD_OK)
 		return false;
 
+  load_timestamps(convert_path("data/mp3/session.dat", System::kDirDropBox).c_str());
 
 	return true;
 }
@@ -289,18 +164,39 @@ bool System::tick()
 
 	if (_channel) {
 		if (_cb) {
-			uint32_t pos;
-			_channel->getPosition(&pos, FMOD_TIMEUNIT_MS);
-			if (pos > timestamps[_time_idx])
-				_cb(0);
+			uint32_t tmp;
+			_channel->getPosition(&tmp, FMOD_TIMEUNIT_MS);
+      const float pos = tmp / 1000.0f;
 
-			while (timestamps[_time_idx] < pos && _time_idx <= ARRAYSIZE(timestamps))
-				_time_idx++;
+      if (pos >= _timestamps[_time_idx].time)
+        _cb(0);
+
+      while (pos > _timestamps[_time_idx].time && _time_idx <= _timestamps.size())
+        _time_idx++;
 
 		}
 	}
 
 	return true;
+}
+
+
+void System::load_timestamps(const char *filename)
+{
+  _timestamps.clear();
+
+  HANDLE h = CreateFile(filename, GENERIC_READ, NULL, NULL, OPEN_EXISTING, 0, NULL);
+  if (h == INVALID_HANDLE_VALUE)
+    return;
+
+  int32_t count = 0;
+  DWORD bytes_read = 0;
+  ReadFile(h, (void*)&count, sizeof(count), &bytes_read, NULL);
+
+  _timestamps.resize(count);
+  ReadFile(h, (void*)&_timestamps[0], sizeof(TimeStamp) * count, &bytes_read, NULL);
+
+  CloseHandle(h);
 }
 
 void System::file_changed_internal(const std::string& filename)
@@ -380,6 +276,17 @@ std::string System::convert_path(const std::string& str, DirTag tag)
 
 void System::add_error_message(const char* fmt, ...)
 {
+  va_list arg;
+  va_start(arg, fmt);
+
+  const int len = _vscprintf(fmt, arg) + 1;
+
+  char* buf = (char*)_alloca(len);
+  vsprintf_s(buf, len, fmt, arg);
+  va_end(arg);
+  _error_msg = buf;
+
+  LOG_ERROR_LN(buf);
 }
 
 bool System::start_mp3()
