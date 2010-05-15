@@ -36,17 +36,25 @@ public:
 	bool load_vertex_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn);
 	bool load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn);
 
+  bool  load_shaders(const char *filename, const char *vs, const char *ps, const fnEffectLoaded& fn);
+
 	bool load_scene(const char* filename, const fnSceneLoaded& fn);
 	bool load_materials(const char* filename, const fnMaterialsLoaded& fn);
 
 private:
 	DISALLOW_COPY_AND_ASSIGN(ResourceManager);
 
+  enum ShaderType {
+    kVertexShader = 1 << 0,
+    kPixelShader = 1 << 1,
+  };
+
 	// The inner functions are called both from the "file changed" signal, and directly from the load_xxx methods
 	bool reload_effect_states(const char* filename);
-	void	reload_vs(const std::string& filename);
-	void	reload_ps(const std::string& filename);
-	bool reload_shader(const char* filename, const bool vertex_shader);
+	bool reload_vs(const std::string& filename);
+	bool reload_ps(const std::string& filename);
+  bool reload_vs_ps(const std::string& filename);
+	bool reload_shader(const char* filename, const int shaders);
 	bool reload_material(const char* filename);
 	bool reload_scene(const char* filename);
 
@@ -58,14 +66,17 @@ private:
 	// Structures to keep track of which user callbacks are associated with which files
 	struct ShaderCallbackData
 	{
-		ShaderCallbackData(const std::string& filename, const std::string& entry_point, const fnEffectLoaded& fn) : _filename(filename), _entry_point(entry_point), _effect_loaded(fn) {}
+    typedef const std::string& StringRef;
+		ShaderCallbackData(StringRef filename, StringRef vs_entry_point, StringRef ps_entry_point, const fnEffectLoaded& fn) 
+      : _filename(filename), _vs_entry_point(vs_entry_point), _ps_entry_point(ps_entry_point), _effect_loaded(fn) {}
 		std::string _filename;
-		std::string _entry_point;
+    std::string _vs_entry_point;
+    std::string _ps_entry_point;
 		fnEffectLoaded _effect_loaded;
 	};
 
 	typedef std::string Filename;
-	typedef std::map< std::pair<Filename, bool>, std::vector<ShaderCallbackData> > ShaderCallbacks;
+	typedef std::map< std::pair<Filename, int>, std::vector<ShaderCallbackData> > ShaderCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnStateLoaded> > StateCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnSceneLoaded> > SceneCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnMaterialsLoaded> > MaterialCallbacks;

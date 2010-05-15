@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "redux_loader.hpp"
 #include "scene.hpp"
-#include "graphics.hpp"
 #include "mesh.hpp"
 
 namespace json = json_spirit;

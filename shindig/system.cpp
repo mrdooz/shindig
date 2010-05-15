@@ -91,6 +91,7 @@ System::System()
 	, _time_idx(0)
   , _spectrum_left(new float[1024])
   , _spectrum_right(new float[1024])
+  , _spectrum_combined(new float[1024])
 {
 }
 
@@ -98,6 +99,7 @@ System::~System()
 {
   SAFE_ADELETE(_spectrum_left);
   SAFE_ADELETE(_spectrum_right);
+  SAFE_ADELETE(_spectrum_combined);
 }
 
 System& System::instance()
@@ -122,10 +124,8 @@ bool System::init()
 	if (_fmod_system->init(32, FMOD_INIT_NORMAL, 0) != FMOD_OK)
 		return false;
 
-	if (_fmod_system->createSound(convert_path("data/mp3/12 Session.mp3", System::kDirDropBox).c_str(), FMOD_HARDWARE, 0, &_sound) != FMOD_OK)
+	if (_fmod_system->createSound(convert_path("data/mp3/12 Session.mp3", System::kDirDropBox).c_str(), FMOD_SOFTWARE, 0, &_sound) != FMOD_OK)
 		return false;
-
-  load_timestamps(convert_path("data/mp3/session.dat", System::kDirDropBox).c_str());
 
 	return true;
 }
@@ -163,41 +163,66 @@ bool System::tick()
 
 
 	if (_channel) {
-		if (_cb) {
-			uint32_t tmp;
-			_channel->getPosition(&tmp, FMOD_TIMEUNIT_MS);
-      const float pos = tmp / 1000.0f;
-
-      if (pos >= _timestamps[_time_idx].time)
-        _cb(0);
-
-      while (pos > _timestamps[_time_idx].time && _time_idx <= _timestamps.size())
-        _time_idx++;
-
-		}
+    process_frequency_callbacks();
+    //process_timed_callbacks();
 	}
 
 	return true;
 }
 
-
-void System::load_timestamps(const char *filename)
+void System::process_frequency_callbacks()
 {
-  _timestamps.clear();
+  _fmod_system->getSpectrum(_spectrum_left, 1024, 0, FMOD_DSP_FFT_WINDOW_RECT);
+  _fmod_system->getSpectrum(_spectrum_right, 1024, 0, FMOD_DSP_FFT_WINDOW_RECT);
 
-  HANDLE h = CreateFile(filename, GENERIC_READ, NULL, NULL, OPEN_EXISTING, 0, NULL);
-  if (h == INVALID_HANDLE_VALUE)
+  for (int i = 0; i < 1024; ++i)
+    _spectrum_combined[i] = 0.5f * (_spectrum_left[i] + _spectrum_right[i]);
+
+  for (int i = 0; i < (int32_t)_frequency_callbacks.size(); ++i)
+    _frequency_callbacks[i].ticked = false;
+
+  const float inc = 44100.0f / 2 / (1024 - 1);
+  float lower_hz = 0;
+  float upper_hz = inc;
+  for (int i = 0; i < 1024; ++i) {
+
+    for (int j = 0; j < (int)_frequency_callbacks.size(); ++j) {
+      auto &cur = _frequency_callbacks[j];
+      if (cur.ticked)
+        continue;
+      const bool freq_ok = (cur.min_freq >= lower_hz && cur.min_freq < upper_hz) || 
+        (cur.max_freq >= lower_hz && cur.max_freq < upper_hz) ||
+        (cur.min_freq <= lower_hz && cur.max_freq > upper_hz);
+      const bool amp_ok = _spectrum_combined[i] >= cur.amp;
+      if (freq_ok && amp_ok) {
+        cur.cb(0.5f * (lower_hz + upper_hz), _spectrum_combined[i]);
+        cur.ticked = true;
+      }
+    }
+    lower_hz += inc;
+    upper_hz += inc;
+  }
+}
+
+void System::process_timed_callbacks()
+{
+  if (_callback_times.empty() || _frequency_callbacks.empty())
     return;
 
-  int32_t count = 0;
-  DWORD bytes_read = 0;
-  ReadFile(h, (void*)&count, sizeof(count), &bytes_read, NULL);
+  uint32_t cur_time = 0;
+  _channel->getPosition(&cur_time, FMOD_TIMEUNIT_MS);
 
-  _timestamps.resize(count);
-  ReadFile(h, (void*)&_timestamps[0], sizeof(TimeStamp) * count, &bytes_read, NULL);
+  if (cur_time >= _callback_times[_time_idx])
+    _frequency_callbacks[0].cb(0,0);
 
-  CloseHandle(h);
+  while (cur_time >= _callback_times[_time_idx] && _time_idx < _callback_times.size())
+    _time_idx++;
+
+  if (_time_idx == _callback_times.size())
+    return;
+
 }
+
 
 void System::file_changed_internal(const std::string& filename)
 {
@@ -207,19 +232,42 @@ void System::file_changed_internal(const std::string& filename)
 
 }
 
-boost::signals2::connection System::add_file_changed(const fnFileChanged& slot)
+// Loads callbacks from a file containing a list of floats (exported from Sonic Visualiser)
+void System::load_callback_times(const char *filename)
 {
-	return _global_signals.connect(slot);
+  FILE * f = fopen(filename, "rt");
+  if (!f)
+    return;
+
+  float t;
+  while (fscanf(f, "%f", &t) == 1)
+    _callback_times.push_back((int32_t)(1000 * t));
+
+  fclose(f);
 }
 
-boost::signals2::connection System::add_file_changed(const std::string& filename, const fnFileChanged& slot)
+bool System::add_file_changed(const fnFileChanged& slot)
+{
+	auto s = _global_signals.connect(slot);
+  return true;
+}
+
+bool System::add_file_changed(const std::string& filename, const fnFileChanged& slot, const bool initial_load)
 {
 	auto f = Path::make_canonical(Path::get_full_path_name(filename));
-	SpecificSignals::iterator it = _specific_signals.find(f);
+	auto it = _specific_signals.find(f);
 	if (it == _specific_signals.end()) {
 		_specific_signals.insert(std::make_pair(f, new sigFileChanged()));
 	}
-	return _specific_signals[f]->connect(slot);
+
+  // if initial_load is set, we fake a "file changed" event, and call the callback at once
+  bool res = true;
+  if (initial_load) {
+    res = slot(f);
+  }
+
+	auto s = _specific_signals[f]->connect(slot);
+  return res;
 }
 
 void System::enum_known_folders()
@@ -327,7 +375,8 @@ void System::set_paused(const bool state)
 	_channel->setPaused(state);
 }
 
-void System::add_timed_callback(const int idx, TimedCallback& fn)
+void System::add_callback(const Freq& f)
 {
-	_cb = fn;
+  _frequency_callbacks.push_back(f);
 }
+

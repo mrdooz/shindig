@@ -2,17 +2,17 @@
 #define _TEST_EFFECT_HPP_
 
 #include "resource_manager.hpp"
-#include "effect_wrapper.hpp"
 #include "scene.hpp"
 #include "render_target.hpp"
+#include "effect_base.hpp"
 
-struct TestEffect
+struct TestEffect : public EffectBase
 {
   TestEffect();
 
-	bool init();
-	bool close();
-	bool render();
+	virtual bool init();
+	virtual bool close();
+	virtual bool render();
 
 	void states_loaded(const ResourceManager::EffectStates& states);
 	void post_vs_loaded(EffectWrapper* effect);
@@ -24,9 +24,10 @@ struct TestEffect
 
 	void	render_meshes();
 
-	void	callback(const int idx);
+	void	callback(float freq, float amp);
 
 	bool _boom;
+  int _boom_count;
 
 	RefPtr<Scene> _scene;
 	MaterialFile _materials;

@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "app.hpp"
 #include "system.hpp"
-#include "graphics.hpp"
 #include "test_effect.hpp"
+#include "test_effect2.hpp"
 
 App* App::_instance = NULL;
 
@@ -35,9 +35,9 @@ bool App::init(HINSTANCE hinstance)
   _height = 600;
   create_window();
   RETURN_ON_FAIL_BOOL(System::instance().init(), ErrorPredicate<bool>, LOG_ERROR_LN);
-  RETURN_ON_FAIL_BOOL(Graphics::instance().init(_hwnd, _width, _height), ErrorPredicate<bool>, LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(Graphics::instance().init_directx(_hwnd, _width, _height), ErrorPredicate<bool>, LOG_ERROR_LN);
 
-	_test_effect = new TestEffect();
+	_test_effect = new TestEffect2();
 	_test_effect->init();
 
 	_key_signal.connect(fastdelegate::MakeDelegate(this, &App::key_slot));
@@ -48,8 +48,10 @@ bool App::init(HINSTANCE hinstance)
 
 bool App::close()
 {
-	_test_effect->close();
-	delete _test_effect;
+  if (_test_effect) {
+    _test_effect->close();
+    delete _test_effect;
+  }
 
   RETURN_ON_FAIL_BOOL(Graphics::instance().close(), ErrorPredicate<bool>, LOG_ERROR_LN);
   RETURN_ON_FAIL_BOOL(System::instance().close(), ErrorPredicate<bool>, LOG_ERROR_LN);

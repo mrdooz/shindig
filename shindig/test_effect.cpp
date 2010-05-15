@@ -4,52 +4,37 @@
 #include "system.hpp"
 #include "scene.hpp"
 #include "mesh.hpp"
-#include "graphics.hpp"
 
-void depth_stencil_default(D3D11_DEPTH_STENCIL_DESC* desc)
+namespace
 {
-	desc->DepthEnable = TRUE;
-	desc->DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	desc->DepthFunc = D3D11_COMPARISON_LESS;
-	desc->StencilEnable = FALSE;
-	desc->StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
-	desc->StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
-	const D3D11_DEPTH_STENCILOP_DESC defaultStencilOp =
-	{ D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_COMPARISON_ALWAYS };
-	desc->FrontFace = defaultStencilOp;
-	desc->BackFace = defaultStencilOp;
-}
-/*
-void blend_default(D3D11_BLEND_DESC* desc)
-{
-	desc->AlphaToCoverageEnable = FALSE;
-	desc->IndependentBlendEnable = FALSE;
-	const D3D11_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlendDesc =
-	{
-		FALSE,
-		D3D11_BLEND_ONE, D3D11_BLEND_ZERO, D3D11_BLEND_OP_ADD,
-		D3D11_BLEND_ONE, D3D11_BLEND_ZERO, D3D11_BLEND_OP_ADD,
-		D3D11_COLOR_WRITE_ENABLE_ALL,
-	};
-	for (UINT i = 0; i < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
-		desc->RenderTarget[ i ] = defaultRenderTargetBlendDesc;
+  void depth_stencil_default(D3D11_DEPTH_STENCIL_DESC* desc)
+  {
+    desc->DepthEnable = TRUE;
+    desc->DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    desc->DepthFunc = D3D11_COMPARISON_LESS;
+    desc->StencilEnable = FALSE;
+    desc->StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+    desc->StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+    const D3D11_DEPTH_STENCILOP_DESC defaultStencilOp =
+    { D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_COMPARISON_ALWAYS };
+    desc->FrontFace = defaultStencilOp;
+    desc->BackFace = defaultStencilOp;
+  }
 
+  void rasterizer_default(D3D11_RASTERIZER_DESC* desc)
+  {
+    desc->FillMode = D3D11_FILL_SOLID;
+    desc->CullMode = D3D11_CULL_BACK;
+    desc->FrontCounterClockwise = FALSE;
+    desc->DepthBias = D3D11_DEFAULT_DEPTH_BIAS;
+    desc->DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
+    desc->SlopeScaledDepthBias = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+    desc->DepthClipEnable = TRUE;
+    desc->ScissorEnable = FALSE;
+    desc->MultisampleEnable = FALSE;
+    desc->AntialiasedLineEnable = FALSE;
+  }
 }
-*/
-void rasterizer_default(D3D11_RASTERIZER_DESC* desc)
-{
-	desc->FillMode = D3D11_FILL_SOLID;
-	desc->CullMode = D3D11_CULL_BACK;
-	desc->FrontCounterClockwise = FALSE;
-	desc->DepthBias = D3D11_DEFAULT_DEPTH_BIAS;
-	desc->DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
-	desc->SlopeScaledDepthBias = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
-	desc->DepthClipEnable = TRUE;
-	desc->ScissorEnable = FALSE;
-	desc->MultisampleEnable = FALSE;
-	desc->AntialiasedLineEnable = FALSE;
-}
-
 
 TestEffect::TestEffect()
   : _vs_effect(NULL)
@@ -57,6 +42,7 @@ TestEffect::TestEffect()
 	, _vs_fs(NULL)
 	, _ps_fs(NULL)
 	, _boom(false)
+  , _boom_count(0)
 {
 }
 
@@ -129,15 +115,17 @@ bool TestEffect::init()
 	};
 	_full_screen_layout.Attach(_vs_fs->create_input_layout(fs_desc, ELEMS_IN_ARRAY(fs_desc)));
 
-	sys.add_timed_callback(0, fastdelegate::MakeDelegate(this, &TestEffect::callback));
-	sys.start_mp3();
+  //sys.load_callback_times(sys.convert_path("data/mp3/session.txt", System::kDirDropBox).c_str());
+  //sys.add_callback(System::Freq(100, 150, 0.075f, fastdelegate::MakeDelegate(this, &TestEffect::callback)));
+	//sys.start_mp3();
 
 	return true;
 }
 
-void TestEffect::callback(const int idx)
+void TestEffect::callback(float freq, float amp)
 {
 	_boom = true;
+  _boom_count += 10;
 }
 
 bool TestEffect::close()
@@ -176,7 +164,7 @@ void TestEffect::render_meshes()
 	D3DXMatrixPerspectiveFovLH(&proj, (float)D3DXToRadian(45), 1, 1, 1000.0f);
 	D3DXMatrixLookAtLH(&view, &D3DXVECTOR3(0,0,-10), &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
 
-	_vs_effect->set_variable("mWorldViewProj", view * proj);
+	_vs_effect->set_vs_variable("mWorldViewProj", view * proj);
 	_vs_effect->unmap_buffers();
 	_vs_effect->set_cbuffer();
 
@@ -186,7 +174,7 @@ void TestEffect::render_meshes()
 
 		const auto& material_connection = _materials.material_connections[m->_name];
 		const auto& material = _materials.materials[material_connection.material_name];
-		_ps_effect->set_variable("diffuse", material.diffuse);
+		_ps_effect->set_ps_variable("diffuse", material.diffuse);
 		_ps_effect->unmap_buffers();
 		_ps_effect->set_cbuffer();
 
@@ -210,9 +198,12 @@ bool TestEffect::render()
 	ID3D11DeviceContext* context = Graphics::instance().context();
 
 	_rt.set();
-  _rt.clear(D3DXCOLOR(_boom ? 1 : 0, _boom ? 1 : 0, _boom ? 1 : 0, 1));
+  float c = std::min<int>(_boom_count, 20) / 10.0f;
+  _rt.clear(D3DXCOLOR(c, c, c, 1));
+  if (_boom_count > 0)
+    _boom_count--;
 
-	_boom = false;
+	//_boom = false;
 
 	render_meshes();
 	Graphics::instance().set_default_render_target();

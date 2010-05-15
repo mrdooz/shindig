@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct TestEffect;
+class EffectBase;
 
 // holds a WM_KEY[DOWN|UP] message
 struct IoKey
@@ -57,7 +57,7 @@ private:
   static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	static App* _instance;
-	TestEffect* _test_effect;
+	EffectBase* _test_effect;
   HINSTANCE _hinstance;
   int32_t _width;
   int32_t _height;

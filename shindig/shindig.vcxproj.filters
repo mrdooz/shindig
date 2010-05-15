@@ -24,12 +24,6 @@
     <ClCompile Include="debug_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="effect_wrapper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="graphics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,6 +57,12 @@
     <ClCompile Include="render_target.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_effect2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp">
@@ -71,16 +71,10 @@
     <ClInclude Include="debug_renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="effect_wrapper.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="fast_delegate.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fast_delegate_bind.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="graphics.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="mesh.hpp">
@@ -117,6 +111,18 @@
       <Filter>parser</Filter>
     </ClInclude>
     <ClInclude Include="render_target.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="demo.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="effect_base.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_effect2.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dynamic_vb.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

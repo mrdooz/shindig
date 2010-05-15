@@ -47,6 +47,9 @@
 #include <celsus/path_utils.hpp>
 #include <celsus/string_utils.hpp>
 #include <celsus/error2.hpp>
+#include <celsus/graphics.hpp>
+#include <celsus/effect_wrapper.hpp>
+#include <celsus/section_reader.hpp>
 
 #include "fast_delegate.hpp"
 #include "fast_delegate_bind.hpp"

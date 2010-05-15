@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "render_target.hpp"
-#include "graphics.hpp"
 
 RenderTarget::RenderTarget()
 	: _width(-1)
