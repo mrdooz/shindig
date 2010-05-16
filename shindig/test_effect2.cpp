@@ -394,8 +394,6 @@ void TestEffect2::render_lines()
     }
   }
 
-  //p[0] = D3DXVECTOR3(0,0,0);
-  //p[0] = D3DXVECTOR3(0,0.5f,0);
   _line_vb.unmap();
 
   set_vb(context, _line_vb.vb(), sizeof(D3DXVECTOR3));
