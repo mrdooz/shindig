@@ -292,7 +292,7 @@ bool TestEffect2::init()
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/single_color.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
     MakeDelegate(this, &TestEffect2::line_loaded)), ErrorPredicate<bool>, LOG_ERROR_LN);
 
-  if (!_line_vb.create(1000))
+  if (!_line_vb.create(10000))
     return false;
 
   D3D11_INPUT_ELEMENT_DESC desc[] = { 
@@ -361,6 +361,90 @@ void TestEffect2::render_background()
 
 }
 
+struct Rect
+{
+	Rect(const D3DXVECTOR3& c, const D3DXVECTOR3& e, const D3DXVECTOR3& r) : center(c), extents(e), rotation(r) {}
+	D3DXVECTOR3 *add_to_list(D3DXVECTOR3 *ptr);
+	D3DXVECTOR3	center;
+	D3DXVECTOR3	extents;
+	D3DXVECTOR3	rotation;
+};
+
+D3DXVECTOR3 *Rect::add_to_list(D3DXVECTOR3 *ptr)
+{
+	D3DXMATRIX rot;
+	D3DXMATRIX trans;
+	D3DXMatrixTranslation(&trans, center.x, center.y, center.z);
+	D3DXMatrixRotationZ(&rot, rotation.z);
+
+	D3DXMATRIX mtx = rot * trans;
+
+	// 0-1
+	// 2-3
+
+	D3DXVECTOR3 v0(-extents.x, +extents.y, +extents.z);
+	D3DXVECTOR3 v1(+extents.x, +extents.y, +extents.z);
+	D3DXVECTOR3 v2(-extents.x, -extents.y, +extents.z);
+	D3DXVECTOR3 v3(+extents.x, -extents.y, +extents.z);
+
+	D3DXVec3TransformCoord(ptr++, &v0, &mtx);
+	D3DXVec3TransformCoord(ptr++, &v1, &mtx);
+
+	D3DXVec3TransformCoord(ptr++, &v1, &mtx);
+	D3DXVec3TransformCoord(ptr++, &v3, &mtx);
+
+	D3DXVec3TransformCoord(ptr++, &v3, &mtx);
+	D3DXVec3TransformCoord(ptr++, &v2, &mtx);
+
+	D3DXVec3TransformCoord(ptr++, &v2, &mtx);
+	D3DXVec3TransformCoord(ptr++, &v0, &mtx);
+
+	return ptr;
+}
+
+void make_pyth_tree_inner(int cur_level, int max_level, float angle, const Rect& parent, std::vector<Rect> *out)
+{
+	if (cur_level > max_level)
+		return;
+
+	// add 2 children to the current parent
+	//const float len = parent.extents.x; // D3DXVec3Length(&parent.extents);
+
+	const float scale = 0.5f * sqrtf(2) * parent.extents.y;
+	const float a = sqrtf(0.5f * scale * scale);
+
+	// new center is a along the current rotation from the edge
+	D3DXMATRIX t;
+	D3DXMATRIX r;
+	D3DXMatrixTranslation(&t, -parent.extents.x, 0, 0);
+	D3DXMatrixRotationZ(&r, parent.rotation.z);
+	D3DXMATRIX m = r * t;
+	D3DXVECTOR3 v = (parent.extents.y + a) * D3DXVECTOR3(0,1,0);
+	D3DXVec3TransformCoord(&v, &v, &m);
+
+	Rect left(
+		parent.center + parent.extents + a * D3DXVECTOR3(1,1,1),
+		scale * D3DXVECTOR3(1,1,1),
+		D3DXVECTOR3(0, 0, -cur_level * angle));
+/*
+	Rect right(
+		parent.center + len * D3DXVECTOR3(-1, +1, +1),
+		0.5f * parent.extents,
+		D3DXVECTOR3(0, 0, +cur_level * angle));
+		*/
+	out->push_back(left);
+	//out->push_back(right);
+
+	make_pyth_tree_inner(cur_level+1, max_level, parent.rotation.z - angle, left, out);
+	//make_pyth_tree_inner(cur_level+1, max_level, angle, right, out);
+}
+
+void make_pyth_tree(int levels, const Rect& start, std::vector<Rect> *out)
+{
+	out->push_back(start);
+	make_pyth_tree_inner(1, levels, D3DX_PI / 4, start, out);
+}
+
 void TestEffect2::render_lines()
 {
   ID3D11Device* device = Graphics::instance().device();
@@ -376,10 +460,18 @@ void TestEffect2::render_lines()
 
   _line_effect->set_shaders(context);
   context->IASetInputLayout(_line_layout);
-  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-  D3DXVECTOR3* p = _line_vb.map();
+  
+	D3DXVECTOR3* p = _line_vb.map();
 
+	std::vector<Rect> rects;
+	make_pyth_tree(6, Rect(D3DXVECTOR3(0,0,0), D3DXVECTOR3(0.25f, 0.25f, 0.25f), D3DXVECTOR3(0,0,0)), &rects);
+	int count = rects.size() * 4 * 2;
+	for (int i = 0; i < (int)rects.size(); ++i)
+		p = rects[i].add_to_list(p);
+
+#if 0
   const int count = _control_points.size();
   for (int i = 0; i < count; ++i) {
     D3DXVECTOR3 p0 = _control_points[std::max<int>(0, i-1)];
@@ -393,12 +485,12 @@ void TestEffect2::render_lines()
       *p++ = v;
     }
   }
-
+#endif
   _line_vb.unmap();
 
   set_vb(context, _line_vb.vb(), sizeof(D3DXVECTOR3));
   if (count > 0)
-    context->Draw(count * _num_splits, 0);
+    context->Draw(count, 0);
 }
 
 void TestEffect2::line_loaded(EffectWrapper *effect)
