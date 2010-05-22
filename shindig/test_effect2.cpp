@@ -453,7 +453,8 @@ static int hax = 0;
 void make_pyth_tree(int levels, const Rect& start, std::vector<Rect> *out)
 {
 	out->push_back(start);
-	make_pyth_tree_inner(1, levels, sinf(hax++ / 1000.0f) * D3DX_PI / 2, start, out);
+//	make_pyth_tree_inner(1, levels, sinf(hax++ / 1000.0f) * D3DX_PI / 2, start, out);
+	make_pyth_tree_inner(1, levels, D3DX_PI / 4, start, out);
 }
 
 void TestEffect2::render_lines()
@@ -477,7 +478,7 @@ void TestEffect2::render_lines()
 	D3DXVECTOR3* p = _line_vb.map();
 
 	std::vector<Rect> rects;
-	make_pyth_tree(7, Rect(D3DXVECTOR3(0,0,0), D3DXVECTOR3(0.125f, 0.125f, 0.125f), D3DXVECTOR3(0,0,0)), &rects);
+	make_pyth_tree(9, Rect(D3DXVECTOR3(0,0,0), D3DXVECTOR3(0.125f, 0.125f, 0.125f), D3DXVECTOR3(0,0,0)), &rects);
 	int count = rects.size() * 4 * 2;
 	for (int i = 0; i < (int)rects.size(); ++i)
 		p = rects[i].add_to_list(p);
