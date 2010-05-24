@@ -20,7 +20,7 @@ bool ReduxLoader::load()
 
 		uint8_t* data = 0;
 		uint32_t data_len = 0;
-		ENFORCE(load_file(data, data_len, rdx_filename.c_str()))(rdx_filename);
+		ENFORCE((data = load_file(rdx_filename.c_str(), &data_len)) != NULL)(rdx_filename);
 
 		ChunkIo reader;
 		reader.init_reader(data, data_len);

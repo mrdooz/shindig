@@ -454,7 +454,7 @@ void make_pyth_tree(int levels, const Rect& start, std::vector<Rect> *out)
 {
 	out->push_back(start);
 //	make_pyth_tree_inner(1, levels, sinf(hax++ / 1000.0f) * D3DX_PI / 2, start, out);
-	make_pyth_tree_inner(1, levels, D3DX_PI / 4, start, out);
+	make_pyth_tree_inner(1, levels, (float)D3DX_PI / 4.0f, start, out);
 }
 
 void TestEffect2::render_lines()

@@ -129,7 +129,7 @@ bool ResourceManager::reload_effect_states(const char* filename)
 {
 	// load the effect state file
 	uint32_t len = 0;
-	uint8_t* buf = load_file(filename, true, &len);
+	uint8_t* buf = load_file_with_zero_terminate(filename, &len);
 	if (buf == NULL) {
 		return false;
 	}

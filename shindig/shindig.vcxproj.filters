@@ -63,6 +63,9 @@
     <ClCompile Include="test_effect2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test_effect3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp">
@@ -123,6 +126,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dynamic_vb.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_effect3.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
