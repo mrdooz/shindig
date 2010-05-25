@@ -97,6 +97,8 @@
     <ClCompile Include="debug_renderer.cpp" />
     <ClCompile Include="demo.cpp" />
     <ClCompile Include="mesh.cpp" />
+    <ClCompile Include="mesh2.cpp" />
+    <ClCompile Include="obj_loader.cpp" />
     <ClCompile Include="redux_loader.cpp" />
     <ClCompile Include="render_target.cpp" />
     <ClCompile Include="resource_manager.cpp" />
@@ -127,7 +129,9 @@
     <ClInclude Include="fast_delegate.hpp" />
     <ClInclude Include="fast_delegate_bind.hpp" />
     <ClInclude Include="mesh.hpp" />
+    <ClInclude Include="mesh2.hpp" />
     <ClInclude Include="object.hpp" />
+    <ClInclude Include="obj_loader.hpp" />
     <ClInclude Include="redux_loader.hpp" />
     <ClInclude Include="render_target.hpp" />
     <ClInclude Include="resource_manager.hpp" />

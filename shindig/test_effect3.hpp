@@ -6,6 +6,8 @@
 #include "effect_base.hpp"
 #include "dynamic_vb.hpp"
 
+class Mesh2;
+
 class TestEffect3 : public EffectBase
 {
 public:
@@ -19,5 +21,6 @@ public:
 private:
 
   bool load_mesh(const std::string& filename);
+  Mesh2 *_mesh;
 };
 
