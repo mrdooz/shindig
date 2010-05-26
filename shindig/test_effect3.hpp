@@ -23,6 +23,9 @@ private:
   bool load_mesh(const std::string& filename);
   void effect_loaded(EffectWrapper *effect);
 
+  CComPtr<ID3D11DepthStencilState> _dss;
+  CComPtr<ID3D11BlendState> _blend_state;
+
   Mesh2 *_mesh;
   EffectWrapper *_effect;
 };
