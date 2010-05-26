@@ -2,10 +2,11 @@
 
 class Mesh2;
 
+// wavefront obj loader
 class ObjLoader
 {
 public:
-  bool load_from_file(const char *filename, Mesh2 *mesh);
+  bool load_from_file(const char *filename, Mesh2 **mesh);
 private:
 
   struct Face

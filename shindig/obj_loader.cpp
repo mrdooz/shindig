@@ -5,7 +5,7 @@
 #include "mesh2.hpp"
 
 
-bool ObjLoader::load_from_file(const char *filename, Mesh2 *mesh)
+bool ObjLoader::load_from_file(const char *filename, Mesh2 **mesh)
 {
   // note, we convert coordinates to LHS, and flip the winding
   // order of the faces while parsing
@@ -27,18 +27,23 @@ bool ObjLoader::load_from_file(const char *filename, Mesh2 *mesh)
     const D3DXVECTOR3& v0 = verts[i->a];
     const D3DXVECTOR3& v1 = verts[i->b];
     const D3DXVECTOR3& v2 = verts[i->c];
-    face_normals.push_back(vec3_cross(v1 - v0, v2 - v0));
+    face_normals.push_back(vec3_normalize(vec3_cross(v1 - v0, v2 - v0)));
   }
 
   // calc vertex normals
   vertex_normals.reserve(verts.size());
   for (int i = 0; i < (int)verts.size(); ++i) {
     D3DXVECTOR3 n(0,0,0);
-    auto face_for_vtx = verts_by_face[i];
-    for (auto j = face_for_vtx.begin(); j != face_for_vtx.end(); ++j) {
-      n += face_normals[*j];
-    }
-    vertex_normals.push_back(vec3_normalize(n/(float)face_for_vtx.size()));
+		auto it = verts_by_face.find(i);
+		if (it != verts_by_face.end()) {
+			for (auto j = it->second.begin(); j != it->second.end(); ++j) {
+				n += face_normals[*j];
+			}
+			vertex_normals.push_back(vec3_normalize(n/(float)it->second.size()));
+		} else {
+			// the vertex isn't used by any face, so we just add a dummy normal
+			vertex_normals.push_back(D3DXVECTOR3(0,0,0));
+		}
   }
 
   // create interleaved vertex data
@@ -48,20 +53,23 @@ bool ObjLoader::load_from_file(const char *filename, Mesh2 *mesh)
     interleaved[i*2+1] = vertex_normals[i];
   }
 
+	Mesh2 *m = *mesh = new Mesh2();
   auto d = Graphics::instance().device();
-  if (FAILED(create_static_vertex_buffer(d, verts.size(), 2 * sizeof(D3DXVECTOR3), (const uint8_t *)interleaved, &mesh->_vb)))
+  if (FAILED(create_static_vertex_buffer(d, verts.size(), 2 * sizeof(D3DXVECTOR3), (const uint8_t *)interleaved, &m->_vb)))
     return false;
 
   SAFE_ADELETE(interleaved);
 
-  if (FAILED(create_static_index_buffer(d, faces.size() * 3, sizeof(int), (const uint8_t *)&faces[0], &mesh->_ib)))
+  if (FAILED(create_static_index_buffer(d, faces.size() * 3, sizeof(int), (const uint8_t *)&faces[0], &m->_ib)))
     return false;
-  
-  mesh->_ib_format = DXGI_FORMAT_R32_UINT;
-  mesh->_stride = 2 * sizeof(D3DXVECTOR3);
-  mesh->_vertex_count = verts.size();
-  mesh->_vertex_size = 2 * sizeof(D3DXVECTOR3);
-  mesh->_index_count = faces.size() * 3;
+
+	m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0));
+	m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0));
+  m->_ib_format = DXGI_FORMAT_R32_UINT;
+  m->_stride = 2 * sizeof(D3DXVECTOR3);
+  m->_vertex_count = verts.size();
+  m->_vertex_size = 2 * sizeof(D3DXVECTOR3);
+  m->_index_count = faces.size() * 3;
 
   return true;
 }
