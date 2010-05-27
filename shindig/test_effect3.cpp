@@ -10,11 +10,13 @@
 #include <celsus/math_utils.hpp>
 #include "obj_loader.hpp"
 #include "mesh2.hpp"
+#include "app.hpp"
 
 
 TestEffect3::TestEffect3()
   : _mesh(NULL)  
   , _effect(NULL)
+	, _cam_radius(150)
 {
 }
 
@@ -32,6 +34,11 @@ bool TestEffect3::init()
   auto& r = ResourceManager::instance();
   auto& g = Graphics::instance();
   auto* d = Graphics::instance().device();
+
+	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move));
+	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up));
+	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down));
+	App::instance().add_mouse_wheel(MakeDelegate(this, &TestEffect3::on_mouse_wheel));
   
   float v = 0.5f;
   g.set_clear_color(D3DXCOLOR(v, v, v, 1));
@@ -43,7 +50,7 @@ bool TestEffect3::init()
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
     MakeDelegate(this, &TestEffect3::effect_loaded)), ErrorPredicate<bool>, LOG_ERROR_LN);
 
-  _dss.Attach(rt::D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(d));
+  _dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
 
   return true;
 }
@@ -62,7 +69,7 @@ bool TestEffect3::render()
   context->OMSetDepthStencilState(_dss, 0);
 
   D3DXMATRIX view, proj;
-  D3DXMatrixLookAtLH(&view, &D3DXVECTOR3(0,0, -450), &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
+  D3DXMatrixLookAtLH(&view, &D3DXVECTOR3(0,0, -_cam_radius), &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
   D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 1000);
   D3DXMATRIX mtx;
   D3DXMatrixTranspose(&mtx, &(view * proj));
@@ -89,4 +96,24 @@ void TestEffect3::effect_loaded(EffectWrapper *effect)
   SAFE_DELETE(_effect);
   _effect = effect;
 	_mesh->set_layout(_effect->create_input_layout(_mesh->input_desc()));
+}
+
+void TestEffect3::on_mouse_move(const MouseInfo& info)
+{
+
+}
+
+void TestEffect3::on_mouse_up(const MouseInfo& info)
+{
+
+}
+
+void TestEffect3::on_mouse_down(const MouseInfo& info)
+{
+
+}
+
+void TestEffect3::on_mouse_wheel(const MouseInfo& info)
+{
+	_cam_radius += info.wheel_delta;		
 }

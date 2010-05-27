@@ -15,6 +15,7 @@ namespace FMOD
 
 struct Demo;
 
+
 class System
 {
 public:
@@ -39,6 +40,8 @@ public:
 	bool init();
 	bool close();
 	bool tick();
+
+
 
 	//boost::signals2::connection add_file_changed(const fnFileChanged& slot);
 	//boost::signals2::connection add_file_changed(const std::string& filename, const fnFileChanged& slot, const bool initial_load = false);

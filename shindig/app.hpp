@@ -2,34 +2,30 @@
 #define _APP_HPP_
 
 #include <stdint.h>
+#include <MMSystem.h>
 
 class EffectBase;
 
-// holds a WM_KEY[DOWN|UP] message
-struct IoKey
+struct MouseInfo
 {
-	IoKey(const int a, const int b) : key_code(a), state(b) {}
-	int	key_code;
-	int	state;
+	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y, const int wheel_delta = 0) 
+		: left_down(l), middle_down(m), right_down(r), x(x), y(y), wheel_delta(wheel_delta), time(timeGetTime()) {}
+	bool	left_down;
+	bool	middle_down;
+	bool	right_down;
+
+	int		x;
+	int		y;
+	int		wheel_delta;
+	DWORD	time;
 };
 
-struct IoMouse
-{
-	enum Event 
-	{ 
-		kLeftButtonDown, 
-		kLeftButtonUp, 
-		kMiddleButtonDown,
-		kMiddleButtonUp,
-		kRightButtonDown,
-		kRightButtonUp
-	};
+typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseMove;
+typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseUp;
+typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseDown;
+typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseWheel;
 
-	IoMouse(const Event event, const int16_t x, const int16_t y) : event(event), x(x), y(y) {}
-	Event event;
-	int16_t	x;
-	int16_t	y;
-};
+namespace sig2 = boost::signals2;
 
 class App
 {
@@ -43,6 +39,12 @@ public:
 	void	tick();
 
   void run();
+
+	sig2::connection add_mouse_move(const fnMouseMove& slot);
+	sig2::connection add_mouse_up(const fnMouseUp& slot);
+	sig2::connection add_mouse_down(const fnMouseDown& slot);
+	sig2::connection add_mouse_wheel(const fnMouseWheel& slot);
+
 private:
 	DISALLOW_COPY_AND_ASSIGN(App);
 	App();
@@ -51,8 +53,6 @@ private:
   bool create_window();
   void set_client_size();
 
-	void	key_slot(const IoKey& k);
-	void	mouse_slot(const IoMouse& m);
 
   static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -64,11 +64,11 @@ private:
   HWND _hwnd;
 
 	CRITICAL_SECTION _cs_queue;
-	std::vector<IoKey> _key_buffer;
-	std::vector<IoMouse> _mouse_buffer;
 
-	boost::signals2::signal<void (const IoKey&)> _key_signal;
-	boost::signals2::signal<void (const IoMouse&)> _mouse_signal;
+	sig2::signal<void (const MouseInfo&)> _mouse_move_signal;
+	sig2::signal<void (const MouseInfo&)> _mouse_up_signal;
+	sig2::signal<void (const MouseInfo&)> _mouse_down_signal;
+	sig2::signal<void (const MouseInfo&)> _mouse_wheel_signal;
 };
 
 #endif

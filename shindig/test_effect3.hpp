@@ -5,6 +5,7 @@
 #include "render_target.hpp"
 #include "effect_base.hpp"
 #include "dynamic_vb.hpp"
+#include "app.hpp"
 
 class Mesh2;
 
@@ -20,8 +21,15 @@ public:
 
 private:
 
+	void on_mouse_move(const MouseInfo& info);
+	void on_mouse_up(const MouseInfo& info);
+	void on_mouse_down(const MouseInfo& info);
+	void on_mouse_wheel(const MouseInfo& info);
+
   bool load_mesh(const std::string& filename);
   void effect_loaded(EffectWrapper *effect);
+
+	float _cam_radius;
 
   CComPtr<ID3D11DepthStencilState> _dss;
   CComPtr<ID3D11BlendState> _blend_state;

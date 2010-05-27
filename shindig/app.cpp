@@ -41,9 +41,6 @@ bool App::init(HINSTANCE hinstance)
 	_test_effect = new TestEffect3();
 	_test_effect->init();
 
-	_key_signal.connect(fastdelegate::MakeDelegate(this, &App::key_slot));
-	_mouse_signal.connect(fastdelegate::MakeDelegate(this, &App::mouse_slot));
-
 	return true;
 }
 
@@ -106,34 +103,7 @@ bool App::create_window()
 
 void App::tick()
 {
-	// process the key and mouse buffers
-	{
-		SCOPED_CS(&_cs_queue);
-		for (auto i = _key_buffer.begin(), e = _key_buffer.end(); i != e; ++i) {
-
-		}
-		_key_buffer.clear();
-
-		for (auto i = _mouse_buffer.begin(), e = _mouse_buffer.end(); i != e; ++i) {
-
-		}
-		_mouse_buffer.clear();
-	}
-
 }
-
-void App::key_slot(const IoKey& k)
-{
-	SCOPED_CS(&_cs_queue);
-	_key_buffer.push_back(k);
-}
-
-void App::mouse_slot(const IoMouse& m)
-{
-	SCOPED_CS(&_cs_queue);
-	_mouse_buffer.push_back(m);
-}
-
 
 void App::run()
 {
@@ -162,6 +132,8 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
   PAINTSTRUCT ps;
   HDC hdc;
 
+	App& a = App::instance();
+
   switch( message ) 
   {
 
@@ -184,42 +156,27 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     break;
 
   case WM_LBUTTONDOWN:
-		App::instance()._mouse_signal(IoMouse(IoMouse::kLeftButtonDown, LOWORD(lParam), HIWORD(lParam)));
+	case WM_MBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+		a._mouse_down_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		break;
+
+	case WM_LBUTTONUP:
+	case WM_MBUTTONUP:
+	case WM_RBUTTONUP:
+		a._mouse_up_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		break;
+
+	case WM_MOUSEMOVE:
+		a._mouse_move_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
     break;
 
-  case WM_LBUTTONUP:
-		App::instance()._mouse_signal(IoMouse(IoMouse::kLeftButtonUp, LOWORD(lParam), HIWORD(lParam)));
-    break;
-
-  case WM_RBUTTONDOWN:
-		App::instance()._mouse_signal(IoMouse(IoMouse::kRightButtonDown, LOWORD(lParam), HIWORD(lParam)));
-    break;
-
-  case WM_RBUTTONUP:
-		App::instance()._mouse_signal(IoMouse(IoMouse::kRightButtonUp, LOWORD(lParam), HIWORD(lParam)));
-    break;
-
-  case WM_MOUSEMOVE:
-    {
-      /*
-      static bool first_movement = true;
-      if (!first_movement) {
-      g_derived_system->input_.last_x_pos = g_derived_system->input_.x_pos;
-      g_derived_system->input_.last_y_pos = g_derived_system->input_.y_pos;
-      }
-      g_derived_system->input_.x_pos = LOWORD(lParam);
-      g_derived_system->input_.y_pos = HIWORD(lParam);
-      if (first_movement) {
-      g_derived_system->input_.last_x_pos = g_derived_system->input_.x_pos;
-      g_derived_system->input_.last_y_pos = g_derived_system->input_.y_pos;
-      first_movement = false;
-      }
-      */
-    }
-    break;
+	case WM_MOUSEWHEEL:
+		a._mouse_wheel_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam), GET_WHEEL_DELTA_WPARAM(wParam)));
+		break;
 
   case WM_KEYDOWN:
-		App::instance()._key_signal(IoKey(wParam, lParam));
+		//App::instance()._key_signal(IoKey(wParam, lParam));
 		break;
 
   case WM_KEYUP:
@@ -229,7 +186,7 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
       PostQuitMessage( 0 );
       break;
 		default:
-			App::instance()._key_signal(IoKey(wParam, lParam));
+			//App::instance()._key_signal(IoKey(wParam, lParam));
 			break;
     }
     break;
@@ -239,4 +196,24 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
   }
   return 0;
 
+}
+
+sig2::connection App::add_mouse_move(const fnMouseMove& slot)
+{
+	return _mouse_move_signal.connect(slot);
+}
+
+sig2::connection App::add_mouse_up(const fnMouseUp& slot)
+{
+	return _mouse_up_signal.connect(slot);
+}
+
+sig2::connection App::add_mouse_down(const fnMouseDown& slot)
+{
+	return _mouse_down_signal.connect(slot);
+}
+
+sig2::connection App::add_mouse_wheel(const fnMouseWheel& slot)
+{
+	return _mouse_wheel_signal.connect(slot);
 }
