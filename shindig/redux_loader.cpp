@@ -2,6 +2,7 @@
 #include "redux_loader.hpp"
 #include "scene.hpp"
 #include "mesh.hpp"
+#include <celsus/file_utils.hpp>
 
 namespace json = json_spirit;
 

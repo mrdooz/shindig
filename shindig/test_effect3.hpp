@@ -21,6 +21,8 @@ public:
 
 private:
 
+  D3DXVECTOR3 calc_cam_pos() const;
+
 	void on_mouse_move(const MouseInfo& info);
 	void on_mouse_up(const MouseInfo& info);
 	void on_mouse_down(const MouseInfo& info);
@@ -29,7 +31,11 @@ private:
   bool load_mesh(const std::string& filename);
   void effect_loaded(EffectWrapper *effect);
 
+  float _alpha;
+  float _theta;
 	float _cam_radius;
+  bool _first_update;
+  MouseInfo _prev_mouse;
 
   CComPtr<ID3D11DepthStencilState> _dss;
   CComPtr<ID3D11BlendState> _blend_state;

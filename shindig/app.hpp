@@ -8,6 +8,7 @@ class EffectBase;
 
 struct MouseInfo
 {
+  MouseInfo() : left_down(false), middle_down(false), right_down(false), x(0), y(0), wheel_delta(0), time(timeGetTime()) {}
 	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y, const int wheel_delta = 0) 
 		: left_down(l), middle_down(m), right_down(r), x(x), y(y), wheel_delta(wheel_delta), time(timeGetTime()) {}
 	bool	left_down;

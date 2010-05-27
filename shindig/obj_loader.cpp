@@ -2,11 +2,52 @@
 #include "obj_loader.hpp"
 #include "celsus/text_scanner.hpp"
 #include "celsus/math_utils.hpp"
+#include "celsus/file_utils.hpp"
 #include "mesh2.hpp"
+
+std::function<int()> closure_maker(int a)
+{
+  return [=]() {return a;};
+}
+
+void test()
+{
+  auto aa = closure_maker(10);
+  auto bb = closure_maker(11);
+
+  int aa1 = aa();
+  int bb1 = bb();
+}
+
+bool ObjLoader::load_binary_file(const char *filename, Mesh2 **mesh)
+{
+
+
+  std::string binary_name(filename);
+  binary_name += ".bin";
+
+  if (file_exists(binary_name.c_str()))
+    return false;
+
+  FILE *f = fopen(binary_name.c_str(), "rb");
+  if (f == NULL) 
+    return false;
+
+  SCOPED_OBJ([=](){fclose(f);});
+
+  BinaryHeader header;
+  //if (fread(&header, sizeof(header), 1, f) != 1)
+    //re
+
+  return true;
+}
 
 
 bool ObjLoader::load_from_file(const char *filename, Mesh2 **mesh)
 {
+  if (load_binary_file(filename, mesh))
+    return true;
+
   // note, we convert coordinates to LHS, and flip the winding
   // order of the faces while parsing
   Verts verts;

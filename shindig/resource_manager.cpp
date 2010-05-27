@@ -4,6 +4,7 @@
 #include "redux_loader.hpp"
 #include "scene.hpp"
 #include "system.hpp"
+#include <celsus/file_utils.hpp>
 
 ResourceManager* ResourceManager::_instance = NULL;
 

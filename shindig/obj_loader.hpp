@@ -15,9 +15,17 @@ private:
     int a, b, c;
   };
 
+  struct BinaryHeader
+  {
+    int textfile_size;
+    FILETIME textfile_write_time;
+  };
+
   typedef std::vector<D3DXVECTOR3> Verts;
   typedef std::vector<Face> Faces;
   typedef std::map<int, std::vector<int> > VertsByFace;
+
+  bool load_binary_file(const char *filename, Mesh2 **mesh);
 
   bool parse_file(const char *filename, Verts *verts, Faces *faces, VertsByFace *verts_by_face);
 };
