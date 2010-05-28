@@ -66,9 +66,9 @@ bool TestEffect3::close()
 D3DXVECTOR3 TestEffect3::calc_cam_pos() const
 {
   return D3DXVECTOR3(
-    _cam_radius * sinf(_alpha),
-    _cam_radius * cosf(_alpha) * sinf(_theta),
-    _cam_radius * cosf(_alpha)
+		_cam_radius * sinf(_theta) * sinf(_alpha),
+		_cam_radius * cosf(_theta),
+		_cam_radius * sinf(_theta) * cosf(_alpha)
     );
 }
 
@@ -80,8 +80,9 @@ bool TestEffect3::render()
   float blend_factors[] = {1, 1, 1, 1};
   context->OMSetDepthStencilState(_dss, 0);
 
+
   D3DXMATRIX view, proj;
-  D3DXMatrixLookAtLH(&view, &calc_cam_pos(), &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
+  D3DXMatrixLookAtLH(&view, &(_mesh->_bounding_center + calc_cam_pos()), &_mesh->_bounding_center, &D3DXVECTOR3(0,1,0));
   D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 1000);
   D3DXMATRIX mtx;
   D3DXMatrixTranspose(&mtx, &(view * proj));
@@ -100,7 +101,15 @@ bool TestEffect3::load_mesh(const std::string& filename)
   SAFE_DELETE(_mesh);
 
   ObjLoader loader;
-  return loader.load_from_file(filename.c_str(), &_mesh);
+  bool res = loader.load_from_file(filename.c_str(), &_mesh);
+
+	float r = _mesh->_bounding_radius;
+	float fov = deg_to_rad(45) / (4/3.0f);
+	float x = atanf(fov);
+	float a = (r - r * x) / x;
+	_cam_radius = r + a;
+
+	return res;
 }
 
 void TestEffect3::effect_loaded(EffectWrapper *effect)
@@ -123,7 +132,7 @@ void TestEffect3::on_mouse_move(const MouseInfo& info)
     const float delta = (float)(info.time - _prev_mouse.time);
     if (delta > 0) {
       _alpha += (info.x - _prev_mouse.x) / delta;
-      _theta += (info.y - _prev_mouse.y) / delta;
+      _theta -= (info.y - _prev_mouse.y) / delta;
     }
   }
 

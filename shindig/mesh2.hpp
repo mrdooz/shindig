@@ -12,8 +12,11 @@ public:
 	const std::vector<D3D11_INPUT_ELEMENT_DESC>& input_desc() const { return _input_desc; }
 	void set_layout(ID3D11InputLayout *layout) { _layout = NULL; _layout.Attach(layout); }
 
-private:
+//private:
 	friend class ObjLoader;
+
+	float _bounding_radius;
+	D3DXVECTOR3 _bounding_center;
 
   CComPtr<ID3D11Buffer> _vb;
   CComPtr<ID3D11Buffer> _ib;
