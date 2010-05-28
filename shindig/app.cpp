@@ -34,7 +34,7 @@ bool App::init(HINSTANCE hinstance)
   _width = 800;
   _height = 600;
   create_window();
-  RETURN_ON_FAIL_BOOL(!System::instance().init(), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(System::instance().init(), LOG_ERROR_LN);
   RETURN_ON_FAIL_BOOL(Graphics::instance().init_directx(_hwnd, _width, _height), LOG_ERROR_LN);
 
 	_test_effect = new TestEffect2();
