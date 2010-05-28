@@ -276,7 +276,7 @@ bool TestEffect2::init()
 
   // init bg
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/gradient_quad.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
-    MakeDelegate(this, &TestEffect2::bg_loaded)), ErrorPredicate<bool>, LOG_ERROR_LN);
+    MakeDelegate(this, &TestEffect2::bg_loaded)), LOG_ERROR_LN);
 
 
   D3D11_INPUT_ELEMENT_DESC bg_desc[] = { 
@@ -290,7 +290,7 @@ bool TestEffect2::init()
 
   // init lines
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/single_color.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
-    MakeDelegate(this, &TestEffect2::line_loaded)), ErrorPredicate<bool>, LOG_ERROR_LN);
+    MakeDelegate(this, &TestEffect2::line_loaded)), LOG_ERROR_LN);
 
   if (!_line_vb.create(10000))
     return false;

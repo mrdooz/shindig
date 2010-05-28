@@ -48,10 +48,10 @@ bool TestEffect3::init()
 
   RETURN_ON_FAIL_BOOL(
     s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
-    ErrorPredicate<bool>, LOG_ERROR_LN);
+    LOG_ERROR_LN);
 
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
-    MakeDelegate(this, &TestEffect3::effect_loaded)), ErrorPredicate<bool>, LOG_ERROR_LN);
+    MakeDelegate(this, &TestEffect3::effect_loaded)), LOG_ERROR_LN);
 
   _dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
 

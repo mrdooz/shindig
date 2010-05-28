@@ -53,25 +53,25 @@ bool TestEffect::init()
 	ResourceManager& r = ResourceManager::instance();
 
   RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative).c_str(), MakeDelegate(this, &TestEffect::states_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
+		LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "vsMain", MakeDelegate(this, &TestEffect::post_vs_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
+		LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/post_process.fx", System::kDirRelative).c_str(), "psMain", MakeDelegate(this, &TestEffect::post_ps_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
+		LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_vertex_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "vsMain", MakeDelegate(this, &TestEffect::vs_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
+		LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_pixel_shader(sys.convert_path("effects/default_vs.fx", System::kDirRelative).c_str(), "psMain", MakeDelegate(this, &TestEffect::ps_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
+		LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_scene(sys.convert_path("data/scenes/diskette.rdx", System::kDirDropBox).c_str(), MakeDelegate(this, &TestEffect::scene_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
+		LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_materials(sys.convert_path("data/scenes/diskette.json", System::kDirDropBox).c_str(), MakeDelegate(this, &TestEffect::materials_loaded)),
-		ErrorPredicate<bool>, LOG_ERROR_LN);
+		LOG_ERROR_LN);
 
 	D3D11_RASTERIZER_DESC raster_desc;
 	rasterizer_default(&raster_desc);
@@ -87,7 +87,7 @@ bool TestEffect::init()
 	device->CreateDepthStencilState(&depth_desc, &_depth_state);
 	_layout.Attach(_vs_effect->create_input_layout(_scene->meshes()[0]->_input_element_descs));
 
-	RETURN_ON_FAIL_BOOL(_rt.create(512, 512), ErrorPredicate<bool>, LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(_rt.create(512, 512), LOG_ERROR_LN);
 
 	struct
 	{

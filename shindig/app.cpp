@@ -28,17 +28,16 @@ App& App::instance()
 	return *_instance;
 }
 
-
 bool App::init(HINSTANCE hinstance)
 {
 	_hinstance = hinstance;
   _width = 800;
   _height = 600;
   create_window();
-  RETURN_ON_FAIL_BOOL(System::instance().init(), ErrorPredicate<bool>, LOG_ERROR_LN);
-  RETURN_ON_FAIL_BOOL(Graphics::instance().init_directx(_hwnd, _width, _height), ErrorPredicate<bool>, LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(!System::instance().init(), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(Graphics::instance().init_directx(_hwnd, _width, _height), LOG_ERROR_LN);
 
-	_test_effect = new TestEffect3();
+	_test_effect = new TestEffect2();
 	_test_effect->init();
 
 	return true;
@@ -51,8 +50,8 @@ bool App::close()
     delete _test_effect;
   }
 
-  RETURN_ON_FAIL_BOOL(Graphics::instance().close(), ErrorPredicate<bool>, LOG_ERROR_LN);
-  RETURN_ON_FAIL_BOOL(System::instance().close(), ErrorPredicate<bool>, LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(Graphics::instance().close(), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(System::instance().close(), LOG_ERROR_LN);
 	return true;
 }
 
@@ -86,7 +85,7 @@ bool App::create_window()
   wcex.lpszClassName  = kClassName;
 
 
-  RETURN_ON_FAIL_BOOL(RegisterClassExA(&wcex), ErrorPredicate<int>, LOG_WARNING_LN);
+  RETURN_ON_FAIL_BOOL(RegisterClassExA(&wcex), LOG_WARNING_LN);
 
   const uint32_t window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
 

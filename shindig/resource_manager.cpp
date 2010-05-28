@@ -224,9 +224,9 @@ bool ResourceManager::reload_material(const char* filename)
 	const json_spirit::mValue* materials = NULL;
 	const json_spirit::mValue* material_connections = NULL;
 	const json_spirit::mValue* effect_connections = NULL;
-	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "materials", &materials), ErrorPredicate<bool>, LOG_ERROR_LN);
-	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "material_connections", &material_connections), ErrorPredicate<bool>, LOG_ERROR_LN);
-	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "effect_connections", &effect_connections), ErrorPredicate<bool>, LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "materials", &materials), LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "material_connections", &material_connections), LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(find_obj(global.get_obj(), "effect_connections", &effect_connections), LOG_ERROR_LN);
 
 	// parse the materials
 	for (auto i = materials->get_array().begin(), e = materials->get_array().end(); i != e; ++i) {
@@ -234,8 +234,8 @@ bool ResourceManager::reload_material(const char* filename)
 		auto single_material = i->get_obj();
 		const json_spirit::mValue* name = NULL;
 		const json_spirit::mValue* values = NULL;
-		RETURN_ON_FAIL_BOOL(find_obj(single_material, "name", &name), ErrorPredicate<bool>, LOG_ERROR_LN);
-		RETURN_ON_FAIL_BOOL(find_obj(single_material, "values", &values), ErrorPredicate<bool>, LOG_ERROR_LN);
+		RETURN_ON_FAIL_BOOL(find_obj(single_material, "name", &name), LOG_ERROR_LN);
+		RETURN_ON_FAIL_BOOL(find_obj(single_material, "values", &values), LOG_ERROR_LN);
 		MaterialFile::Material m;
 		m.name = name->get_str();
 		for (auto i = values->get_array().begin(), e = values->get_array().end(); i != e; ++i) {
@@ -243,9 +243,9 @@ bool ResourceManager::reload_material(const char* filename)
 			const json_spirit::mValue* name = NULL;
 			const json_spirit::mValue* type = NULL;
 			const json_spirit::mValue* value = NULL;
-			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "name", &name), ErrorPredicate<bool>, LOG_ERROR_LN);
-			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "type", &type), ErrorPredicate<bool>, LOG_ERROR_LN);
-			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "value", &value), ErrorPredicate<bool>, LOG_ERROR_LN);
+			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "name", &name), LOG_ERROR_LN);
+			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "type", &type), LOG_ERROR_LN);
+			RETURN_ON_FAIL_BOOL(find_obj(single_value.get_obj(), "value", &value), LOG_ERROR_LN);
 			if (*name == "transparency") {
 				m.transparency = (float)value->get_real();
 			} else if (*name == "ambient_color") {
@@ -264,8 +264,8 @@ bool ResourceManager::reload_material(const char* filename)
 		auto single_connection = i->get_obj();
 		const json_spirit::mValue* mesh = NULL;
 		const json_spirit::mValue* material = NULL;
-		RETURN_ON_FAIL_BOOL(find_obj(single_connection, "mesh", &mesh), ErrorPredicate<bool>, LOG_ERROR_LN);
-		RETURN_ON_FAIL_BOOL(find_obj(single_connection, "material", &material), ErrorPredicate<bool>, LOG_ERROR_LN);
+		RETURN_ON_FAIL_BOOL(find_obj(single_connection, "mesh", &mesh), LOG_ERROR_LN);
+		RETURN_ON_FAIL_BOOL(find_obj(single_connection, "material", &material), LOG_ERROR_LN);
 		material_file.material_connections.insert(std::make_pair(mesh->get_str(), MaterialFile::MaterialConnection(mesh->get_str(), material->get_str())));
 	}
 
@@ -280,7 +280,7 @@ bool ResourceManager::reload_scene(const char* filename)
 {
 	Scene* scene = new Scene();
 	ReduxLoader loader(filename, scene, NULL);
-	RETURN_ON_FAIL_BOOL(loader.load(), ErrorPredicate<bool>, LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL(loader.load(), LOG_ERROR_LN);
 
 	SceneCallbacks::iterator it = _scene_callbacks.find(filename);
 	if (it == _scene_callbacks.end()) {
