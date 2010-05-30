@@ -6,6 +6,8 @@
 #include "effect_base.hpp"
 #include "dynamic_vb.hpp"
 
+struct PosCol { D3DXVECTOR3 p; D3DXCOLOR c; };
+
 class TestEffect2 : public EffectBase
 {
 public:
@@ -18,6 +20,19 @@ public:
 
 private:
 
+  struct Rect
+  {
+    Rect() {}
+    Rect(const D3DXVECTOR3& c, const D3DXVECTOR3& e, const D3DXVECTOR3& r) : center(c), extents(e), rotation(r), x(1,0,0), y(0,1,0) {}
+    PosCol *add_to_list(PosCol *ptr);
+    D3DXVECTOR3	center;
+    D3DXVECTOR3	extents;
+    D3DXVECTOR3	rotation;
+
+    D3DXVECTOR3 x, y;   // frame
+  };
+
+
   void render_background();
   void render_lines();
 
@@ -27,6 +42,11 @@ private:
   bool init_bg(const std::string& filename);
   bool init_lines(const std::string& filename);
 
+  PosCol *draw_debug_lines(PosCol *ptr);
+
+  void make_pyth_tree(int levels, const Rect& start, std::vector<Rect> *out);
+  void make_pyth_tree_inner(int cur_level, int max_level, float angle, const Rect& parent, std::vector<Rect> *out);
+
   CComPtr<ID3D11DepthStencilState> _default_dss;
 
   EffectWrapper *_background;
@@ -35,10 +55,22 @@ private:
 
   EffectWrapper *_line_effect;
   CComPtr<ID3D11InputLayout> _line_layout;
-  DynamicVb<D3DXVECTOR3> _line_vb;
+
+
+  DynamicVb<PosCol> _line_vb;
   CComPtr<ID3D11DepthStencilState> _line_dss;
 
   int _num_splits;
   std::vector<D3DXVECTOR3> _control_points;
+
+  struct DebugLine
+  {
+    DebugLine() {}
+    DebugLine(const D3DXVECTOR3& s, const D3DXVECTOR3& e, const D3DXCOLOR& c) : s(s), e(e), c(c) {}
+    D3DXVECTOR3 s, e;
+    D3DXCOLOR c;
+  };
+
+  std::vector<DebugLine> _debug_lines;
 };
 
