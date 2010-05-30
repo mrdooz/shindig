@@ -15,6 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "json_spirit", "..\libs\json
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua", "..\libs\lua-5.1.4\lua\lua.vcxproj", "{003C0C29-0F6A-42BC-AF33-E671F50BE964}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celsus_tests", "..\celsus\celsus_tests\celsus_tests.vcxproj", "{B44A0974-DEE2-4F6E-B067-A6CD1CE99862}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3} = {B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -45,14 +50,18 @@ Global
 		{003C0C29-0F6A-42BC-AF33-E671F50BE964}.Debug|Win32.Build.0 = Debug|Win32
 		{003C0C29-0F6A-42BC-AF33-E671F50BE964}.Release|Win32.ActiveCfg = Release|Win32
 		{003C0C29-0F6A-42BC-AF33-E671F50BE964}.Release|Win32.Build.0 = Release|Win32
+		{B44A0974-DEE2-4F6E-B067-A6CD1CE99862}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B44A0974-DEE2-4F6E-B067-A6CD1CE99862}.Debug|Win32.Build.0 = Debug|Win32
+		{B44A0974-DEE2-4F6E-B067-A6CD1CE99862}.Release|Win32.ActiveCfg = Release|Win32
+		{B44A0974-DEE2-4F6E-B067-A6CD1CE99862}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1D3401ED-8DD2-409B-8280-3EFD3067E98B} = {B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}
+		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549} = {B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}
 		{BE262A86-CC26-4B25-A877-883ED2688CEC} = {B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}
 		{003C0C29-0F6A-42BC-AF33-E671F50BE964} = {B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}
-		{5E05CA90-5A2B-46A0-91B1-4E91ADF2F549} = {B32BE15C-41CD-4C3C-A6AA-75B58244D3ED}
 	EndGlobalSection
 EndGlobal

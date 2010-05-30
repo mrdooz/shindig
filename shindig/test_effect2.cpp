@@ -363,11 +363,14 @@ void TestEffect2::render_background()
 
 struct Rect
 {
-	Rect(const D3DXVECTOR3& c, const D3DXVECTOR3& e, const D3DXVECTOR3& r) : center(c), extents(e), rotation(r) {}
+	Rect() {}
+	Rect(const D3DXVECTOR3& c, const D3DXVECTOR3& e, const D3DXVECTOR3& r) : center(c), extents(e), rotation(r), x(1,0,0), y(0,1,0) {}
 	D3DXVECTOR3 *add_to_list(D3DXVECTOR3 *ptr);
 	D3DXVECTOR3	center;
 	D3DXVECTOR3	extents;
 	D3DXVECTOR3	rotation;
+
+	D3DXVECTOR3 x, y;
 };
 
 D3DXVECTOR3 *Rect::add_to_list(D3DXVECTOR3 *ptr)
@@ -407,16 +410,34 @@ void make_pyth_tree_inner(int cur_level, int max_level, float angle, const Rect&
 	if (cur_level > max_level)
 		return;
 
-  // calc child extents
-  const float b = 0.5f * sqrtf(2 * parent.extents.x * parent.extents.x);
+	// calc new basis vectors
+	D3DXMATRIX r;
+	Rect left;
+	D3DXMatrixRotationZ(&r, angle);
+	D3DXVec3TransformCoord(&left.x, &parent.x, &r);
+	D3DXVec3TransformCoord(&left.y, &parent.y, &r);
 
-  // calc child center
+	float b = parent.extents.x * cosf(angle);
+
+	left.center = b * left.x + b * left.y + D3DXVECTOR3(parent.center.x - parent.extents.x, parent.center.y + parent.extents.y, 0);
+	//left.center = b * left.x + b * left.y + (parent.center.x - parent.extents.x) * parent.x + (parent.center.y + parent.extents.y) * parent.y;
+	left.extents = b * D3DXVECTOR3(1,1,1);
+	left.rotation = D3DXVECTOR3(0, 0, parent.rotation.z + angle);
+	out->push_back(left);
+
+	make_pyth_tree_inner(cur_level+1, max_level, angle, left, out);
+
+
+/*
+  // calc child extents
+  const float b = parent.extents.x * cosf(angle); //0.5f * sqrtf(2 * parent.extents.x * parent.extents.x);
+
+	// 
   float r = sqrtf(2*b*b);
-  D3DXVECTOR3 v(0, r, 0);
+  D3DXVECTOR3 v(r, 0, 0);
   D3DXMATRIX rot, trans;
-  D3DXMatrixRotationZ(&rot, parent.rotation.z);
+  D3DXMatrixRotationZ(&rot, parent.rotation.z + angle);
   D3DXVECTOR3 ofs(-parent.extents.x, parent.extents.y, 0);
-  D3DXVec3TransformCoord(&ofs, &ofs, &rot);
   D3DXMatrixTranslation(&trans, parent.center.x+ofs.x, parent.center.y+ofs.y, parent.center.z);
   D3DXMATRIX mtx = rot * trans;
   D3DXVec3TransformCoord(&v, &v, &mtx);
@@ -442,10 +463,11 @@ void make_pyth_tree_inner(int cur_level, int max_level, float angle, const Rect&
 
 
 	out->push_back(left);
-	out->push_back(right);
+*/
+	//out->push_back(right);
 
-	make_pyth_tree_inner(cur_level+1, max_level, angle, left, out);
-	make_pyth_tree_inner(cur_level+1, max_level, angle, right, out);
+	//make_pyth_tree_inner(cur_level+1, max_level, angle, left, out);
+	//make_pyth_tree_inner(cur_level+1, max_level, angle, right, out);
 }
 
 static int hax = 0;
@@ -454,7 +476,8 @@ void make_pyth_tree(int levels, const Rect& start, std::vector<Rect> *out)
 {
 	out->push_back(start);
 //	make_pyth_tree_inner(1, levels, sinf(hax++ / 1000.0f) * D3DX_PI / 2, start, out);
-	make_pyth_tree_inner(1, levels, (float)D3DX_PI / 4.0f, start, out);
+	make_pyth_tree_inner(1, levels, (float)D3DX_PI / 6.0f, start, out);
+//	make_pyth_tree_inner(1, levels, 0, start, out);
 }
 
 void TestEffect2::render_lines()
