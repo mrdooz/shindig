@@ -9,6 +9,24 @@
 
 // Something like http://vimeo.com/1593564
 
+struct InputDesc
+{
+	InputDesc& add(LPCSTR name, UINT index, DXGI_FORMAT fmt, UINT slot, UINT byte_offset = D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION slot_class = D3D11_INPUT_PER_VERTEX_DATA, UINT step_rate = 0)
+	{
+		_desc.push_back(CD3D11_INPUT_ELEMENT_DESC(name, index, fmt, slot, byte_offset, slot_class, step_rate));
+		return *this;
+	}
+
+	bool create(CComPtr<ID3D11InputLayout>& layout, EffectWrapper *effect)
+	{
+		auto p = effect->create_input_layout(_desc);
+		if (!p) return false;
+		layout.Attach(p);
+		return true;
+	}
+
+	std::vector<D3D11_INPUT_ELEMENT_DESC> _desc;
+};
 
 namespace 
 {
@@ -278,12 +296,10 @@ bool TestEffect2::init()
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/gradient_quad.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
     MakeDelegate(this, &TestEffect2::bg_loaded)), LOG_ERROR_LN);
 
-
-  D3D11_INPUT_ELEMENT_DESC bg_desc[] = { 
-    CD3D11_INPUT_ELEMENT_DESC("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0),
-    CD3D11_INPUT_ELEMENT_DESC("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0),
-  };
-  _bg_layout.Attach(_background->create_input_layout(bg_desc, ELEMS_IN_ARRAY(bg_desc)));
+	InputDesc().
+		add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+		add("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0).
+		create(_bg_layout, _background);
 
   s.add_file_changed(s.convert_path("data/settings/testeffect2.txt", System::kDirRelative), MakeDelegate(this, &TestEffect2::init_bg), true);
   s.add_file_changed(s.convert_path("data/settings/testeffect2.txt", System::kDirRelative), MakeDelegate(this, &TestEffect2::init_lines), true);
@@ -295,11 +311,13 @@ bool TestEffect2::init()
   if (!_line_vb.create(10000))
     return false;
 
-  D3D11_INPUT_ELEMENT_DESC desc[] = { 
-    CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0),
-    CD3D11_INPUT_ELEMENT_DESC("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0),
-  };
-  _line_layout.Attach(_line_effect->create_input_layout(desc, ELEMS_IN_ARRAY(desc)));
+	InputDesc().
+		add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+		add("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0).
+		create(_line_layout, _line_effect);
+
+	RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/particle.fx", System::kDirRelative).c_str(), "vsMain", "gsMain", "psMain", 
+		MakeDelegate(this, &TestEffect2::line_loaded)), LOG_ERROR_LN);
 
 
   return true;
@@ -430,7 +448,7 @@ void TestEffect2::make_pyth_tree_inner(int cur_level, int max_level, float angle
 
   {
     const float old_angle = angle;
-    angle = -(D3DX_PI/2 - angle);
+    angle = -((float)D3DX_PI/2 - angle);
     D3DXMATRIX r;
     Rect left;
     D3DXMatrixRotationZ(&r, angle);
@@ -462,7 +480,7 @@ static int hax = 0;
 void TestEffect2::make_pyth_tree(int levels, const Rect& start, std::vector<Rect> *out)
 {
 	out->push_back(start);
-	make_pyth_tree_inner(1, levels, sinf(hax++ / 1000.0f) * D3DX_PI / 2, start, out);
+	make_pyth_tree_inner(1, levels, sinf(hax++ / 1000.0f) * (float)D3DX_PI / 2, start, out);
 	//make_pyth_tree_inner(1, levels, 0.5, start, out);
 //	make_pyth_tree_inner(1, levels, 0, start, out);
 }
@@ -491,7 +509,6 @@ void TestEffect2::render_lines()
   D3DXMATRIX mtx;
   D3DXMatrixIdentity(&mtx);
   _line_effect->set_vs_variable("mtx", mtx);
-  _line_effect->set_ps_variable("color", D3DXCOLOR(0,0,0,0));
   _line_effect->set_cbuffer();
 
   _line_effect->set_shaders(context);
@@ -557,4 +574,11 @@ bool TestEffect2::init_lines(const std::string& filename)
     _control_points.push_back(tmp);
 
   return true;
+}
+
+void TestEffect2::particle_loaded(EffectWrapper *effect)
+{
+	delete exch(_particle_effect, effect);
+
+	InputDesc().add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).create(_particle_layout, _particle_effect);
 }

@@ -37,8 +37,9 @@ private:
   void render_lines();
 
   void line_loaded(EffectWrapper *effect);
+	void bg_loaded(EffectWrapper *effect);
+	void particle_loaded(EffectWrapper *effect);
 
-  void bg_loaded(EffectWrapper *effect);
   bool init_bg(const std::string& filename);
   bool init_lines(const std::string& filename);
 
@@ -55,10 +56,13 @@ private:
 
   EffectWrapper *_line_effect;
   CComPtr<ID3D11InputLayout> _line_layout;
+	DynamicVb<PosCol> _line_vb;
+	CComPtr<ID3D11DepthStencilState> _line_dss;
 
+	EffectWrapper *_particle_effect;
+	CComPtr<ID3D11InputLayout> _particle_layout;
+	CComPtr<ID3D11Buffer> _particle_vb;
 
-  DynamicVb<PosCol> _line_vb;
-  CComPtr<ID3D11DepthStencilState> _line_dss;
 
   int _num_splits;
   std::vector<D3DXVECTOR3> _control_points;

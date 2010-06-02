@@ -28,7 +28,7 @@ private:
 	void on_mouse_down(const MouseInfo& info);
 	void on_mouse_wheel(const MouseInfo& info);
 
-  bool load_mesh(const std::string& filename);
+  bool load_mesh(const string2& filename);
   void effect_loaded(EffectWrapper *effect);
 
   float _alpha;

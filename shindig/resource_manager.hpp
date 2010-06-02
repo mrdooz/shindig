@@ -15,8 +15,8 @@ class ResourceManager
 public:
 	static ResourceManager& instance();
 
-	typedef stdext::hash_map< std::string, CComPtr<ID3D11BlendState> > BlendStates;
-	typedef stdext::hash_map< std::string, CComPtr<ID3D11SamplerState> > SamplerStates;
+	typedef stdext::hash_map< string2, CComPtr<ID3D11BlendState> > BlendStates;
+	typedef stdext::hash_map< string2, CComPtr<ID3D11SamplerState> > SamplerStates;
 
 	struct EffectStates
 	{
@@ -36,7 +36,8 @@ public:
 	bool load_vertex_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn);
 	bool load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn);
 
-  bool  load_shaders(const char *filename, const char *vs, const char *ps, const fnEffectLoaded& fn);
+	bool  load_shaders(const char *filename, const char *vs, const char *ps, const fnEffectLoaded& fn);
+	bool  load_shaders(const char *filename, const char *vs, const char *gs, const char *ps, const fnEffectLoaded& fn);
 
 	bool load_scene(const char* filename, const fnSceneLoaded& fn);
 	bool load_materials(const char* filename, const fnMaterialsLoaded& fn);
@@ -46,14 +47,16 @@ private:
 
   enum ShaderType {
     kVertexShader = 1 << 0,
-    kPixelShader = 1 << 1,
+		kGeometryShader = 1 << 1,
+    kPixelShader = 1 << 2,
   };
 
 	// The inner functions are called both from the "file changed" signal, and directly from the load_xxx methods
 	bool reload_effect_states(const char* filename);
-	bool reload_vs(const std::string& filename);
-	bool reload_ps(const std::string& filename);
-  bool reload_vs_ps(const std::string& filename);
+	bool reload_vs(const string2& filename);
+	bool reload_ps(const string2& filename);
+	bool reload_vs_ps(const string2& filename);
+	bool reload_vs_gs_ps(const string2& filename);
 	bool reload_shader(const char* filename, const int shaders);
 	bool reload_material(const char* filename);
 	bool reload_scene(const char* filename);
@@ -66,16 +69,17 @@ private:
 	// Structures to keep track of which user callbacks are associated with which files
 	struct ShaderCallbackData
 	{
-    typedef const std::string& StringRef;
-		ShaderCallbackData(StringRef filename, StringRef vs_entry_point, StringRef ps_entry_point, const fnEffectLoaded& fn) 
-      : _filename(filename), _vs_entry_point(vs_entry_point), _ps_entry_point(ps_entry_point), _effect_loaded(fn) {}
-		std::string _filename;
-    std::string _vs_entry_point;
-    std::string _ps_entry_point;
-		fnEffectLoaded _effect_loaded;
+    typedef const string2& StringRef;
+		ShaderCallbackData(StringRef filename, StringRef vs, StringRef gs, StringRef ps, const fnEffectLoaded& fn) 
+      : filename(filename), vs(vs), gs(gs), ps(ps), fn(fn) {}
+		string2 filename;
+    string2 vs;
+		string2 gs;
+    string2 ps;
+		fnEffectLoaded fn;
 	};
 
-	typedef std::string Filename;
+	typedef string2 Filename;
 	typedef std::map< std::pair<Filename, int>, std::vector<ShaderCallbackData> > ShaderCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnStateLoaded> > StateCallbacks;
 	typedef stdext::hash_map< Filename, std::vector<fnSceneLoaded> > SceneCallbacks;

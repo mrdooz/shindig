@@ -96,12 +96,12 @@ bool TestEffect3::render()
   return true;
 }
 
-bool TestEffect3::load_mesh(const std::string& filename)
+bool TestEffect3::load_mesh(const string2& filename)
 {
   SAFE_DELETE(_mesh);
 
   ObjLoader loader;
-  bool res = loader.load_from_file(filename.c_str(), &_mesh);
+  bool res = loader.load_from_file(filename, &_mesh);
 
 	float r = _mesh->_bounding_radius;
 	float fov = deg_to_rad(45) / (4/3.0f);

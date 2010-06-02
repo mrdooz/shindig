@@ -52,39 +52,50 @@ int make_hex(const char* ts, const char* te)
 bool ResourceManager::load_vertex_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
 {
   auto f = Path::make_canonical(Path::get_full_path_name(filename));
-	_shader_callbacks[std::make_pair(f, kVertexShader)].push_back(ShaderCallbackData(f, shader_name, std::string(), fn));
+	_shader_callbacks[std::make_pair(f, kVertexShader)].push_back(ShaderCallbackData(f, shader_name, "", "", fn));
 	return System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs), true);
 }
 
 bool ResourceManager::load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
 {
   auto f = Path::make_canonical(Path::get_full_path_name(filename));
-	_shader_callbacks[std::make_pair(f, kPixelShader)].push_back(ShaderCallbackData(f, std::string(), shader_name, fn));
+	_shader_callbacks[std::make_pair(f, kPixelShader)].push_back(ShaderCallbackData(f, "", "", shader_name, fn));
   return System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_ps), true);
 }
 
 bool ResourceManager::load_shaders(const char *filename, const char *vs, const char *ps, const fnEffectLoaded& fn)
 {
-  auto f = Path::make_canonical(Path::get_full_path_name(filename));
-  const int flags = kVertexShader | kPixelShader;
-  _shader_callbacks[std::make_pair(f, flags)].push_back(ShaderCallbackData(f, vs, ps, fn));
-  return System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs_ps), true);
+	return load_shaders(filename, vs, NULL, ps, fn);
+}
+
+bool ResourceManager::load_shaders(const char *filename, const char *vs, const char *gs, const char *ps, const fnEffectLoaded& fn)
+{
+	auto f = Path::make_canonical(Path::get_full_path_name(filename));
+	const int flags = !!vs * kVertexShader | !!gs * kGeometryShader | !!ps * kPixelShader;
+	_shader_callbacks[std::make_pair(f, flags)].push_back(ShaderCallbackData(f, vs, gs, ps, fn));
+	return System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs_ps), true);
+
 }
 
 // these should probably replaced by binding the shader-argument to the parameter of reload-shader
-bool ResourceManager::reload_vs(const std::string& filename)
+bool ResourceManager::reload_vs(const string2& filename)
 {
-	return reload_shader(filename.c_str(), kVertexShader);
+	return reload_shader(filename, kVertexShader);
 }
 
-bool ResourceManager::reload_ps(const std::string& filename)
+bool ResourceManager::reload_ps(const string2& filename)
 {
-	return reload_shader(filename.c_str(), kPixelShader);
+	return reload_shader(filename, kPixelShader);
 }
 
-bool ResourceManager::reload_vs_ps(const std::string& filename)
+bool ResourceManager::reload_vs_ps(const string2& filename)
 {
-  return reload_shader(filename.c_str(), kVertexShader | kPixelShader);
+  return reload_shader(filename, kVertexShader | kPixelShader);
+}
+
+bool ResourceManager::reload_vs_gs_ps(const string2& filename)
+{
+	return reload_shader(filename, kVertexShader | kGeometryShader | kPixelShader);
 }
 
 bool ResourceManager::reload_shader(const char* filename, const int shaders)
@@ -98,23 +109,14 @@ bool ResourceManager::reload_shader(const char* filename, const int shaders)
 
 	const std::vector<ShaderCallbackData>& n = it->second;
 	for (auto i = n.begin(), e = n.end(); i != e; ++i) {
-		const std::string& filename = i->_filename;
-    const std::string& vs = i->_vs_entry_point;
-    const std::string& ps = i->_ps_entry_point;
-		fnEffectLoaded fn = i->_effect_loaded;
-
     EffectWrapper* effect = new EffectWrapper();
-    if ((shaders & (kVertexShader | kPixelShader)) == (kVertexShader | kPixelShader)) {
-      if (!effect->load_shaders(filename.c_str(), vs.c_str(), ps.c_str()))
-        return false;
-    } else if (shaders & kVertexShader) {
-      if (!effect->load_vertex_shader(filename.c_str(), vs.c_str()))
-        return false;
-    } else if (shaders & kPixelShader) {
-      if (!effect->load_pixel_shader(filename.c_str(), ps.c_str()))
-        return false;
-    }
-		fn(effect);
+		if (!effect->load_shaders(i->filename, 
+			shaders & kVertexShader ? i->vs : NULL, 
+			shaders & kGeometryShader ? i->gs : NULL, 
+			shaders & kPixelShader ? i->ps : NULL))
+			return false;
+
+		i->fn(effect);
 	}
 	return true;
 }
@@ -190,7 +192,7 @@ bool ResourceManager::load_materials(const char* filename, const fnMaterialsLoad
 namespace json = json_spirit;
 
 template<class T, class U>
-bool find_obj(const T& obj, const std::string& name, U** out)
+bool find_obj(const T& obj, const string2& name, U** out)
 {
 	for (auto i = obj.begin(), e = obj.end(); i != e; ++i) {
 		if (i->first == name) {
