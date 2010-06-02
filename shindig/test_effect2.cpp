@@ -267,9 +267,10 @@ Tentacle tentacle;
 #endif
 
 TestEffect2::TestEffect2()
-  : _background(NULL)
-  , _line_effect(NULL)
+  : _background(nullptr)
+  , _line_effect(nullptr)
   , _num_splits(10)
+  , _particle_effect(nullptr)
 {
 }
 
@@ -277,6 +278,7 @@ TestEffect2::~TestEffect2()
 {
   SAFE_DELETE(_background);
   SAFE_DELETE(_line_effect);
+  SAFE_DELETE(_particle_effect);
 }
 
 bool TestEffect2::init()
@@ -293,7 +295,7 @@ bool TestEffect2::init()
   _line_dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(d));
 
   // init bg
-  RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/gradient_quad.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
+  RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/gradient_quad.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect2::bg_loaded)), LOG_ERROR_LN);
 
 	InputDesc().
@@ -305,7 +307,7 @@ bool TestEffect2::init()
   s.add_file_changed(s.convert_path("data/settings/testeffect2.txt", System::kDirRelative), MakeDelegate(this, &TestEffect2::init_lines), true);
 
   // init lines
-  RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/single_color.fx", System::kDirRelative).c_str(), "vsMain", "psMain", 
+  RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/single_color.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect2::line_loaded)), LOG_ERROR_LN);
 
   if (!_line_vb.create(10000))
@@ -316,18 +318,23 @@ bool TestEffect2::init()
 		add("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0).
 		create(_line_layout, _line_effect);
 
-	RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/particle.fx", System::kDirRelative).c_str(), "vsMain", "gsMain", "psMain", 
-		MakeDelegate(this, &TestEffect2::line_loaded)), LOG_ERROR_LN);
+  // init particles
+	RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/particle.fx", System::kDirRelative), "vsMain", "gsMain", "psMain", 
+		MakeDelegate(this, &TestEffect2::particle_loaded)), LOG_ERROR_LN);
+
+  RETURN_ON_FAIL_BOOL(_particle_vb.create(10000), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL(InputDesc().add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).create(_particle_layout, _particle_effect), LOG_ERROR_LN);
+
 
 
   return true;
 }
 
-bool TestEffect2::init_bg(const std::string& filename)
+bool TestEffect2::init_bg(const string2& filename)
 {
   Graphics& g = Graphics::instance();
   SectionReader r;
-  if (!r.load(filename.c_str(), "background"))
+  if (!r.load(filename, "background"))
     return false;
 
   // clip space triangle strip
@@ -547,6 +554,29 @@ void TestEffect2::render_lines()
   set_vb(context, _line_vb.vb(), sizeof(PosCol));
   if (count > 0)
     context->Draw(count, 0);
+
+  // draw the particles
+  const int particle_count = (int)rects.size();
+  if (particle_count > 0 ) {
+    D3DXVECTOR3 *particles = _particle_vb.map();
+    for (int i = 0; i < particle_count; ++i) {
+      *particles++ = rects[i].center;
+    }
+    _particle_vb.unmap();
+
+    D3DXMATRIX mtx;
+    D3DXMatrixIdentity(&mtx);
+    _particle_effect->set_vs_variable("mtx", mtx);
+    _particle_effect->set_cbuffer();
+
+    _particle_effect->set_shaders(context);
+    context->IASetInputLayout(_particle_layout);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+    set_vb(context, _particle_vb.vb(), sizeof(D3DXVECTOR3));
+    context->Draw(particle_count, 0);
+  }
+
 }
 
 void TestEffect2::line_loaded(EffectWrapper *effect)
@@ -559,10 +589,10 @@ void TestEffect2::bg_loaded(EffectWrapper *effect)
   delete exch(_background, effect);
 }
 
-bool TestEffect2::init_lines(const std::string& filename)
+bool TestEffect2::init_lines(const string2& filename)
 {
   SectionReader r;
-  if (!r.load(filename.c_str(), "control-points"))
+  if (!r.load(filename, "control-points"))
     return false;
 
   if (!r.read_int(&_num_splits))
@@ -579,6 +609,4 @@ bool TestEffect2::init_lines(const std::string& filename)
 void TestEffect2::particle_loaded(EffectWrapper *effect)
 {
 	delete exch(_particle_effect, effect);
-
-	InputDesc().add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).create(_particle_layout, _particle_effect);
 }

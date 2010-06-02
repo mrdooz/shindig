@@ -41,18 +41,13 @@ public:
 	bool close();
 	bool tick();
 
-
-
-	//boost::signals2::connection add_file_changed(const fnFileChanged& slot);
-	//boost::signals2::connection add_file_changed(const std::string& filename, const fnFileChanged& slot, const bool initial_load = false);
-
   bool add_file_changed(const fnFileChanged& slot);
-  bool add_file_changed(const std::string& filename, const fnFileChanged& slot, const bool initial_load = false);
+  bool add_file_changed(const string2& filename, const fnFileChanged& slot, const bool initial_load);
 
-  const std::string& dropbox() const { return _dropbox; }
-  const std::string& working_dir() const { return _working_dir; }
+  const string2& dropbox() const { return _dropbox; }
+  const string2& working_dir() const { return _working_dir; }
 
-  std::string convert_path(const std::string& str, DirTag tag);
+  string2 convert_path(const string2& str, DirTag tag);
 
   void add_error_message(const char* fmt, ...);
   void add_callback(const Freq& f);
@@ -103,9 +98,9 @@ private:
 	HANDLE _watcher_completion_port;
 	static System* _instance;
 
-  std::string _my_documents;
-  std::string _dropbox;
-  std::string _working_dir;
+  string2 _my_documents;
+  string2 _dropbox;
+  string2 _working_dir;
 
 	uint32_t _time_idx;
   std::vector<uint32_t>  _callback_times;

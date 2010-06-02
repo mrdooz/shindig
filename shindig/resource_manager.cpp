@@ -8,6 +8,8 @@
 
 ResourceManager* ResourceManager::_instance = NULL;
 
+using namespace fastdelegate;
+
 ResourceManager::ResourceManager()
 {
 }
@@ -49,53 +51,29 @@ int make_hex(const char* ts, const char* te)
 	return value;
 }
 
-bool ResourceManager::load_vertex_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
+// This can be removed once I stop being stupid and fix a proper bind
+struct Trampoline
 {
-  auto f = Path::make_canonical(Path::get_full_path_name(filename));
-	_shader_callbacks[std::make_pair(f, kVertexShader)].push_back(ShaderCallbackData(f, shader_name, "", "", fn));
-	return System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs), true);
-}
+  typedef std::function<bool(const string2&, int)> Fn;
+  Trampoline(const Fn& fn, const int flags) : _fn(fn), _flags(flags) {}
 
-bool ResourceManager::load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn)
-{
-  auto f = Path::make_canonical(Path::get_full_path_name(filename));
-	_shader_callbacks[std::make_pair(f, kPixelShader)].push_back(ShaderCallbackData(f, "", "", shader_name, fn));
-  return System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_ps), true);
-}
-
-bool ResourceManager::load_shaders(const char *filename, const char *vs, const char *ps, const fnEffectLoaded& fn)
-{
-	return load_shaders(filename, vs, NULL, ps, fn);
-}
+  bool run(const string2& str)
+  {
+    bool res = _fn(str, _flags);
+    return res;
+  }
+  Fn _fn;
+  int _flags;
+};
 
 bool ResourceManager::load_shaders(const char *filename, const char *vs, const char *gs, const char *ps, const fnEffectLoaded& fn)
 {
 	auto f = Path::make_canonical(Path::get_full_path_name(filename));
 	const int flags = !!vs * kVertexShader | !!gs * kGeometryShader | !!ps * kPixelShader;
 	_shader_callbacks[std::make_pair(f, flags)].push_back(ShaderCallbackData(f, vs, gs, ps, fn));
-	return System::instance().add_file_changed(f, fastdelegate::MakeDelegate(this, &ResourceManager::reload_vs_ps), true);
+	return System::instance().add_file_changed(f, 
+    MakeDelegate(&Trampoline(MakeDelegate(this, &ResourceManager::reload_shader), flags), &Trampoline::run), true);
 
-}
-
-// these should probably replaced by binding the shader-argument to the parameter of reload-shader
-bool ResourceManager::reload_vs(const string2& filename)
-{
-	return reload_shader(filename, kVertexShader);
-}
-
-bool ResourceManager::reload_ps(const string2& filename)
-{
-	return reload_shader(filename, kPixelShader);
-}
-
-bool ResourceManager::reload_vs_ps(const string2& filename)
-{
-  return reload_shader(filename, kVertexShader | kPixelShader);
-}
-
-bool ResourceManager::reload_vs_gs_ps(const string2& filename)
-{
-	return reload_shader(filename, kVertexShader | kGeometryShader | kPixelShader);
 }
 
 bool ResourceManager::reload_shader(const char* filename, const int shaders)
@@ -195,7 +173,7 @@ template<class T, class U>
 bool find_obj(const T& obj, const string2& name, U** out)
 {
 	for (auto i = obj.begin(), e = obj.end(); i != e; ++i) {
-		if (i->first == name) {
+		if (i->first.c_str() == name) {
 			*out = &(i->second);
 			return true;
 		}

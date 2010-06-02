@@ -15,8 +15,8 @@ class ResourceManager
 public:
 	static ResourceManager& instance();
 
-	typedef stdext::hash_map< string2, CComPtr<ID3D11BlendState> > BlendStates;
-	typedef stdext::hash_map< string2, CComPtr<ID3D11SamplerState> > SamplerStates;
+	typedef std::map< string2, CComPtr<ID3D11BlendState> > BlendStates;
+	typedef std::map< string2, CComPtr<ID3D11SamplerState> > SamplerStates;
 
 	struct EffectStates
 	{
@@ -33,10 +33,6 @@ public:
 	// All the loading functions are synchronous, but the given callback can be
 	// called multiple times if the specified file is modified
 	bool load_effect_states(const char* filename, const fnStateLoaded& fn);
-	bool load_vertex_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn);
-	bool load_pixel_shader(const char* filename, const char* shader_name, const fnEffectLoaded& fn);
-
-	bool  load_shaders(const char *filename, const char *vs, const char *ps, const fnEffectLoaded& fn);
 	bool  load_shaders(const char *filename, const char *vs, const char *gs, const char *ps, const fnEffectLoaded& fn);
 
 	bool load_scene(const char* filename, const fnSceneLoaded& fn);
@@ -53,10 +49,6 @@ private:
 
 	// The inner functions are called both from the "file changed" signal, and directly from the load_xxx methods
 	bool reload_effect_states(const char* filename);
-	bool reload_vs(const string2& filename);
-	bool reload_ps(const string2& filename);
-	bool reload_vs_ps(const string2& filename);
-	bool reload_vs_gs_ps(const string2& filename);
 	bool reload_shader(const char* filename, const int shaders);
 	bool reload_material(const char* filename);
 	bool reload_scene(const char* filename);
@@ -81,9 +73,9 @@ private:
 
 	typedef string2 Filename;
 	typedef std::map< std::pair<Filename, int>, std::vector<ShaderCallbackData> > ShaderCallbacks;
-	typedef stdext::hash_map< Filename, std::vector<fnStateLoaded> > StateCallbacks;
-	typedef stdext::hash_map< Filename, std::vector<fnSceneLoaded> > SceneCallbacks;
-	typedef stdext::hash_map< Filename, std::vector<fnMaterialsLoaded> > MaterialCallbacks;
+	typedef std::map< Filename, std::vector<fnStateLoaded> > StateCallbacks;
+	typedef std::map< Filename, std::vector<fnSceneLoaded> > SceneCallbacks;
+	typedef std::map< Filename, std::vector<fnMaterialsLoaded> > MaterialCallbacks;
 
 	ShaderCallbacks _shader_callbacks;
 	StateCallbacks _state_callbacks;

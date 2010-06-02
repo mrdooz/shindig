@@ -124,7 +124,7 @@ bool System::init()
 	if (_fmod_system->init(32, FMOD_INIT_NORMAL, 0) != FMOD_OK)
 		return false;
 
-	if (_fmod_system->createSound(convert_path("data/mp3/12 Session.mp3", System::kDirDropBox).c_str(), FMOD_SOFTWARE, 0, &_sound) != FMOD_OK)
+	if (_fmod_system->createSound(convert_path("data/mp3/12 Session.mp3", System::kDirDropBox), FMOD_SOFTWARE, 0, &_sound) != FMOD_OK)
 		return false;
 
 	return true;
@@ -252,7 +252,7 @@ bool System::add_file_changed(const fnFileChanged& slot)
   return true;
 }
 
-bool System::add_file_changed(const std::string& filename, const fnFileChanged& slot, const bool initial_load)
+bool System::add_file_changed(const string2& filename, const fnFileChanged& slot, const bool initial_load)
 {
 	auto f = Path::make_canonical(Path::get_full_path_name(filename));
 	auto it = _specific_signals.find(f);
@@ -276,7 +276,8 @@ void System::enum_known_folders()
   char buf[MAX_PATH+1];
   _getcwd(buf, MAX_PATH);
   _working_dir = buf;
-  _working_dir += "\\";
+  //_working_dir += "\\";
+  _working_dir = _working_dir + "\\";
 
   // find the "my documents" and drop box folders
   // See https://cfx.svn.codeplex.com/svn/Visual%20Studio%202008/CppShellKnownFolders/ReadMe.txt
@@ -295,7 +296,7 @@ void System::enum_known_folders()
     UnicodeToAnsi(pszPath, &str);
     _my_documents = str;
     _dropbox = _my_documents + "\\My DropBox\\";
-    if( !(GetFileAttributesA(_dropbox.c_str()) & FILE_ATTRIBUTE_DIRECTORY)) {
+    if( !(GetFileAttributesA(_dropbox) & FILE_ATTRIBUTE_DIRECTORY)) {
       _dropbox = "";
     }
 
@@ -305,9 +306,9 @@ void System::enum_known_folders()
   FreeKnownFolderDefinitionFields(&kfd);
 }
 
-std::string System::convert_path(const std::string& str, DirTag tag)
+string2 System::convert_path(const string2& str, DirTag tag)
 {
-  std::string res;
+  string2 res;
   switch(tag) {
     case kDirRelative:
       res = working_dir() + str;

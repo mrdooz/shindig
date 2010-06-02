@@ -40,8 +40,8 @@ private:
 	void bg_loaded(EffectWrapper *effect);
 	void particle_loaded(EffectWrapper *effect);
 
-  bool init_bg(const std::string& filename);
-  bool init_lines(const std::string& filename);
+  bool init_bg(const string2& filename);
+  bool init_lines(const string2& filename);
 
   PosCol *draw_debug_lines(PosCol *ptr);
 
@@ -61,8 +61,7 @@ private:
 
 	EffectWrapper *_particle_effect;
 	CComPtr<ID3D11InputLayout> _particle_layout;
-	CComPtr<ID3D11Buffer> _particle_vb;
-
+  DynamicVb<D3DXVECTOR3> _particle_vb;
 
   int _num_splits;
   std::vector<D3DXVECTOR3> _control_points;

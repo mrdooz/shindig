@@ -8,20 +8,15 @@ public:
   DynamicVb()
     : _mapped(false)
   {
-
   }
 
   ~DynamicVb()
   {
-
   }
 
   bool create(int max_verts)
   {
-    if (FAILED(create_dynamic_vertex_buffer(Graphics::instance().device(), max_verts, sizeof(Vtx), &_vb)))
-      return false;
-
-    return true;
+    return SUCCEEDED(create_dynamic_vertex_buffer(Graphics::instance().device(), max_verts, sizeof(Vtx), &_vb));
   }
 
   Vtx* map()
@@ -38,6 +33,7 @@ public:
   void unmap()
   {
     assert(_mapped);
+    if (!_mapped) return;
     ID3D11DeviceContext *c = Graphics::instance().context();
     c->Unmap(_vb, 0);
     _mapped = false;
