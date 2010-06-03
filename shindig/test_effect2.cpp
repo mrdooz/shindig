@@ -552,8 +552,8 @@ void TestEffect2::render_lines()
   _line_vb.unmap();
 
   set_vb(context, _line_vb.vb(), sizeof(PosCol));
-  if (count > 0)
-    context->Draw(count, 0);
+  //if (count > 0)
+//    context->Draw(count, 0);
 
   // draw the particles
   const int particle_count = (int)rects.size();
@@ -566,7 +566,7 @@ void TestEffect2::render_lines()
 
     D3DXMATRIX mtx;
     D3DXMatrixIdentity(&mtx);
-    _particle_effect->set_vs_variable("mtx", mtx);
+    _particle_effect->set_gs_variable("mtx", mtx);
     _particle_effect->set_cbuffer();
 
     _particle_effect->set_shaders(context);

@@ -20,6 +20,7 @@ ipch/
 *.psess
 *.sdf
 *.vsp
+*.log
 shindig/parser/state_parser.hpp
 shindig/parser/state_parser_lexer.cpp
 shindig/parser/state_parser_symbols.hpp

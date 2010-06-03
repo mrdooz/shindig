@@ -276,8 +276,7 @@ void System::enum_known_folders()
   char buf[MAX_PATH+1];
   _getcwd(buf, MAX_PATH);
   _working_dir = buf;
-  //_working_dir += "\\";
-  _working_dir = _working_dir + "\\";
+  _working_dir += "\\";
 
   // find the "my documents" and drop box folders
   // See https://cfx.svn.codeplex.com/svn/Visual%20Studio%202008/CppShellKnownFolders/ReadMe.txt
