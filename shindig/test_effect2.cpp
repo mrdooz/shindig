@@ -295,8 +295,8 @@ bool TestEffect2::init()
   _line_dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(d));
 
   // init bg
-  RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/gradient_quad.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
-    MakeDelegate(this, &TestEffect2::bg_loaded)), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/gradient_quad.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
+    MakeDelegate(this, &TestEffect2::bg_loaded)));
 
 	InputDesc().
 		add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
@@ -307,8 +307,8 @@ bool TestEffect2::init()
   s.add_file_changed(s.convert_path("data/settings/testeffect2.txt", System::kDirRelative), MakeDelegate(this, &TestEffect2::init_lines), true);
 
   // init lines
-  RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/single_color.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
-    MakeDelegate(this, &TestEffect2::line_loaded)), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/single_color.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
+    MakeDelegate(this, &TestEffect2::line_loaded)));
 
   if (!_line_vb.create(10000))
     return false;
@@ -319,11 +319,11 @@ bool TestEffect2::init()
 		create(_line_layout, _line_effect);
 
   // init particles
-	RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/particle.fx", System::kDirRelative), "vsMain", "gsMain", "psMain", 
-		MakeDelegate(this, &TestEffect2::particle_loaded)), LOG_ERROR_LN);
+	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/particle.fx", System::kDirRelative), "vsMain", "gsMain", "psMain", 
+		MakeDelegate(this, &TestEffect2::particle_loaded)));
 
-  RETURN_ON_FAIL_BOOL(_particle_vb.create(10000), LOG_ERROR_LN);
-  RETURN_ON_FAIL_BOOL(InputDesc().add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).create(_particle_layout, _particle_effect), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL_E(_particle_vb.create(10000));
+  RETURN_ON_FAIL_BOOL_E(InputDesc().add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).create(_particle_layout, _particle_effect));
 
 
 
@@ -553,7 +553,7 @@ void TestEffect2::render_lines()
 
   set_vb(context, _line_vb.vb(), sizeof(PosCol));
   //if (count > 0)
-//    context->Draw(count, 0);
+//		context->Draw(count, 0);
 
   // draw the particles
   const int particle_count = (int)rects.size();

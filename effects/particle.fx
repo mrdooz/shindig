@@ -24,24 +24,22 @@ vsOutput vsMain( in vsInput v )
 	return o;
 }
 
-  // triangle strip
-  // 1 3
-  // 0 2
-  
-float3 verts[] = { 
-	{-1, -1, 0},
-	{-1, +1, 0},
-	{+1, -1, 0},
-	{+1, +1, 0} };
-	
-float scale = 0.1;	
+float3 g_positions[4] =
+{
+	float3( -1, -1, 0 ),
+	float3( -1, +1, 0 ),
+	float3( +1, -1, 0 ),
+	float3( +1, +1, 0 ),
+};
+
+float scale = 0.3;
 
 [maxvertexcount(4)]
 void gsMain(point vsOutput input[1], inout TriangleStream<gsOutput> output)
 {
 	gsOutput g;
-	for (int i = 0; i < 4; ++i) {
-		g.position = mul(float4(input[0].position + scale * verts[i], 1), mtx);
+	for (int i = 0; i < 4; i++) {
+		g.position = mul(float4(input[0].position + scale * g_positions[i], 1), mtx);
 		output.Append(g);
 	}
 	output.RestartStrip();
