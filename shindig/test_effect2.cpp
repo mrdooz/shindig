@@ -325,8 +325,6 @@ bool TestEffect2::init()
   RETURN_ON_FAIL_BOOL_E(_particle_vb.create(10000));
   RETURN_ON_FAIL_BOOL_E(InputDesc().add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).create(_particle_layout, _particle_effect));
 
-
-
   return true;
 }
 
@@ -366,7 +364,7 @@ bool TestEffect2::close()
 
 bool TestEffect2::render()
 {
-  render_background();
+  //render_background();
   render_lines();
 
   return true;
@@ -511,6 +509,10 @@ void TestEffect2::render_lines()
   ID3D11Device* device = Graphics::instance().device();
   ID3D11DeviceContext* context = Graphics::instance().context();
 
+  std::vector<Rect> rects;
+  make_pyth_tree(8, Rect(D3DXVECTOR3(0,-0.5f,0), D3DXVECTOR3(0.125f, 0.125f, 0.125f), D3DXVECTOR3(0,0,0)), &rects);
+
+/*
   context->OMSetDepthStencilState(_line_dss, 0);
 
   D3DXMATRIX mtx;
@@ -525,8 +527,6 @@ void TestEffect2::render_lines()
   
 	PosCol* p = _line_vb.map();
 
-	std::vector<Rect> rects;
-	make_pyth_tree(8, Rect(D3DXVECTOR3(0,-0.5f,0), D3DXVECTOR3(0.125f, 0.125f, 0.125f), D3DXVECTOR3(0,0,0)), &rects);
 	int count = rects.size() * 4 * 2;
 	for (int i = 0; i < (int)rects.size(); ++i)
 		p = rects[i].add_to_list(p);
@@ -554,7 +554,7 @@ void TestEffect2::render_lines()
   set_vb(context, _line_vb.vb(), sizeof(PosCol));
   //if (count > 0)
 //		context->Draw(count, 0);
-
+*/
   // draw the particles
   const int particle_count = (int)rects.size();
   if (particle_count > 0 ) {
@@ -574,6 +574,11 @@ void TestEffect2::render_lines()
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
     set_vb(context, _particle_vb.vb(), sizeof(D3DXVECTOR3));
+
+    UINT ofs = 0;
+    ID3D11Buffer* buffers[1] = { NULL };
+    context->SOSetTargets(1, buffers, &ofs);
+
     context->Draw(particle_count, 0);
   }
 
