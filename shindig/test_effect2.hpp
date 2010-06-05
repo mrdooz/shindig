@@ -61,7 +61,13 @@ private:
 
 	EffectWrapper *_particle_effect;
 	CComPtr<ID3D11InputLayout> _particle_layout;
-  DynamicVb<D3DXVECTOR3> _particle_vb;
+
+	struct ParticleVb
+	{
+		D3DXVECTOR3 pos;
+		float scale;
+	};
+  DynamicVb<ParticleVb> _particle_vb;
 
   int _num_splits;
   std::vector<D3DXVECTOR3> _control_points;
@@ -75,5 +81,9 @@ private:
   };
 
   std::vector<DebugLine> _debug_lines;
+	CComPtr<ID3D11DepthStencilState> _particle_dss;
+	CComPtr<ID3D11SamplerState> _sampler_state;
+	CComPtr<ID3D11ShaderResourceView> _texture;
+	CComPtr<ID3D11BlendState> _blend_state;
 };
 

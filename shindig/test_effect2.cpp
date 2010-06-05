@@ -323,7 +323,35 @@ bool TestEffect2::init()
 		MakeDelegate(this, &TestEffect2::particle_loaded)));
 
   RETURN_ON_FAIL_BOOL_E(_particle_vb.create(10000));
-  RETURN_ON_FAIL_BOOL_E(InputDesc().add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).create(_particle_layout, _particle_effect));
+  RETURN_ON_FAIL_BOOL_E(InputDesc().
+		add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+		add("TEXCOORD", 0, DXGI_FORMAT_R32_FLOAT, 0).
+		create(_particle_layout, _particle_effect));
+
+	_sampler_state.Attach(D3D11::SamplerDescription().
+		AddressU_(D3D11_TEXTURE_ADDRESS_CLAMP).
+		AddressV_(D3D11_TEXTURE_ADDRESS_CLAMP).
+		Filter_(D3D11_FILTER_MIN_MAG_MIP_LINEAR).
+		Create(d));
+
+	_blend_state.Attach(D3D11::BlendDescription().
+		RenderTarget_(0, D3D11::RenderTargetBlendDescription().
+			BlendEnable_(TRUE).
+			BlendOp_(D3D11_BLEND_OP_ADD).
+			BlendOpAlpha_(D3D11_BLEND_OP_ADD).
+			SrcBlend_(D3D11_BLEND_ONE).
+			DestBlend_(D3D11_BLEND_ONE).
+			SrcBlendAlpha_(D3D11_BLEND_SRC_ALPHA).
+			DestBlendAlpha_(D3D11_BLEND_INV_SRC_ALPHA)).
+		Create(d));
+
+	_particle_dss.Attach(D3D11::DepthStencilDescription().
+		DepthEnable_(FALSE).
+		Create(d));
+		
+
+	RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, s.convert_path("data/gfx/particle.png", System::kDirDropBox),
+		NULL, NULL, &_texture, NULL));
 
   return true;
 }
@@ -510,7 +538,8 @@ void TestEffect2::render_lines()
   ID3D11DeviceContext* context = Graphics::instance().context();
 
   std::vector<Rect> rects;
-  make_pyth_tree(8, Rect(D3DXVECTOR3(0,-0.5f,0), D3DXVECTOR3(0.125f, 0.125f, 0.125f), D3DXVECTOR3(0,0,0)), &rects);
+	float s = 0.1;
+  make_pyth_tree(9, Rect(D3DXVECTOR3(0,-0.5f,0), D3DXVECTOR3(s, s, s), D3DXVECTOR3(0,0,0)), &rects);
 
 /*
   context->OMSetDepthStencilState(_line_dss, 0);
@@ -558,9 +587,11 @@ void TestEffect2::render_lines()
   // draw the particles
   const int particle_count = (int)rects.size();
   if (particle_count > 0 ) {
-    D3DXVECTOR3 *particles = _particle_vb.map();
+    ParticleVb *particles = _particle_vb.map();
     for (int i = 0; i < particle_count; ++i) {
-      *particles++ = rects[i].center;
+			particles->pos = rects[i].center;
+			particles->scale = rects[i].extents.x;
+			particles++;
     }
     _particle_vb.unmap();
 
@@ -573,11 +604,15 @@ void TestEffect2::render_lines()
     context->IASetInputLayout(_particle_layout);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-    set_vb(context, _particle_vb.vb(), sizeof(D3DXVECTOR3));
+    set_vb(context, _particle_vb.vb(), sizeof(ParticleVb));
 
-    UINT ofs = 0;
-    ID3D11Buffer* buffers[1] = { NULL };
-    context->SOSetTargets(1, buffers, &ofs);
+		ID3D11ShaderResourceView* t[] = { _texture };
+		ID3D11SamplerState *samplers[] = { _sampler_state };
+		float blend_factors[4] = {1, 1, 1, 1};
+		context->OMSetBlendState(_blend_state, blend_factors, 0xffffffff);
+		context->OMSetDepthStencilState(_particle_dss, 0xffffffff);
+		context->PSSetSamplers(0, 1, samplers);
+		context->PSSetShaderResources(0, 1, t);
 
     context->Draw(particle_count, 0);
   }
