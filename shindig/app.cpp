@@ -24,7 +24,6 @@ App::App()
 
 App::~App()
 {
-	SAFE_DELETE(_debug_writer);
 }
 
 App& App::instance()
@@ -59,6 +58,7 @@ bool App::close()
   }
 
 	_debug_writer->close();
+  SAFE_DELETE(_debug_writer);
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
   RETURN_ON_FAIL_BOOL_E(System::instance().close());
 	return true;
@@ -115,6 +115,8 @@ void App::tick()
 
 void App::run()
 {
+  auto& graphics = Graphics::instance();
+
   MSG msg = {0};
   while (WM_QUIT != msg.message) {
     if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
@@ -122,17 +124,19 @@ void App::run()
       DispatchMessage(&msg);
     } else {
 			System::instance().tick();
-			Graphics::instance().clear();
+			graphics.clear();
 			_debug_writer->reset_frame();
-			_debug_writer->write("magnus");
 
 			if (_test_effect) {
-				//_test_effect->render();
+				_test_effect->render();
 			}
+
+      graphics.tick();
+      add_dbg_message(".fps: %.1f\n", graphics.fps());
 
 			_debug_writer->render();
 
-			Graphics::instance().present();
+			graphics.present();
 
     }
   }
@@ -228,4 +232,17 @@ sig2::connection App::add_mouse_down(const fnMouseDown& slot)
 sig2::connection App::add_mouse_wheel(const fnMouseWheel& slot)
 {
 	return _mouse_wheel_signal.connect(slot);
+}
+
+void App::add_dbg_message(const char* fmt, ...)
+{
+  va_list arg;
+  va_start(arg, fmt);
+
+  const int len = _vscprintf(fmt, arg) + 1;
+
+  char* buf = (char*)_alloca(len);
+  vsprintf_s(buf, len, fmt, arg);
+  va_end(arg);
+  _debug_writer->write(buf);
 }

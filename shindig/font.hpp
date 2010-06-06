@@ -16,5 +16,4 @@ private:
 	float _scale;
 	FileReader *_font_file;
 	stbtt_fontinfo _font;
-
 };

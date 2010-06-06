@@ -33,6 +33,25 @@ bool DebugWriter::init(int width, int height)
 	System& sys = System::instance();
 	RETURN_ON_FAIL_BOOL_E(_effect->load_shaders(sys.convert_path("effects/debug_writer.fx", System::kDirRelative), "vsMain", NULL, "psMain"));
 
+  using namespace rt;
+  _sampler_state.Attach(D3D11::SamplerDescription().
+    AddressU_(D3D11_TEXTURE_ADDRESS_CLAMP).
+    AddressV_(D3D11_TEXTURE_ADDRESS_CLAMP).
+    Filter_(D3D11_FILTER_MIN_MAG_MIP_LINEAR).
+    Create(device));
+
+  _blend_state.Attach(D3D11::BlendDescription().
+    RenderTarget_(0, D3D11::RenderTargetBlendDescription().
+    BlendEnable_(TRUE).
+    BlendOp_(D3D11_BLEND_OP_ADD).
+    BlendOpAlpha_(D3D11_BLEND_OP_ADD).
+    SrcBlend_(D3D11_BLEND_ONE).
+    DestBlend_(D3D11_BLEND_ZERO).
+    SrcBlendAlpha_(D3D11_BLEND_SRC_ALPHA).
+    DestBlendAlpha_(D3D11_BLEND_INV_SRC_ALPHA)).
+    Create(device));
+
+
 	return true;
 }
 
@@ -42,22 +61,15 @@ void DebugWriter::render()
 	D3D11_MAPPED_SUBRESOURCE s;
 	context->Map(_texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &s);
 	_font->render(_text, (uint8_t *)s.pData, _width, _height);
-	int a = 10;
 	context->Unmap(_texture, 0);
 
 	_effect->set_shaders(context);
-	//context->IASetInputLayout(_particle_layout);
-	//context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-	//set_vb(context, _particle_vb.vb(), sizeof(ParticleVb));
-/*
-	ID3D11ShaderResourceView* t[] = { _texture };
-	ID3D11SamplerState *samplers[] = { _sampler_state };
-	float blend_factors[4] = {1, 1, 1, 1};
-	context->OMSetBlendState(_blend_state, blend_factors, 0xffffffff);
-	context->OMSetDepthStencilState(_particle_dss, 0xffffffff);
-	context->PSSetSamplers(0, 1, samplers);
-	context->PSSetShaderResources(0, 1, t);
-	*/
+  ID3D11SamplerState *samplers[] = { _sampler_state };
+  context->PSSetSamplers(0, 1, samplers);
+  ID3D11ShaderResourceView* t[] = { _view };
+  context->PSSetShaderResources(0, 1, t);
+
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	context->Draw(4, 0);
 }
 

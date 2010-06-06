@@ -50,6 +50,7 @@
 #include <celsus/graphics.hpp>
 #include <celsus/effect_wrapper.hpp>
 #include <celsus/section_reader.hpp>
+#include <celsus/D3D11Descriptions.hpp>
 
 #include "fast_delegate.hpp"
 #include "fast_delegate_bind.hpp"

@@ -40,6 +40,8 @@ public:
 
 	void	tick();
 
+  void add_dbg_message(const char* fmt, ...);
+
   void run();
 
 	sig2::connection add_mouse_move(const fnMouseMove& slot);

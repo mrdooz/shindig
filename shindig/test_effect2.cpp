@@ -5,7 +5,6 @@
 #include "scene.hpp"
 #include "mesh.hpp"
 #include "dynamic_vb.hpp"
-#include <celsus/D3D11Descriptions.hpp>
 
 // Something like http://vimeo.com/1593564
 

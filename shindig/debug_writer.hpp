@@ -22,5 +22,7 @@ private:
 	Font *_font;
 	CComPtr<ID3D11Texture2D> _texture;
 	CComPtr<ID3D11ShaderResourceView> _view;
+  CComPtr<ID3D11SamplerState> _sampler_state;
+  CComPtr<ID3D11BlendState> _blend_state;
 	EffectWrapper *_effect;
 };
