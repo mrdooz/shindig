@@ -4,8 +4,13 @@
 #include "test_effect.hpp"
 #include "test_effect2.hpp"
 #include "test_effect3.hpp"
+#include "font.hpp"
+#include <celsus/file_utils.hpp>
+#include "debug_writer.hpp"
 
 App* App::_instance = NULL;
+
+
 
 App::App()
   : _hinstance(NULL)
@@ -13,18 +18,19 @@ App::App()
   , _height(-1)
   , _hwnd(NULL)
 	, _test_effect(NULL)
+	, _debug_writer(new DebugWriter())
 {
 }
 
 App::~App()
 {
+	SAFE_DELETE(_debug_writer);
 }
 
 App& App::instance()
 {
-	if (_instance == NULL) {
+	if (_instance == NULL)
 		_instance = new App();
-	}
 	return *_instance;
 }
 
@@ -34,11 +40,13 @@ bool App::init(HINSTANCE hinstance)
   _width = 800;
   _height = 600;
   create_window();
-  RETURN_ON_FAIL_BOOL(System::instance().init(), LOG_ERROR_LN);
-  RETURN_ON_FAIL_BOOL(Graphics::instance().init_directx(_hwnd, _width, _height), LOG_ERROR_LN);
+  RETURN_ON_FAIL_BOOL_E(System::instance().init());
+  RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
+	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(_width, _height));
 
 	_test_effect = new TestEffect2();
 	_test_effect->init();
+
 
 	return true;
 }
@@ -50,8 +58,9 @@ bool App::close()
     delete _test_effect;
   }
 
-  RETURN_ON_FAIL_BOOL(Graphics::instance().close(), LOG_ERROR_LN);
-  RETURN_ON_FAIL_BOOL(System::instance().close(), LOG_ERROR_LN);
+	_debug_writer->close();
+  RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
+  RETURN_ON_FAIL_BOOL_E(System::instance().close());
 	return true;
 }
 
@@ -114,10 +123,14 @@ void App::run()
     } else {
 			System::instance().tick();
 			Graphics::instance().clear();
+			_debug_writer->reset_frame();
+			_debug_writer->write("magnus");
 
 			if (_test_effect) {
-				_test_effect->render();
+				//_test_effect->render();
 			}
+
+			_debug_writer->render();
 
 			Graphics::instance().present();
 

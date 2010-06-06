@@ -5,6 +5,7 @@
 #include <MMSystem.h>
 
 class EffectBase;
+class DebugWriter;
 
 struct MouseInfo
 {
@@ -70,6 +71,8 @@ private:
 	sig2::signal<void (const MouseInfo&)> _mouse_up_signal;
 	sig2::signal<void (const MouseInfo&)> _mouse_down_signal;
 	sig2::signal<void (const MouseInfo&)> _mouse_wheel_signal;
+
+	DebugWriter *_debug_writer;
 };
 
 #endif
