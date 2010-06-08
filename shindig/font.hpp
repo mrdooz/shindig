@@ -12,6 +12,7 @@ public:
 	bool init(const char *filename, float height);
 	void render(const char *text, uint8_t *ptr, int width, int height);
 private:
+	void pack_font();
 	float _height;
 	float _scale;
 	FileReader *_font_file;
