@@ -3,6 +3,12 @@
 
 class FileReader;
 
+struct FontInfo
+{
+	D3DXVECTOR2 _uv;
+	int _w, _h;
+};
+
 // wrapper around stb-truetype
 class Font
 {
@@ -17,4 +23,7 @@ private:
 	float _scale;
 	FileReader *_font_file;
 	stbtt_fontinfo _font;
+
+	typedef std::map<int, FontInfo>	FontMap;
+	FontMap _font_map;
 };
