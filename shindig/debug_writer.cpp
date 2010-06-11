@@ -31,7 +31,7 @@ bool DebugWriter::init(int width, int height)
 	RETURN_ON_FAIL_BOOL_E(device->CreateShaderResourceView(_texture, NULL, &_view));
 
 	System& sys = System::instance();
-	RETURN_ON_FAIL_BOOL_E(_effect->load_shaders(sys.convert_path("effects/debug_writer.fx", System::kDirRelative), "vsMain", NULL, "psMain"));
+	RETURN_ON_FAIL_BOOL_E(_effect->load_shaders(sys.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain"));
 
   using namespace rt;
   _sampler_state.Attach(D3D11::SamplerDescription().
@@ -51,6 +51,13 @@ bool DebugWriter::init(int width, int height)
     DestBlendAlpha_(D3D11_BLEND_INV_SRC_ALPHA)).
     Create(device));
 
+  InputDesc().
+    add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+    add("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0).
+    create(_layout, _effect);
+
+
+  _verts.create(10000);
 
 	return true;
 }
@@ -58,19 +65,23 @@ bool DebugWriter::init(int width, int height)
 void DebugWriter::render()
 {
 	auto context = Graphics::instance().context();
-	D3D11_MAPPED_SUBRESOURCE s;
-	context->Map(_texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &s);
-	_font->render(_text, (uint8_t *)s.pData, _width, _height);
-	context->Unmap(_texture, 0);
+  PosTex *v = _verts.map();
+  _font->render2(_text, v, _width, _height);
+  _verts.unmap();
 
 	_effect->set_shaders(context);
   ID3D11SamplerState *samplers[] = { _sampler_state };
   context->PSSetSamplers(0, 1, samplers);
-  ID3D11ShaderResourceView* t[] = { _view };
+  ID3D11ShaderResourceView* t[] = { _font->view()};
   context->PSSetShaderResources(0, 1, t);
 
-  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	context->Draw(4, 0);
+  float blend_factor[] = { 1, 1, 1, 1 };
+  context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
+
+  set_vb(context, _verts.vb(), Verts::stride);
+  context->IASetInputLayout(_layout);
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->Draw(6 * _text.size(), 0);
 }
 
 void DebugWriter::reset_frame()

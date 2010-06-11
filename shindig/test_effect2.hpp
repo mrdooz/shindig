@@ -5,8 +5,7 @@
 #include "render_target.hpp"
 #include "effect_base.hpp"
 #include "dynamic_vb.hpp"
-
-struct PosCol { D3DXVECTOR3 p; D3DXCOLOR c; };
+#include <celsus/vertex_types.hpp>
 
 class TestEffect2 : public EffectBase
 {

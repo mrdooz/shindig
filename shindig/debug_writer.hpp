@@ -1,4 +1,7 @@
 #pragma once
+#include "dynamic_vb.hpp"
+#include <celsus/vertex_types.hpp>
+
 
 class Font;
 class RenderTarget;
@@ -24,5 +27,8 @@ private:
 	CComPtr<ID3D11ShaderResourceView> _view;
   CComPtr<ID3D11SamplerState> _sampler_state;
   CComPtr<ID3D11BlendState> _blend_state;
+  CComPtr<ID3D11InputLayout> _layout;
+  typedef DynamicVb<PosTex> Verts;
+  Verts _verts;
 	EffectWrapper *_effect;
 };

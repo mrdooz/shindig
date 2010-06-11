@@ -9,8 +9,6 @@ struct psInput
 	float2 tex : TexCoord;
 };
 
-// Note, this isn't valid anymore, because we're using a triangle strip to
-// work with pre dx 10 hardware
 // 0-1
 // 2-3
 

@@ -8,25 +8,6 @@
 
 // Something like http://vimeo.com/1593564
 
-struct InputDesc
-{
-	InputDesc& add(LPCSTR name, UINT index, DXGI_FORMAT fmt, UINT slot, UINT byte_offset = D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION slot_class = D3D11_INPUT_PER_VERTEX_DATA, UINT step_rate = 0)
-	{
-		_desc.push_back(CD3D11_INPUT_ELEMENT_DESC(name, index, fmt, slot, byte_offset, slot_class, step_rate));
-		return *this;
-	}
-
-	bool create(CComPtr<ID3D11InputLayout>& layout, EffectWrapper *effect)
-	{
-		auto p = effect->create_input_layout(_desc);
-		if (!p) return false;
-		layout.Attach(p);
-		return true;
-	}
-
-	std::vector<D3D11_INPUT_ELEMENT_DESC> _desc;
-};
-
 namespace 
 {
   const float width = 800;
@@ -430,17 +411,17 @@ PosCol *TestEffect2::Rect::add_to_list(PosCol *ptr)
 	D3DXVECTOR3 v2(-extents.x, -extents.y, +extents.z);
 	D3DXVECTOR3 v3(+extents.x, -extents.y, +extents.z);
 
-	D3DXVec3TransformCoord(&ptr->p, &v0, &mtx); ptr++;
-	D3DXVec3TransformCoord(&ptr->p, &v1, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v0, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v1, &mtx); ptr++;
 
-	D3DXVec3TransformCoord(&ptr->p, &v1, &mtx); ptr++;
-	D3DXVec3TransformCoord(&ptr->p, &v3, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v1, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v3, &mtx); ptr++;
 
-	D3DXVec3TransformCoord(&ptr->p, &v3, &mtx); ptr++;
-	D3DXVec3TransformCoord(&ptr->p, &v2, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v3, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v2, &mtx); ptr++;
 
-	D3DXVec3TransformCoord(&ptr->p, &v2, &mtx); ptr++;
-	D3DXVec3TransformCoord(&ptr->p, &v0, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v2, &mtx); ptr++;
+	D3DXVec3TransformCoord(&ptr->pos, &v0, &mtx); ptr++;
 
 	return ptr;
 }
@@ -520,10 +501,10 @@ void TestEffect2::make_pyth_tree(int levels, const Rect& start, std::vector<Rect
 PosCol *TestEffect2::draw_debug_lines(PosCol *ptr)
 {
   for (int i = 0; i < (int)_debug_lines.size(); ++i) {
-    ptr[0].p = _debug_lines[i].s;
-    ptr[0].c = _debug_lines[i].c;
-    ptr[1].p = _debug_lines[i].e;
-    ptr[1].c = _debug_lines[i].c;
+    ptr[0].pos = _debug_lines[i].s;
+    ptr[0].col = _debug_lines[i].c;
+    ptr[1].pos = _debug_lines[i].e;
+    ptr[1].col = _debug_lines[i].c;
     ptr += 2;
   }
   return ptr;
@@ -537,7 +518,7 @@ void TestEffect2::render_lines()
   ID3D11DeviceContext* context = Graphics::instance().context();
 
   std::vector<Rect> rects;
-	float s = 0.1;
+	float s = 0.1f;
   make_pyth_tree(9, Rect(D3DXVECTOR3(0,-0.5f,0), D3DXVECTOR3(s, s, s), D3DXVECTOR3(0,0,0)), &rects);
 
 /*

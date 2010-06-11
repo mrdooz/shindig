@@ -5,6 +5,8 @@ template<class Vtx>
 class DynamicVb
 {
 public:
+
+  enum { stride = sizeof(Vtx) };
   DynamicVb()
     : _mapped(false)
   {

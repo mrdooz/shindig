@@ -2,6 +2,15 @@
 #include "font.hpp"
 #include <celsus/file_utils.hpp>
 
+bool create_empty_texture(int width, int height, DXGI_FORMAT format, int mip_levels, D3D11_SUBRESOURCE_DATA *data, ID3D11Texture2D *texture, ID3D11ShaderResourceView *view)
+{
+  ID3D11Device* device = Graphics::instance().device();
+  CD3D11_TEXTURE2D_DESC desc(format, width, height, 1, mip_levels);
+  RETURN_ON_FAIL_BOOL_E(device->CreateTexture2D(&desc, data, &texture));
+  RETURN_ON_FAIL_BOOL_E(device->CreateShaderResourceView(texture, NULL, &view));
+  return true;
+}
+
 // This is an implementation of http://www.blackpawn.com/texts/lightmaps/default.html
 struct PixelRect
 {
@@ -97,25 +106,54 @@ bool Font::init(const char *filename, float height)
 	return true;
 }
 
-void Font::pack_font()
+bool Font::pack_font()
 {
+  int width = 256;
+  int height = 256;
+
+  ID3D11Device* device = Graphics::instance().device();
+  CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
+  RETURN_ON_FAIL_BOOL_E(device->CreateTexture2D(&desc, NULL, &_texture));
+  RETURN_ON_FAIL_BOOL_E(device->CreateShaderResourceView(_texture, NULL, &_view));
+
+  auto context = Graphics::instance().context();
+  D3D11_MAPPED_SUBRESOURCE s;
+  context->Map(_texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &s);
+  uint8_t *buf = (uint8_t *)s.pData;
+
 	Node *root = new Node();
-	uint8_t *buf = new uint8_t[256*256*4];
-	root->_rc = PixelRect(0, 0, 256, 256);
+	root->_rc = PixelRect(0, 0, width, height);
 
 	char char_map[256];
 	for (int i = 1; i < 256; ++i) {
 		char_map[i-1] = (char)i;
 	}
 	char_map[255] = 0;
-//	char char_map[] = "abcdefghijklmnopqrstuvwxyzåäö";
 	char *cur = char_map;
 	while (*cur) {
+    char ch = *cur;
 		int w, h;
-		uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, 0,_scale, *cur, &w, &h, NULL, NULL);
+		uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, 0,_scale, ch, &w, &h, NULL, NULL);
 		Image *img = new Image();
 		img->_rc = PixelRect(0, 0, h, w);
 		if (Node *n = root->insert(img)) {
+      // create texture coords
+
+      // 0, 1
+      // 2, 3
+      D3DXVECTOR2 _uv[4];
+      FontInfo info;
+      float ww = (float)width;
+      float hh = (float)height;
+      info._uv[0] = D3DXVECTOR2(n->_rc._left / ww, n->_rc._top / hh);
+      info._uv[1] = D3DXVECTOR2((n->_rc._left + img->_rc.width()) / ww, n->_rc._top / hh);
+      info._uv[2] = D3DXVECTOR2(n->_rc._left / ww, (n->_rc._top + img->_rc.height()) / hh);
+      info._uv[3] = D3DXVECTOR2((n->_rc._left + img->_rc.width()) / ww, (n->_rc._top + img->_rc.height()) / hh);
+      info._w = img->_rc.width();
+      info._h = img->_rc.height();
+
+      _font_map.insert(std::make_pair(ch, info));
+
 			n->_image = img;
 			int x = n->_rc._left, y = n->_rc._top;
 			for (int j = 0; j < h; ++j) {
@@ -134,7 +172,69 @@ void Font::pack_font()
 	}
 
 	save_bmp32("c:/temp/tjong.bmp", buf, 256, 256);
-	SAFE_ADELETE(buf);
+  context->Unmap(_texture, 0);
+  return true;
+}
+
+void Font::render2(const char *text, PosTex *vtx, int width, int height)
+{
+  D3DXVECTOR3 pos(0,0,0);
+  int max_height = 0;	// max height of a letter on the current row
+  while (*text) {
+    int new_lines = 0;
+    while (*text == '\n' && *text != NULL) {
+      new_lines++;
+      text++;
+    }
+    char ch = *text;
+    if (ch == 0)
+      break;
+
+    FontMap::const_iterator it = _font_map.find(ch);
+    if (it == _font_map.end()) {
+      ++text;
+      continue;
+    }
+
+    const FontInfo& info = it->second;
+    // 0, 1
+    // 2, 3
+    float w = (float)info._w, h = (float)info._h;
+    auto v0 = PosTex(pos + D3DXVECTOR3(0,0,0), info._uv[0]);
+    auto v1 = PosTex(pos + D3DXVECTOR3(w,0,0), info._uv[1]);
+    auto v2 = PosTex(pos + D3DXVECTOR3(0,-h,0), info._uv[2]);
+    auto v3 = PosTex(pos + D3DXVECTOR3(w,-h,0), info._uv[3]);
+
+    v0.pos *= 1 / 256.0f;
+    v1.pos *= 1 / 256.0f;
+    v2.pos *= 1 / 256.0f;
+    v3.pos *= 1 / 256.0f;
+
+    // 2, 0, 1
+    // 2, 1, 3
+    *vtx++ = v2;
+    *vtx++ = v0;
+    *vtx++ = v1;
+
+    *vtx++ = v2;
+    *vtx++ = v1;
+    *vtx++ = v3;
+
+    if (pos.x + w > width)
+      new_lines = 1;
+    if (new_lines) {
+      // check if it's possible..
+      pos.y += new_lines * (max_height != 0 ? max_height : (int)_height);
+      if (pos.y > height)
+        break;
+      pos.x  = 0;
+      max_height = 0;
+    }
+
+    pos.x += w;
+    max_height = std::max<int>(max_height, (int)h);
+    ++text;
+  }
 
 }
 

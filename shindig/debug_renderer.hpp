@@ -3,6 +3,7 @@
 
 #include "vector_font.hpp"
 #include <d3dx10math.h>
+#include <celsus/vertex_types.hpp>
 
 class EffectWrapper;
 
@@ -10,14 +11,6 @@ typedef CComPtr<ID3D11Buffer> ID3D11BufferPtr;
 typedef CComPtr<ID3D11InputLayout> ID3D11InputLayoutPtr;
 typedef CComPtr<ID3D11Device> ID3D11DevicePtr;
 
-struct PosCol
-{
-  PosCol() {}
-  PosCol(const D3DXVECTOR3& pos, const D3DXCOLOR& col) : pos(pos), col(col) {}
-  PosCol(const D3DXVECTOR3& pos) : pos(pos) {}
-  D3DXVECTOR3 pos;
-  D3DXCOLOR col;
-};
 
 class DebugRenderer
 {
