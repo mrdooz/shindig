@@ -28,6 +28,7 @@ private:
   CComPtr<ID3D11SamplerState> _sampler_state;
   CComPtr<ID3D11BlendState> _blend_state;
   CComPtr<ID3D11InputLayout> _layout;
+	CComPtr<ID3D11DepthStencilState> _dss;
   typedef DynamicVb<PosTex> Verts;
   Verts _verts;
 	EffectWrapper *_effect;

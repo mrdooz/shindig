@@ -372,9 +372,8 @@ bool TestEffect2::close()
 
 bool TestEffect2::render()
 {
-  //render_background();
+  render_background();
   render_lines();
-
   return true;
 }
 

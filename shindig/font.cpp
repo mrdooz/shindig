@@ -25,8 +25,6 @@ struct PixelRect
 
 struct Image
 {
-	Image() : _bitmap(nullptr) {}
-	const char *_bitmap;
 	PixelRect _rc;
 };
 
@@ -38,8 +36,12 @@ struct Node
 		_image = nullptr;
 	}
 
-	bool is_leaf() const { return _children[0] == nullptr && _children[1] == nullptr; }
+	~Node()
+	{
+		SAFE_DELETE(_image);
+	}
 
+	bool is_leaf() const { return _children[0] == nullptr && _children[1] == nullptr; }
 	Node *insert(const Image *img);
 
 	Node *_children[2];
@@ -132,8 +134,8 @@ bool Font::pack_font()
 	char *cur = char_map;
 	while (*cur) {
     char ch = *cur;
-		int w, h;
-		uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, 0,_scale, ch, &w, &h, NULL, NULL);
+		int w, h, ofsx, ofsy;
+		uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, 0,_scale, ch, &w, &h, &ofsx, &ofsy);
 		Image *img = new Image();
 		img->_rc = PixelRect(0, 0, h, w);
 		if (Node *n = root->insert(img)) {
@@ -151,6 +153,8 @@ bool Font::pack_font()
       info._uv[3] = D3DXVECTOR2((n->_rc._left + img->_rc.width()) / ww, (n->_rc._top + img->_rc.height()) / hh);
       info._w = img->_rc.width();
       info._h = img->_rc.height();
+			info._ofsx = ofsx;
+			info._ofsy = ofsy;
 
       _font_map.insert(std::make_pair(ch, info));
 
@@ -161,7 +165,7 @@ bool Font::pack_font()
 					// assume ptr contains 32 bit data
 					int c = bitmap[j*w+i];
 					int ofs = 4 * ((y+j) * 256 + x + i);
-					buf[ofs+0] = buf[ofs+1] = buf[ofs+2] = buf[ofs+3] = c;
+					buf[ofs+0] = buf[ofs+1] = buf[ofs+2] = buf[ofs+3] = c; 
 				}
 			}
 
@@ -171,12 +175,12 @@ bool Font::pack_font()
 		++cur;
 	}
 
-	save_bmp32("c:/temp/tjong.bmp", buf, 256, 256);
+	//save_bmp32("c:/temp/tjong.bmp", buf, 256, 256);
   context->Unmap(_texture, 0);
   return true;
 }
 
-void Font::render2(const char *text, PosTex *vtx, int width, int height)
+void Font::render(const char *text, PosTex *vtx, int width, int height)
 {
   D3DXVECTOR3 pos(0,0,0);
   int max_height = 0;	// max height of a letter on the current row
@@ -205,10 +209,13 @@ void Font::render2(const char *text, PosTex *vtx, int width, int height)
     auto v2 = PosTex(pos + D3DXVECTOR3(0,-h,0), info._uv[2]);
     auto v3 = PosTex(pos + D3DXVECTOR3(w,-h,0), info._uv[3]);
 
-    v0.pos *= 1 / 256.0f;
-    v1.pos *= 1 / 256.0f;
-    v2.pos *= 1 / 256.0f;
-    v3.pos *= 1 / 256.0f;
+		const D3DXVECTOR3 ofs(-256.0f + info._ofsx, +256 - 20 - info._ofsy, 0);
+		const float f = 1.0f / 256;
+
+		v0.pos = f * (ofs + v0.pos);
+		v1.pos = f * (ofs + v1.pos);
+		v2.pos = f * (ofs + v2.pos);
+		v3.pos = f * (ofs + v3.pos);
 
     // 2, 0, 1
     // 2, 1, 3
@@ -236,55 +243,4 @@ void Font::render2(const char *text, PosTex *vtx, int width, int height)
     ++text;
   }
 
-}
-
-
-void Font::render(const char *text, uint8_t *ptr, int width, int height)
-{
-	ZeroMemory(ptr, width * height * 4);
-
-	int x = 0;
-	int y = 0;
-	int max_height = 0;	// max height of a letter on the current row
-	while (*text) {
-		int new_lines = 0;
-		while (*text == '\n' && *text != NULL) {
-			new_lines++;
-			text++;
-		}
-		char ch = *text;
-    if (ch == 0)
-      break;
-		int w, h;
-		int xoffs = 0;
-		int yoffs = 0;
-
-		uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, 0,_scale, ch, &w, &h, &xoffs, &yoffs);
-		// check if we need to skip to the next line
-		if (x + w > width)
-			new_lines = 1;
-		if (new_lines) {
-			// check if it's possible..
-			y += new_lines * (max_height != 0 ? max_height : (int)_height);
-			if (y > height)
-				break;
-			x  = 0;
-			max_height = 0;
-		}
-
-		// draw the char
-		for (int j = 0; j < h; ++j) {
-			for (int i = 0; i < w; ++i) {
-				// assume ptr contains 32 bit data
-				int c = bitmap[j*w+i];
-				int ofs = 4 * ((y+j+20+yoffs) * width + x + i);
-				ptr[ofs+0] = ptr[ofs+1] = ptr[ofs+2] = ptr[ofs+3] = c;
-			}
-		}
-
-		x += w;
-		//y += h;
-		max_height = std::max<int>(max_height, h);
-		++text;
-	}
 }

@@ -45,11 +45,13 @@ bool DebugWriter::init(int width, int height)
     BlendEnable_(TRUE).
     BlendOp_(D3D11_BLEND_OP_ADD).
     BlendOpAlpha_(D3D11_BLEND_OP_ADD).
-    SrcBlend_(D3D11_BLEND_ONE).
-    DestBlend_(D3D11_BLEND_ZERO).
+    SrcBlend_(D3D11_BLEND_SRC_COLOR).
+    DestBlend_(D3D11_BLEND_DEST_COLOR).
     SrcBlendAlpha_(D3D11_BLEND_SRC_ALPHA).
     DestBlendAlpha_(D3D11_BLEND_INV_SRC_ALPHA)).
     Create(device));
+		
+	_dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(device));
 
   InputDesc().
     add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
@@ -66,7 +68,7 @@ void DebugWriter::render()
 {
 	auto context = Graphics::instance().context();
   PosTex *v = _verts.map();
-  _font->render2(_text, v, _width, _height);
+  _font->render(_text, v, _width, _height);
   _verts.unmap();
 
 	_effect->set_shaders(context);
@@ -77,6 +79,7 @@ void DebugWriter::render()
 
   float blend_factor[] = { 1, 1, 1, 1 };
   context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
+	context->OMSetDepthStencilState(_dss, 0xffffffff);
 
   set_vb(context, _verts.vb(), Verts::stride);
   context->IASetInputLayout(_layout);
