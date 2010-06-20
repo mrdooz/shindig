@@ -193,47 +193,125 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
   int vert_idx = 0;
   int face_idx = 0;
 
-  while (true)
-  {
-    char ch;
-    if (!scanner.peek(&ch))
-      break;
-    switch(ch)
-    {
-    case 's':
-      // new smoothing group
-      break;
-    case 'v':
-      {
-        scanner.skip_chars("v \t");
-        std::vector<float> f;
-        scanner.read_floats(&f);
-        if (f.size() != 3)
-          return false;
-        verts->push_back(D3DXVECTOR3(f[0], f[1], -f[2]));
-        vert_idx++;
-      }
-      break;
-    case 'f':
-      {
-        scanner.skip_chars("f \t");
-        std::vector<int> i;
-        scanner.read_ints(&i);
-        if (i.size() != 3)
-          return false;
-        int i0 = i[0] - 1, i1 = i[2] - 1, i2 = i[1] - 1;
-        faces->push_back(Face(i0, i1, i2));
-        (*verts_by_face)[i0].push_back(face_idx);
-        (*verts_by_face)[i1].push_back(face_idx);
-        (*verts_by_face)[i2].push_back(face_idx);
-        face_idx++;
-      }
-      break;
-    default:
-      break;
-    }
-    scanner.skip_to_next_line();
+  while (true) {
+
+#define IS_ID(id) !memcmp(id, buf, 2)
+		static char buf[2];
+		if (!scanner.peek(buf, 2))
+			break;
+
+		if (IS_ID("vn")) {
+
+			if (!scanner.skip_to_next_line())
+				break;
+		} else if (IS_ID("g ")) {
+
+			if (!scanner.skip_to_next_line())
+				break;
+		} else if (IS_ID("s ")) {
+
+			// new smoothing group
+			if (!scanner.skip_to_next_line())
+				break;
+
+		} else if (IS_ID("v ")) {
+
+			scanner.skip_chars("v \t");
+			std::vector<float> f;
+			scanner.read_floats(&f);
+			if (f.size() != 3)
+				return false;
+			verts->push_back(D3DXVECTOR3(f[0], f[1], -f[2]));
+			vert_idx++;
+
+		} else if (IS_ID("f ")) {
+
+			if (!scanner.skip_chars("f \t"))
+				break;
+
+			// faces can have different formats
+			// f v1/vt1
+			// f v1/vt1/vn1
+			// f v1//vn1
+			std::vector<int> tmp;
+			std::vector<int> v;
+			std::vector<int> t;
+			std::vector<int> n;
+			int t2;
+			while (scanner.read_ints(&tmp)) {
+				if (tmp.size() == 1) {
+					// face isn't just a list of vertex, but texcoord and normals too, so we have to parse
+					// these guys
+					v.push_back(tmp[0]);
+					char buf[2];
+					if (!scanner.peek(buf, 2)) break;
+					if (!scanner.skip_chars("/")) break;
+					if (buf[0] == '/') {
+						if (buf[1] == '/') {
+							// v1//vn1
+							if (!scanner.read_int(&t2)) break;
+							n.push_back(t2);
+						} else {
+							// vt1
+							if (!scanner.read_int(&t2)) break;
+							t.push_back(t2);
+							char ch;
+							if (!scanner.peek(&ch)) break;
+							if (!scanner.skip_chars("/")) break;
+							if (ch == '/') {
+								// vn1
+								if (!scanner.read_int(&t2)) break;
+								n.push_back(t2);
+							}
+						}
+					}
+
+				} else {
+					// face is a nice list of space seperated indices
+					v = tmp;
+					break;
+				}
+			}
+
+			switch( v.size() ) {
+			case 3:
+				{
+					int i0 = v[0] - 1, i1 = v[2] - 1, i2 = v[1] - 1;
+					faces->push_back(Face(i0, i1, i2));
+					(*verts_by_face)[i0].push_back(face_idx);
+					(*verts_by_face)[i1].push_back(face_idx);
+					(*verts_by_face)[i2].push_back(face_idx);
+					face_idx++;
+				}
+				break;
+			case 4:
+				{
+					int i0 = v[0] - 1, i1 = v[2] - 1, i2 = v[1] - 1, i3 = v[3] - 1;
+					faces->push_back(Face(i0, i1, i2));
+					(*verts_by_face)[i0].push_back(face_idx);
+					(*verts_by_face)[i1].push_back(face_idx);
+					(*verts_by_face)[i2].push_back(face_idx);
+					face_idx++;
+
+					faces->push_back(Face(i0, i1, i3));
+					(*verts_by_face)[i0].push_back(face_idx);
+					(*verts_by_face)[i1].push_back(face_idx);
+					(*verts_by_face)[i3].push_back(face_idx);
+					face_idx++;
+				}
+				break;
+			default:
+				return false;
+			}
+
+			if (!scanner.skip_to_next_line())
+				break;
+
+		} else {
+			scanner.skip_to_next_line();
+		}
   }
 
+#undef IS_ID
   return true;
 }

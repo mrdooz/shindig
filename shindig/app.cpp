@@ -43,7 +43,7 @@ bool App::init(HINSTANCE hinstance)
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(_width, _height));
 
-	_test_effect = new TestEffect2();
+	_test_effect = new TestEffect3();
 	_test_effect->init();
 
 

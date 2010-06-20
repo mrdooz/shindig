@@ -45,10 +45,14 @@ bool TestEffect3::init()
   
   float v = 0.5f;
   g.set_clear_color(D3DXCOLOR(v, v, v, 1));
-
+/*
   RETURN_ON_FAIL_BOOL(
     s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
     LOG_ERROR_LN);
+*/
+	RETURN_ON_FAIL_BOOL(
+		s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
+		LOG_ERROR_LN);
 
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect3::effect_loaded)), LOG_ERROR_LN);
@@ -83,7 +87,7 @@ bool TestEffect3::render()
 
   D3DXMATRIX view, proj;
   D3DXMatrixLookAtLH(&view, &(_mesh->_bounding_center + calc_cam_pos()), &_mesh->_bounding_center, &D3DXVECTOR3(0,1,0));
-  D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 1000);
+  D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, _mesh->_bounding_radius);
   D3DXMATRIX mtx;
   D3DXMatrixTranspose(&mtx, &(view * proj));
   _effect->set_vs_variable("mtx", mtx);
@@ -102,12 +106,13 @@ bool TestEffect3::load_mesh(const string2& filename)
 
   ObjLoader loader;
   bool res = loader.load_from_file(filename, &_mesh);
-
-	float r = _mesh->_bounding_radius;
-	float fov = deg_to_rad(45) / (4/3.0f);
-	float x = atanf(fov);
-	float a = (r - r * x) / x;
-	_cam_radius = r + a;
+	if (res) {
+		float r = _mesh->_bounding_radius;
+		float fov = deg_to_rad(45) / (4/3.0f);
+		float x = atanf(fov);
+		float a = (r - r * x) / x;
+		_cam_radius = r + a;
+	}
 
 	return res;
 }

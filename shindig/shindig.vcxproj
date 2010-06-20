@@ -102,6 +102,7 @@
     <ClCompile Include="debug_writer.cpp" />
     <ClCompile Include="demo.cpp" />
     <ClCompile Include="font.cpp" />
+    <ClCompile Include="material.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="mesh2.cpp" />
     <ClCompile Include="obj_loader.cpp" />
@@ -137,6 +138,7 @@
     <ClInclude Include="fast_delegate.hpp" />
     <ClInclude Include="fast_delegate_bind.hpp" />
     <ClInclude Include="font.hpp" />
+    <ClInclude Include="material.hpp" />
     <ClInclude Include="mesh.hpp" />
     <ClInclude Include="mesh2.hpp" />
     <ClInclude Include="object.hpp" />
