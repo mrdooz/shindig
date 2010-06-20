@@ -4,6 +4,7 @@
 #include "celsus/math_utils.hpp"
 #include "celsus/file_utils.hpp"
 #include "mesh2.hpp"
+#include "material.hpp"
 
 bool ObjLoader::load_binary_file(const char *filename, Mesh2 **mesh)
 {
@@ -181,8 +182,111 @@ bool ObjLoader::load_from_file(const char *filename, Mesh2 **mesh)
   return true;
 }
 
+bool ObjLoader::load_material_file(const char *filename, std::vector<Material *> *materials)
+{
+	TextScanner scanner;
+	if (!scanner.load(filename))
+		return false;
+
+	Material *cur = nullptr;
+
+	static string2 float_values[] = { "Ns", "Ni", "d", "Tr" };
+	static string2 float3_values[] = { "Tf", "Ka", "Kd", "Ks", "Ke" };
+	static string2 string_values[] = { "map_Ka", "map_Kd", "map_d", "map_bump", "bump" };
+
+	while (true) {
+
+		if (!scanner.skip_chars_lenient(" \t"))
+			break;
+		string2 s;
+		if (!scanner.read_string(&s)) 
+			break;
+
+		if (s == "newmtl") {
+			string2 name;
+			if (!scanner.read_string(&name)) 
+				break;
+			// new material found. store old one first, if it exists
+			if (cur)
+				materials->push_back(cur);
+			cur = new Material(name);
+		} else {
+			bool found = false;
+			// float values
+			float f;
+			for (int i = 0; !found && i < ELEMS_IN_ARRAY(float_values); ++i) {
+				if (s == float_values[i]) {
+					if (!scanner.read_float(&f))
+						break;
+					cur->float_values.insert(std::make_pair(s, f));
+					found = true;
+				}
+			}
+
+			// float3
+			std::vector<float> floats;
+			for (int i = 0; !found && i < ELEMS_IN_ARRAY(float3_values); ++i) {
+				if (s == float3_values[i]) {
+					if (!scanner.read_floats(&floats))
+						break;
+					if (floats.size() == 3) {
+						cur->float3_values.insert(std::make_pair(s, D3DXVECTOR3(floats[0], floats[1], floats[2])));
+						found = true;
+					}
+				}
+			}
+
+			// string
+			for (int i = 0; !found && i < ELEMS_IN_ARRAY(string_values); ++i) {
+				if (s == string_values[i]) {
+					string2 val;
+					if (!scanner.read_string(&val))
+						break;
+					cur->string_values.insert(std::make_pair(s, val));
+					found = true;
+				}
+			}
+
+		}
+
+		if (!scanner.skip_to_next_line())
+			break;
+	}
+
+	if (cur)
+		materials->push_back(cur);
+
+	return true;
+}
+
 bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, VertsByFace *verts_by_face)
 {
+/*
+	  v 0.000000 2.000000 2.000000
+		v 0.000000 0.000000 2.000000
+		v 2.000000 0.000000 2.000000
+		v 2.000000 2.000000 2.000000
+		v 0.000000 2.000000 0.000000
+		v 0.000000 0.000000 0.000000
+		v 2.000000 0.000000 0.000000
+		v 2.000000 2.000000 0.000000
+		f 1 2 3 4
+		f 8 7 6 5
+		f 4 3 7 8
+		f 5 1 4 8
+		f 5 6 2 1
+		f 2 6 7 3
+
+		  5--8
+		 /  /
+		1--4
+		|/ |/
+		2--3
+
+*/
+
+
+
   TextScanner scanner;
   if (!scanner.load(filename))
     return false;
@@ -193,30 +297,31 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
   int vert_idx = 0;
   int face_idx = 0;
 
+	string2 s;
   while (true) {
 
-#define IS_ID(id) !memcmp(id, buf, 2)
-		static char buf[2];
-		if (!scanner.peek(buf, 2))
+		if (!scanner.read_string(&s))
 			break;
 
-		if (IS_ID("vn")) {
+		if (s == "vn") {
 
 			if (!scanner.skip_to_next_line())
 				break;
-		} else if (IS_ID("g ")) {
+		} else if (s == "g") {
+
+			string2 name;
+			scanner.read_string(&name);
 
 			if (!scanner.skip_to_next_line())
 				break;
-		} else if (IS_ID("s ")) {
+		} else if (s == "s") {
 
 			// new smoothing group
 			if (!scanner.skip_to_next_line())
 				break;
 
-		} else if (IS_ID("v ")) {
+		} else if (s == "v") {
 
-			scanner.skip_chars("v \t");
 			std::vector<float> f;
 			scanner.read_floats(&f);
 			if (f.size() != 3)
@@ -224,10 +329,7 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 			verts->push_back(D3DXVECTOR3(f[0], f[1], -f[2]));
 			vert_idx++;
 
-		} else if (IS_ID("f ")) {
-
-			if (!scanner.skip_chars("f \t"))
-				break;
+		} else if (s == "f") {
 
 			// faces can have different formats
 			// f v1/vt1
@@ -286,17 +388,21 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 				break;
 			case 4:
 				{
-					int i0 = v[0] - 1, i1 = v[2] - 1, i2 = v[1] - 1, i3 = v[3] - 1;
-					faces->push_back(Face(i0, i1, i2));
-					(*verts_by_face)[i0].push_back(face_idx);
-					(*verts_by_face)[i1].push_back(face_idx);
+					int i1 = v[0] - 1, i2 = v[1] - 1, i3 = v[2] - 1, i4 = v[3] - 1;
+					// 1--4
+					// 2--3
+					// 2, 1, 3
+					// 3, 1, 4
+					faces->push_back(Face(i2, i1, i3));
 					(*verts_by_face)[i2].push_back(face_idx);
-					face_idx++;
-
-					faces->push_back(Face(i0, i1, i3));
-					(*verts_by_face)[i0].push_back(face_idx);
 					(*verts_by_face)[i1].push_back(face_idx);
 					(*verts_by_face)[i3].push_back(face_idx);
+					face_idx++;
+
+					faces->push_back(Face(i3, i1, i4));
+					(*verts_by_face)[i3].push_back(face_idx);
+					(*verts_by_face)[i1].push_back(face_idx);
+					(*verts_by_face)[i4].push_back(face_idx);
 					face_idx++;
 				}
 				break;
@@ -312,6 +418,5 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 		}
   }
 
-#undef IS_ID
   return true;
 }

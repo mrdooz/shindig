@@ -50,6 +50,7 @@ bool TestEffect3::init()
     s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
     LOG_ERROR_LN);
 */
+
 	RETURN_ON_FAIL_BOOL(
 		s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
 		LOG_ERROR_LN);
@@ -57,7 +58,8 @@ bool TestEffect3::init()
   RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect3::effect_loaded)), LOG_ERROR_LN);
 
-  _dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
+	_dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
+	_blend_state.Attach(rt::D3D11::BlendDescription().Create(d));
 
   return true;
 }
@@ -84,6 +86,9 @@ bool TestEffect3::render()
   float blend_factors[] = {1, 1, 1, 1};
   context->OMSetDepthStencilState(_dss, 0);
 
+	float blend_factor[] = { 1, 1, 1, 1 };
+	context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
+
 
   D3DXMATRIX view, proj;
   D3DXMatrixLookAtLH(&view, &(_mesh->_bounding_center + calc_cam_pos()), &_mesh->_bounding_center, &D3DXVECTOR3(0,1,0));
@@ -105,6 +110,10 @@ bool TestEffect3::load_mesh(const string2& filename)
   SAFE_DELETE(_mesh);
 
   ObjLoader loader;
+	ObjLoader::Materials mats;
+	auto& s = System::instance();
+	loader.load_material_file(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), &mats);
+
   bool res = loader.load_from_file(filename, &_mesh);
 	if (res) {
 		float r = _mesh->_bounding_radius;
@@ -173,5 +182,5 @@ void TestEffect3::on_mouse_down(const MouseInfo& info)
 
 void TestEffect3::on_mouse_wheel(const MouseInfo& info)
 {
-	_cam_radius += info.wheel_delta;		
+	_cam_radius -= info.wheel_delta;		
 }

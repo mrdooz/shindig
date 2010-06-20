@@ -1,12 +1,15 @@
 #pragma once
 
 class Mesh2;
+struct Material;
 
 // wavefront obj loader
 class ObjLoader
 {
 public:
+	typedef std::vector<Material *> Materials;
   bool load_from_file(const char *filename, Mesh2 **mesh);
+	bool load_material_file(const char *filename, Materials *materials);
 private:
 
   struct Face
