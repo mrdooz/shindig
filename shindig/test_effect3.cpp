@@ -111,6 +111,7 @@ bool TestEffect3::load_mesh(const string2& filename)
   ObjLoader loader;
 	ObjLoader::Materials mats;
 	auto& s = System::instance();
+  auto d = Graphics::instance().device();
 	loader.load_material_file(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), &mats);
 
 	string2 map_names[] = { "map_Ka", "map_Kd", "map_d", "map_bump", "bump" };
@@ -128,11 +129,11 @@ bool TestEffect3::load_mesh(const string2& filename)
 
 						Path p(value);
 						string2 filename = p.get_filename();
+            ID3D11ShaderResourceView *t;
+						RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, 
+              s.convert_path("data/textures/sponza_textures/textures/" + filename, System::kDirDropBox), NULL, NULL, &t, NULL));
 
-/*
-						RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, s.convert_path("data/gfx/particle.png", System::kDirDropBox),
-							NULL, NULL, &_texture, NULL));
-*/
+            _textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(t)));
 					}
 
 				}
