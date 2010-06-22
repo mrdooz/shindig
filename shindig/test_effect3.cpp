@@ -11,11 +11,11 @@
 #include "obj_loader.hpp"
 #include "mesh2.hpp"
 #include "app.hpp"
+#include "material.hpp"
 
 
 TestEffect3::TestEffect3()
-  : _mesh(NULL)  
-  , _effect(NULL)
+  : _effect(NULL)
 	, _cam_radius(150)
   , _alpha(0)
   , _theta(0)
@@ -26,7 +26,7 @@ TestEffect3::TestEffect3()
 TestEffect3::~TestEffect3()
 {
   SAFE_DELETE(_effect);
-  SAFE_DELETE(_mesh);
+	container_delete(_meshes);
 }
 
 bool TestEffect3::init()
@@ -49,8 +49,7 @@ bool TestEffect3::init()
   RETURN_ON_FAIL_BOOL(
     s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
     LOG_ERROR_LN);
-*/
-
+		*/
 	RETURN_ON_FAIL_BOOL(
 		s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
 		LOG_ERROR_LN);
@@ -89,34 +88,61 @@ bool TestEffect3::render()
 	float blend_factor[] = { 1, 1, 1, 1 };
 	context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
 
-
   D3DXMATRIX view, proj;
-  D3DXMatrixLookAtLH(&view, &(_mesh->_bounding_center + calc_cam_pos()), &_mesh->_bounding_center, &D3DXVECTOR3(0,1,0));
-  D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, _mesh->_bounding_radius);
-  D3DXMATRIX mtx;
-  D3DXMatrixTranspose(&mtx, &(view * proj));
-  _effect->set_vs_variable("mtx", mtx);
-  _effect->set_cbuffer();
-
-  _effect->set_shaders(context);
-
-  _mesh->render(context);
+	D3DXMatrixLookAtLH(&view, &(_meshes[0]->_bounding_center + calc_cam_pos()), &_meshes[0]->_bounding_center, &D3DXVECTOR3(0,1,0));
+	D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 5000 /*_meshes[0]->_bounding_radius*/);
+	D3DXMATRIX mtx;
+	D3DXMatrixTranspose(&mtx, &(view * proj));
+	_effect->set_vs_variable("mtx", mtx);
+	_effect->set_cbuffer();
+	_effect->set_shaders(context);
+	for (int i = 0; i < (int)_meshes.size(); ++i) {
+		Mesh2 *mesh = _meshes[i];
+		mesh->render(context);
+	}
 
   return true;
 }
 
 bool TestEffect3::load_mesh(const string2& filename)
 {
-  SAFE_DELETE(_mesh);
+	container_delete(_meshes);
 
   ObjLoader loader;
 	ObjLoader::Materials mats;
 	auto& s = System::instance();
 	loader.load_material_file(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), &mats);
 
-  bool res = loader.load_from_file(filename, &_mesh);
+	string2 map_names[] = { "map_Ka", "map_Kd", "map_d", "map_bump", "bump" };
+
+	// load textures
+	for (auto i = mats.begin(); i != mats.end(); ++i) {
+		for (auto j = (*i)->string_values.begin(); j != (*i)->string_values.end(); ++j) {
+			const string2& name = j->first;
+
+			for (int k = 0; k < ELEMS_IN_ARRAY(map_names); ++k) {
+				if (name == map_names[k]) {
+					const string2& value = j->second;
+					// check if we've already loaded the texture
+					if (_textures.find(value) == _textures.end()) {
+
+						Path p(value);
+						string2 filename = p.get_filename();
+
+/*
+						RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, s.convert_path("data/gfx/particle.png", System::kDirDropBox),
+							NULL, NULL, &_texture, NULL));
+*/
+					}
+
+				}
+			}
+		}
+	}
+
+  bool res = loader.load_from_file(filename, &_meshes);
 	if (res) {
-		float r = _mesh->_bounding_radius;
+		float r = _meshes[0]->_bounding_radius;
 		float fov = deg_to_rad(45) / (4/3.0f);
 		float x = atanf(fov);
 		float a = (r - r * x) / x;
@@ -130,7 +156,8 @@ void TestEffect3::effect_loaded(EffectWrapper *effect)
 {
   SAFE_DELETE(_effect);
   _effect = effect;
-	_mesh->set_layout(_effect->create_input_layout(_mesh->input_desc()));
+	for (int i = 0; i < (int)_meshes.size(); ++i)
+		_meshes[i]->set_layout(_effect->create_input_layout(_meshes[i]->input_desc()));
 }
 
 void TestEffect3::on_mouse_move(const MouseInfo& info)

@@ -37,10 +37,13 @@ private:
   bool _first_update;
   MouseInfo _prev_mouse;
 
+	std::map< string2, CComPtr<ID3D11ShaderResourceView> > _textures;
+
   CComPtr<ID3D11DepthStencilState> _dss;
   CComPtr<ID3D11BlendState> _blend_state;
 
-  Mesh2 *_mesh;
+	typedef std::vector<Mesh2 *> Meshes;
+	Meshes _meshes;
   EffectWrapper *_effect;
 };
 

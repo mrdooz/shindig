@@ -24,6 +24,7 @@ public:
     kDirDropBox,
     kDirRelative,
     kDirAbsolute,
+		kDirCustom,
   };
 
   struct Freq
@@ -46,6 +47,8 @@ public:
 
   const string2& dropbox() const { return _dropbox; }
   const string2& working_dir() const { return _working_dir; }
+
+	void add_custom_dir(const string2& dir);
 
   string2 convert_path(const string2& str, DirTag tag);
 
@@ -70,7 +73,7 @@ private:
 	~System();
 
 	typedef boost::signals2::signal< void(std::string) > sigFileChanged;
-	typedef std::map< std::string, boost::shared_ptr<sigFileChanged> > SpecificSignals;
+	typedef std::map< string2, boost::shared_ptr<sigFileChanged> > SpecificSignals;
 	typedef std::set< std::string > DeferredFiles;
 
   struct TimeStamp
@@ -114,6 +117,8 @@ private:
   float *_spectrum_left;
   float *_spectrum_right;
   float *_spectrum_combined;
+
+	std::vector<string2> _custom_dirs;
 
 
   Demo *_demo;

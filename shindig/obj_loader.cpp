@@ -85,81 +85,93 @@ void ObjLoader::calc_bounding_sphere(const Verts& verts, float *radius, D3DXVECT
 	*center = c;
 }
 
-bool ObjLoader::load_from_file(const char *filename, Mesh2 **mesh)
+bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 {
+/*
   if (load_binary_file(filename, mesh))
     return true;
-
+*/
   // note, we convert coordinates to LHS, and flip the winding
   // order of the faces while parsing
-  Verts verts;
-  Faces faces;
 
   // save which face each vertex belongs do
-  VertsByFace verts_by_face;
 
-  if (!parse_file(filename, &verts, &faces, &verts_by_face))
+	Groups groups;
+  if (!parse_file(filename, &groups))
     return false;
 
-	D3DXVECTOR3 center;
-	float radius;
-	calc_bounding_sphere(verts, &radius, &center);
+	for (int i = 0; i < (int)groups.size(); ++i) {
+		Group *cur = groups[i];
 
-  std::vector<D3DXVECTOR3> face_normals;
-  std::vector<D3DXVECTOR3> vertex_normals;
+		const Verts& verts = cur->verts;
+		const Faces& faces = cur->faces;
+		const VertsByFace& verts_by_face = cur->verts_by_face;
 
-  // calc face normals
-  face_normals.reserve(faces.size());
-  for (auto i = faces.begin(), e = faces.end(); i != e; ++i) {
-    const D3DXVECTOR3& v0 = verts[i->a];
-    const D3DXVECTOR3& v1 = verts[i->b];
-    const D3DXVECTOR3& v2 = verts[i->c];
-    face_normals.push_back(vec3_normalize(vec3_cross(v1 - v0, v2 - v0)));
-  }
+		D3DXVECTOR3 center;
+		float radius;
+		calc_bounding_sphere(verts, &radius, &center);
 
-  // calc vertex normals
-  vertex_normals.reserve(verts.size());
-  for (int i = 0; i < (int)verts.size(); ++i) {
-    D3DXVECTOR3 n(0,0,0);
-		auto it = verts_by_face.find(i);
-		if (it != verts_by_face.end()) {
-			for (auto j = it->second.begin(); j != it->second.end(); ++j) {
-				n += face_normals[*j];
-			}
-			vertex_normals.push_back(vec3_normalize(n/(float)it->second.size()));
-		} else {
-			// the vertex isn't used by any face, so we just add a dummy normal
-			vertex_normals.push_back(D3DXVECTOR3(0,0,0));
+		std::vector<D3DXVECTOR3> face_normals;
+		std::vector<D3DXVECTOR3> vertex_normals;
+
+		// calc face normals
+		face_normals.reserve(faces.size());
+		const int v_ofs = cur->vert_ofs;
+		for (auto i = faces.begin(), e = faces.end(); i != e; ++i) {
+			const D3DXVECTOR3& v0 = verts[i->a];
+			const D3DXVECTOR3& v1 = verts[i->b];
+			const D3DXVECTOR3& v2 = verts[i->c];
+			face_normals.push_back(vec3_normalize(vec3_cross(v1 - v0, v2 - v0)));
 		}
-  }
 
-  // create interleaved vertex data
-  D3DXVECTOR3 *interleaved = new D3DXVECTOR3[2 * verts.size()];
-	SCOPED_OBJ([=](){ delete [] interleaved; } );
-  for (int i = 0; i < (int)verts.size(); ++i) {
-    interleaved[i*2+0] = verts[i];
-    interleaved[i*2+1] = vertex_normals[i];
-  }
+		// calc vertex normals
+		vertex_normals.reserve(verts.size());
+		const int f_ofs = cur->face_ofs;
+		for (int i = 0; i < (int)verts.size(); ++i) {
+			D3DXVECTOR3 n(0,0,0);
+			auto it = verts_by_face.find(i);
+			if (it != verts_by_face.end()) {
+				for (auto j = it->second.begin(); j != it->second.end(); ++j) {
+					n += face_normals[*j];
+				}
+				vertex_normals.push_back(vec3_normalize(n/(float)it->second.size()));
+			} else {
+				// the vertex isn't used by any face, so we just add a dummy normal
+				vertex_normals.push_back(D3DXVECTOR3(0,0,0));
+			}
+		}
 
-	Mesh2 *m = *mesh = new Mesh2();
-  auto d = Graphics::instance().device();
-  if (FAILED(create_static_vertex_buffer(d, verts.size(), 2 * sizeof(D3DXVECTOR3), (const uint8_t *)interleaved, &m->_vb)))
-    return false;
+		// create interleaved vertex data
+		D3DXVECTOR3 *interleaved = new D3DXVECTOR3[2 * verts.size()];
+		SCOPED_OBJ([=](){ delete [] interleaved; } );
+		for (int i = 0; i < (int)verts.size(); ++i) {
+			interleaved[i*2+0] = verts[i];
+			interleaved[i*2+1] = vertex_normals[i];
+		}
 
-  if (FAILED(create_static_index_buffer(d, faces.size() * 3, sizeof(int), (const uint8_t *)&faces[0], &m->_ib)))
-    return false;
+		Mesh2 *m = new Mesh2();
+		auto d = Graphics::instance().device();
+		if (FAILED(create_static_vertex_buffer(d, verts.size(), 2 * sizeof(D3DXVECTOR3), (const uint8_t *)interleaved, &m->_vb)))
+			return false;
 
-	m->_bounding_radius = radius;
-	m->_bounding_center = center;
-	m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0));
-	m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12));
-  m->_ib_format = DXGI_FORMAT_R32_UINT;
-  m->_stride = 2 * sizeof(D3DXVECTOR3);
-  m->_vertex_count = verts.size();
-  m->_vertex_size = 2 * sizeof(D3DXVECTOR3);
-  m->_index_count = faces.size() * 3;
+		if (FAILED(create_static_index_buffer(d, faces.size() * 3, sizeof(int), (const uint8_t *)&faces[0], &m->_ib)))
+			return false;
 
+		m->_bounding_radius = radius;
+		m->_bounding_center = center;
+		m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0));
+		m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12));
+		m->_ib_format = DXGI_FORMAT_R32_UINT;
+		m->_stride = 2 * sizeof(D3DXVECTOR3);
+		m->_vertex_count = verts.size();
+		m->_vertex_size = 2 * sizeof(D3DXVECTOR3);
+		m->_index_count = faces.size() * 3;
 
+		meshes->push_back(m);
+
+	}
+
+/*
 	std::string binary_name(filename);
 	binary_name += ".bin";
 	BinaryHeader h;
@@ -179,6 +191,7 @@ bool ObjLoader::load_from_file(const char *filename, Mesh2 **mesh)
 	fwrite(&h, sizeof(h), 1, f);
 	fwrite(interleaved, h.vertex_size, h.vertex_count, f);
 	fwrite((void*)&faces[0], h.index_size, h.index_count, f);
+*/
   return true;
 }
 
@@ -259,7 +272,7 @@ bool ObjLoader::load_material_file(const char *filename, std::vector<Material *>
 	return true;
 }
 
-bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, VertsByFace *verts_by_face)
+bool ObjLoader::parse_file(const char *filename, Groups *groups)
 {
 /*
 	  v 0.000000 2.000000 2.000000
@@ -285,19 +298,17 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 
 */
 
-
+	Group *cur_group = nullptr; 
 
   TextScanner scanner;
   if (!scanner.load(filename))
     return false;
 
-  verts->reserve(10000);
-  faces->reserve(10000);
-
-  int vert_idx = 0;
-  int face_idx = 0;
+	int running_vert_idx = 0;
+	int running_face_idx = 0;
 
 	string2 s;
+	bool new_mesh = true;
   while (true) {
 
 		if (!scanner.read_string(&s))
@@ -309,8 +320,7 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 				break;
 		} else if (s == "g") {
 
-			string2 name;
-			scanner.read_string(&name);
+			scanner.read_string(&cur_group->name);
 
 			if (!scanner.skip_to_next_line())
 				break;
@@ -322,14 +332,29 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 
 		} else if (s == "v") {
 
+			if (new_mesh) {
+				if (cur_group != NULL) {
+					groups->push_back(cur_group);
+				}
+				cur_group = new Group("default");
+				cur_group->face_ofs = running_face_idx;
+				cur_group->vert_ofs = running_vert_idx;
+				cur_group->verts.reserve(10000);
+				cur_group->faces.reserve(10000);
+				new_mesh = false;
+			}
+
 			std::vector<float> f;
 			scanner.read_floats(&f);
 			if (f.size() != 3)
 				return false;
-			verts->push_back(D3DXVECTOR3(f[0], f[1], -f[2]));
-			vert_idx++;
+			cur_group->verts.push_back(D3DXVECTOR3(f[0], f[1], -f[2]));
+			cur_group->vert_count++;
+			running_vert_idx++;
 
 		} else if (s == "f") {
+			// really a misnomer, but this will force us to save the mesh when we find the next vertex
+			new_mesh = true;
 
 			// faces can have different formats
 			// f v1/vt1
@@ -378,32 +403,36 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 			switch( v.size() ) {
 			case 3:
 				{
-					int i0 = v[0] - 1, i1 = v[2] - 1, i2 = v[1] - 1;
-					faces->push_back(Face(i0, i1, i2));
-					(*verts_by_face)[i0].push_back(face_idx);
-					(*verts_by_face)[i1].push_back(face_idx);
-					(*verts_by_face)[i2].push_back(face_idx);
-					face_idx++;
+					int i0 = v[0] - 1 - cur_group->vert_ofs, i1 = v[2] - 1 - cur_group->vert_ofs, i2 = v[1] - 1 - cur_group->vert_ofs;
+					cur_group->faces.push_back(Face(i0, i1, i2));
+					cur_group->verts_by_face[i0].push_back(cur_group->face_count);
+					cur_group->verts_by_face[i1].push_back(cur_group->face_count);
+					cur_group->verts_by_face[i2].push_back(cur_group->face_count);
+					cur_group->face_count++;
+					running_face_idx++;
 				}
 				break;
 			case 4:
 				{
-					int i1 = v[0] - 1, i2 = v[1] - 1, i3 = v[2] - 1, i4 = v[3] - 1;
+					int i1 = v[0] - 1 - cur_group->vert_ofs, i2 = v[1] - 1 - cur_group->vert_ofs, i3 = v[2] - 1 - cur_group->vert_ofs, i4 = v[3] - 1 - cur_group->vert_ofs;
 					// 1--4
 					// 2--3
 					// 2, 1, 3
 					// 3, 1, 4
-					faces->push_back(Face(i2, i1, i3));
-					(*verts_by_face)[i2].push_back(face_idx);
-					(*verts_by_face)[i1].push_back(face_idx);
-					(*verts_by_face)[i3].push_back(face_idx);
-					face_idx++;
+					cur_group->faces.push_back(Face(i2, i1, i3));
+					cur_group->verts_by_face[i2].push_back(cur_group->face_count);
+					cur_group->verts_by_face[i1].push_back(cur_group->face_count);
+					cur_group->verts_by_face[i3].push_back(cur_group->face_count);
+					cur_group->face_count++;
+					running_face_idx++;
 
-					faces->push_back(Face(i3, i1, i4));
-					(*verts_by_face)[i3].push_back(face_idx);
-					(*verts_by_face)[i1].push_back(face_idx);
-					(*verts_by_face)[i4].push_back(face_idx);
-					face_idx++;
+					cur_group->faces.push_back(Face(i3, i1, i4));
+					cur_group->verts_by_face[i3].push_back(cur_group->face_count);
+					cur_group->verts_by_face[i1].push_back(cur_group->face_count);
+					cur_group->verts_by_face[i4].push_back(cur_group->face_count);
+					cur_group->face_count++;
+					running_face_idx++;
+
 				}
 				break;
 			default:
@@ -413,10 +442,19 @@ bool ObjLoader::parse_file(const char *filename, Verts *verts, Faces *faces, Ver
 			if (!scanner.skip_to_next_line())
 				break;
 
+		} else if (s == "usemtl") {
+			scanner.read_string(&cur_group->material_name);
+
+			if (!scanner.skip_to_next_line())
+				break;
+
 		} else {
 			scanner.skip_to_next_line();
 		}
   }
+
+	if (cur_group->face_count != 0 && cur_group->vert_count != 0)
+		groups->push_back(cur_group);
 
   return true;
 }

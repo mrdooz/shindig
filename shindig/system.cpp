@@ -6,6 +6,7 @@
 #include <Shlguid.h>
 #include <Shlobj.h>
 #include <direct.h>
+#include <celsus/file_utils.hpp>
 
 using namespace boost::signals2;
 
@@ -318,6 +319,14 @@ string2 System::convert_path(const string2& str, DirTag tag)
     case kDirAbsolute:
       res = str;
       break;
+		case kDirCustom:
+			// search the custom dirs until we find a matching file..
+			for (int i = 0; i < (int)_custom_dirs.size(); ++i) {
+				string2 t = _custom_dirs[i] + str;
+				if (file_exists(t))
+					return t;
+			}
+			break;
   }
   return res;
 }
@@ -378,5 +387,10 @@ void System::set_paused(const bool state)
 void System::add_callback(const Freq& f)
 {
   _frequency_callbacks.push_back(f);
+}
+
+void System::add_custom_dir(const string2& dir)
+{
+	_custom_dirs.push_back(dir);
 }
 
