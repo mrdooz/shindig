@@ -130,8 +130,8 @@ bool TestEffect3::load_mesh(const string2& filename)
 						Path p(value);
 						string2 filename = p.get_filename();
             ID3D11ShaderResourceView *t;
-						RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, 
-              s.convert_path("data/textures/sponza_textures/textures/" + filename, System::kDirDropBox), NULL, NULL, &t, NULL));
+						string2 f = s.convert_path("data/textures/sponza_textures/textures/" + filename, System::kDirDropBox);
+						RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, f, NULL, NULL, &t, NULL));
 
             _textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(t)));
 					}
