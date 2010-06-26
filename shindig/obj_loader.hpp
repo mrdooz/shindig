@@ -15,33 +15,54 @@ private:
 
   struct Face
   {
-    Face(int a, int b, int c) : a(a), b(b), c(c) {}
-    int a, b, c;
+		Face() {}
+    Face(int va, int vb, int vc, int na, int nb, int nc, int ta, int tb, int tc) : va(va), vb(vb), vc(vc), na(na), nb(nb), nc(nc), ta(ta), tb(tb), tc(tc) {}
+		union {
+			struct { int va; int vb; int vc; };
+			int v[3];
+		};
+		union {
+			struct { int na; int nb; int nc; };
+			int n[3];
+		};
+		union {
+			struct { int ta; int tb; int tc; };
+			int t[3];
+		};
   };
+
+	enum {
+		VtxPos = 1 << 0,
+		VtxNormal = 1 << 1,
+		VtxTex = 1 << 2,
+	};
 
   struct BinaryHeader
   {
+		char filename[MAX_PATH];
     DWORD textfile_size;
     FILETIME textfile_write_time;
-		int	vertex_size, vertex_count;
-		int index_size, index_count;
-		float radius;
-		D3DXVECTOR3 center;
+		int mesh_count;
   };
 
   typedef std::vector<D3DXVECTOR3> Verts;
+	typedef std::vector<D3DXVECTOR3> Normals;
+	typedef std::vector<D3DXVECTOR2> TexCoords;
   typedef std::vector<Face> Faces;
   typedef std::map<int, std::vector<int> > VertsByFace;
 
 	struct Group
 	{
-		Group(const string2& name) : name(name), vert_ofs(0), vert_count(0), face_ofs(0), face_count(0) {}
+		Group(const string2& name) : name(name), vert_ofs(0), normal_ofs(0), tex_ofs(0), face_ofs(0), face_count(0) {}
 		string2 name;
 		string2 material_name;
 		Verts verts;
+		Normals normals;
+		TexCoords tex_coords;
 		Faces faces;
 		int vert_ofs;
-		int vert_count;
+		int normal_ofs;
+		int tex_ofs;
 		int face_ofs;
 		int face_count;
 		VertsByFace verts_by_face;
@@ -51,6 +72,9 @@ private:
 
 
   bool load_binary_file(const char *filename, Mesh2 **mesh);
+	bool save_binary_file(const char *filename, const Groups& groups);
+	bool load_binary_file(const char *filename, Groups* groups);
+	bool load_binary_file(const char *filename, Meshes *meshes);
 
 	void calc_bounding_sphere(const Verts& verts, float *radius, D3DXVECTOR3 *center);
 

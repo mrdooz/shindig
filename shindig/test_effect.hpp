@@ -5,6 +5,7 @@
 #include "scene.hpp"
 #include "render_target.hpp"
 #include "effect_base.hpp"
+#include <celsus/refptr.hpp>
 
 struct TestEffect : public EffectBase
 {

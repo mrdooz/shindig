@@ -1,6 +1,7 @@
 #pragma once
 #include "stb_truetype.h"
 #include <celsus/vertex_types.hpp>
+#include <celsus/refptr.hpp>
 
 class FileReader;
 
@@ -28,7 +29,7 @@ private:
 	bool pack_font();
 	float _height;
 	float _scale;
-	FileReader *_font_file;
+	RefPtr<FileReader> _font_file;
 	stbtt_fontinfo _font;
   CComPtr<ID3D11Texture2D> _texture;
   CComPtr<ID3D11ShaderResourceView> _view;

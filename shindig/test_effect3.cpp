@@ -6,6 +6,7 @@
 #include "mesh.hpp"
 #include "dynamic_vb.hpp"
 #include <celsus/text_scanner.hpp>
+#include <celsus/file_utils.hpp>
 #include <celsus/D3D11Descriptions.hpp>
 #include <celsus/math_utils.hpp>
 #include "obj_loader.hpp"
@@ -128,12 +129,16 @@ bool TestEffect3::load_mesh(const string2& filename)
 					if (_textures.find(value) == _textures.end()) {
 
 						Path p(value);
-						string2 filename = p.get_filename();
+						string2 filename = Path::replace_extension(p.get_filename(), "bmp");
             ID3D11ShaderResourceView *t;
 						string2 f = s.convert_path("data/textures/sponza_textures/textures/" + filename, System::kDirDropBox);
-						RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, f, NULL, NULL, &t, NULL));
-
-            _textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(t)));
+						if (file_exists(f)) {
+							RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, f, NULL, NULL, &t, NULL));
+							_textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(t)));
+						} else {
+							LOG_WARNING_LN_ONESHOT("Unable to load texture: %s", f.c_str());
+							_textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(0)));
+						}
 					}
 
 				}

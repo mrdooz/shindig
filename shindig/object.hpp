@@ -25,6 +25,7 @@ private:
 };
 
 // Shared ptr class for Objects
+/*
 template<class T>
 class RefPtr
 {
@@ -84,5 +85,5 @@ public:
 private:
 	T* _obj;
 };
-
+*/
 #endif

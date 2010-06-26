@@ -93,7 +93,6 @@ Font::Font()
 
 Font::~Font()
 {
-	SAFE_DELETE(_font_file);
 }
 
 bool Font::init(const char *filename, float height)

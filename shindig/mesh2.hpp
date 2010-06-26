@@ -6,6 +6,7 @@ class Mesh2
 {
 public:
   Mesh2();
+	~Mesh2();
 
   void render(ID3D11DeviceContext *context);
 
@@ -31,4 +32,6 @@ public:
   int _vertex_count;
   int _vertex_size;
   int _index_count;
+
+	string2 _material_name;
 };

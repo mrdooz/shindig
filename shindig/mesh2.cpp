@@ -10,6 +10,11 @@ Mesh2::Mesh2()
 {
 }
 
+Mesh2::~Mesh2()
+{
+
+}
+
 void Mesh2::render(ID3D11DeviceContext *context)
 {
   context->IASetInputLayout(_layout);
