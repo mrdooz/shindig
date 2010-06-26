@@ -46,17 +46,14 @@ bool TestEffect3::init()
   
   float v = 0.5f;
   g.set_clear_color(D3DXCOLOR(v, v, v, 1));
-/*
-  RETURN_ON_FAIL_BOOL(
-    s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
-    LOG_ERROR_LN);
-		*/
-	RETURN_ON_FAIL_BOOL(
-		s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true),
-		LOG_ERROR_LN);
 
-  RETURN_ON_FAIL_BOOL(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
-    MakeDelegate(this, &TestEffect3::effect_loaded)), LOG_ERROR_LN);
+  //RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true));
+
+  RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), 
+    MakeDelegate(this, &TestEffect3::load_mesh), true));
+
+  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
+    MakeDelegate(this, &TestEffect3::effect_loaded)));
 
 	_dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
 	_blend_state.Attach(rt::D3D11::BlendDescription().Create(d));

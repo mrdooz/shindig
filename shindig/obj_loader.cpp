@@ -8,82 +8,8 @@
 #include "mesh2.hpp"
 #include "material.hpp"
 
-bool ObjLoader::save_binary_file(const char *filename, const Groups& groups)
-{
-	BinaryHeader h;
-	strcpy(h.filename, filename);
-	get_file_size(filename, &h.textfile_size, NULL);
-	get_file_time(filename, NULL, NULL, &h.textfile_write_time);
-
-	string2 binary_file(filename);
-	binary_file += ".bin";
-
-	FileWriter w;
-	if (!w.open(binary_file))
-		return false;
-
-	w.write(h);
-	w.write(groups.size());
-
-	for (int i = 0; i < (int)groups.size(); ++i) {
-		Group *g = groups[i];
-		w.write_string(g->name);
-		w.write_string(g->material_name);
-		w.write_vector(g->verts);
-		w.write_vector(g->faces);
-		w.write(g->vert_ofs);
-		w.write(g->face_ofs);
-		w.write(g->face_count);
-		// verts by face
-		w.write(g->verts_by_face.size());
-		for (VertsByFace::iterator it = g->verts_by_face.begin(); it != g->verts_by_face.end(); ++it) {
-			w.write(it->first);
-			w.write_vector(it->second);
-		}
-	}
-
-	return true;
-}
-/*
-bool ObjLoader::load_binary_file(const char *filename, Groups* groups)
-{
-	RefPtr<FileReader> file(new FileReader());
-	if (!file->load(filename))
-		return false;
-	DataReader r(file.get());
-	BinaryHeader h;
-	r.read(&h);
-
-	int num_groups = 0;
-	r.read(&num_groups);
-	for (int i = 0; i < num_groups; ++i) {
-		string2 name;
-		r.read_string(&name);
-		Group *g = new Group(name);
-		r.read_string(&g->material_name);
-		r.read_vector(&g->verts);
-		r.read_vector(&g->faces);
-		r.read(&g->vert_ofs);
-		r.read(&g->face_ofs);
-		r.read(&g->face_count);
-		int c;
-		r.read(&c);
-		for (int j = 0; j < c; ++j) {
-			int e;
-			r.read(&e);
-			r.read_vector(&g->verts_by_face[e]);
-		}
-
-		groups->push_back(g);
-	}
-
-	return true;
-}
-*/
-
 bool ObjLoader::load_binary_file(const char *filename, Meshes *meshes)
 {
-
 	RefPtr<FileReader> file(new FileReader());
 	if (!file->load(filename))
 		return false;
@@ -230,6 +156,7 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			m->_vertex_count = new_verts.size();
 			m->_vertex_size = sizeof(PosNormalTex);
 			m->_index_count = new_indices.size();
+      m->_material_name = cur->material_name;
 
 			meshes->push_back(m);
 
@@ -245,7 +172,6 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			w.write(m->_vertex_size);
 			w.write(m->_index_count);
 			w.write_string(m->_material_name);
-
 			 
  		} else {
 			// calc face normals
@@ -321,30 +247,6 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 
 	}
 
-//	if (!loaded_binary)
-//		save_binary_file(filename, groups);
-
-/*
-	std::string binary_name(filename);
-	binary_name += ".bin";
-	BinaryHeader h;
-	get_file_size(filename, &h.textfile_size, NULL);
-	get_file_time(filename, NULL, NULL, &h.textfile_write_time);
-	h.vertex_size = 2 * sizeof(D3DXVECTOR3);
-	h.vertex_count = verts.size();
-	h.index_size = sizeof(int);
-	h.index_count = faces.size() * 3;
-	h.center = center;
-	h.radius = radius;
-
-	FILE *f = fopen(binary_name.c_str(), "wb");
-	if (!f)
-		return true;
-	SCOPED_OBJ([=](){ fclose(f); } );
-	fwrite(&h, sizeof(h), 1, f);
-	fwrite(interleaved, h.vertex_size, h.vertex_count, f);
-	fwrite((void*)&faces[0], h.index_size, h.index_count, f);
-*/
   return true;
 }
 
@@ -461,6 +363,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 	int running_face_idx = 0;
 
 	string2 s;
+  string2 cur_material;
 	bool new_mesh = true;
   while (true) {
 
@@ -512,6 +415,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 				cur_group->tex_ofs = running_tex_idx;
 				cur_group->verts.reserve(10000);
 				cur_group->faces.reserve(10000);
+        cur_group->material_name = cur_material;
 				new_mesh = false;
 			}
 
@@ -636,7 +540,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 				break;
 
 		} else if (s == "usemtl") {
-			scanner.read_string(&cur_group->material_name);
+			scanner.read_string(&cur_material);
 
 			if (!scanner.skip_to_next_line())
 				break;
@@ -646,8 +550,10 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 		}
   }
 
-	if (!cur_group->faces.empty() && !cur_group->verts.empty())
-		groups->push_back(cur_group);
+	if (!cur_group->faces.empty() && !cur_group->verts.empty()) {
+    cur_group->material_name = cur_material;
+    groups->push_back(cur_group);
+  }
 
   return true;
 }
