@@ -8,6 +8,25 @@
 #include "mesh2.hpp"
 #include "material.hpp"
 
+void ObjLoader::handle_face_transition(bool *reading_face_data, Groups *groups, Group **cur_group, int running_face_idx, int running_vert_idx, int running_normal_idx, int running_tex_idx)
+{
+
+	if (*reading_face_data) {
+		*reading_face_data = false;
+		groups->push_back(*cur_group);
+
+		Group *g = *cur_group = new Group("default");
+		g->face_ofs = running_face_idx;
+		g->vert_ofs = running_vert_idx;
+		g->normal_ofs = running_normal_idx;
+		g->tex_ofs = running_tex_idx;
+		g->verts.reserve(10000);
+		g->normals.reserve(10000);
+		g->tex_coords.reserve(10000);
+		g->faces.reserve(10000);
+	}
+}
+
 bool ObjLoader::load_binary_file(const char *filename, Meshes *meshes)
 {
 	RefPtr<FileReader> file(new FileReader());
@@ -353,7 +372,6 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 
 */
 
-	Group *cur_group = nullptr; 
 
   TextScanner scanner;
   if (!scanner.load(filename))
@@ -362,17 +380,23 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 	int running_vert_idx = 0, running_normal_idx = 0, running_tex_idx = 0;
 	int running_face_idx = 0;
 
+	// The order of data in the file is:
+	// vertex data | normal data | texture data | usemtl
+	// face data
+	// a new mesh is created at start-up, and then at each transition between face->something else
+
 	string2 s;
-  string2 cur_material;
-	bool new_mesh = true;
+	bool reading_face_data = false;
+	Group *cur_group = new Group("default");
+	groups->push_back(cur_group);
   while (true) {
 
 		if (!scanner.read_string(&s))
 			break;
 
 		if (s == "vn") {
-			if (cur_group->normals.empty())
-				cur_group->normals.reserve(10000);
+			handle_face_transition(&reading_face_data, groups, &cur_group, running_face_idx, running_vert_idx, running_normal_idx, running_tex_idx);
+
 			std::vector<float> f;
 			scanner.read_floats(&f);
 			if (f.size() != 3)
@@ -381,8 +405,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 			running_normal_idx++;
 
 		} else if (s == "vt") {
-			if (cur_group->tex_coords.empty())
-				cur_group->tex_coords.reserve(10000);
+			handle_face_transition(&reading_face_data, groups, &cur_group, running_face_idx, running_vert_idx, running_normal_idx, running_tex_idx);
 			std::vector<float> t;
 			scanner.read_floats(&t);
 			if (t.size() != 3)
@@ -391,7 +414,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 			running_tex_idx++;
 
 		} else if (s == "g") {
-
+			handle_face_transition(&reading_face_data, groups, &cur_group, running_face_idx, running_vert_idx, running_normal_idx, running_tex_idx);
 			scanner.read_string(&cur_group->name);
 
 			if (!scanner.skip_to_next_line())
@@ -403,21 +426,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 				break;
 
 		} else if (s == "v") {
-
-			if (new_mesh) {
-				if (cur_group != NULL) {
-					groups->push_back(cur_group);
-				}
-				cur_group = new Group("default");
-				cur_group->face_ofs = running_face_idx;
-				cur_group->vert_ofs = running_vert_idx;
-				cur_group->normal_ofs = running_normal_idx;
-				cur_group->tex_ofs = running_tex_idx;
-				cur_group->verts.reserve(10000);
-				cur_group->faces.reserve(10000);
-        cur_group->material_name = cur_material;
-				new_mesh = false;
-			}
+			handle_face_transition(&reading_face_data, groups, &cur_group, running_face_idx, running_vert_idx, running_normal_idx, running_tex_idx);
 
 			std::vector<float> f;
 			scanner.read_floats(&f);
@@ -427,8 +436,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 			running_vert_idx++;
 
 		} else if (s == "f") {
-			// really a misnomer, but this will force us to save the mesh when we find the next vertex
-			new_mesh = true;
+			reading_face_data = true;
 
 			// faces can have different formats
 			// f v1/vt1
@@ -540,7 +548,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 				break;
 
 		} else if (s == "usemtl") {
-			scanner.read_string(&cur_material);
+			scanner.read_string(&cur_group->material_name);
 
 			if (!scanner.skip_to_next_line())
 				break;
@@ -548,11 +556,6 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 		} else {
 			scanner.skip_to_next_line();
 		}
-  }
-
-	if (!cur_group->faces.empty() && !cur_group->verts.empty()) {
-    cur_group->material_name = cur_material;
-    groups->push_back(cur_group);
   }
 
   return true;

@@ -79,4 +79,5 @@ private:
 	void calc_bounding_sphere(const Verts& verts, float *radius, D3DXVECTOR3 *center);
 
   bool parse_file(const char *filename, Groups *groups);
+	void handle_face_transition(bool *reading_face_data, Groups *groups, Group **cur_group, int running_face_idx, int running_vert_idx, int running_normal_idx, int running_tex_idx);
 };

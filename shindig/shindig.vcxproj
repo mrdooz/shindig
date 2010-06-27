@@ -98,6 +98,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp" />
+    <ClCompile Include="debug_menu.cpp" />
     <ClCompile Include="debug_renderer.cpp" />
     <ClCompile Include="debug_writer.cpp" />
     <ClCompile Include="demo.cpp" />
@@ -130,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp" />
+    <ClInclude Include="debug_menu.hpp" />
     <ClInclude Include="debug_renderer.hpp" />
     <ClInclude Include="debug_writer.hpp" />
     <ClInclude Include="demo.hpp" />

@@ -52,11 +52,21 @@ bool TestEffect3::init()
   RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), 
     MakeDelegate(this, &TestEffect3::load_mesh), true));
 
-  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), 
+		MakeDelegate(this, &TestEffect3::load_material), true));
+
+  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sponza.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect3::effect_loaded)));
 
 	_dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
 	_blend_state.Attach(rt::D3D11::BlendDescription().Create(d));
+
+	_sampler_state.Attach(rt::D3D11::SamplerDescription().
+		AddressU_(D3D11_TEXTURE_ADDRESS_CLAMP).
+		AddressV_(D3D11_TEXTURE_ADDRESS_CLAMP).
+		Filter_(D3D11_FILTER_MIN_MAG_MIP_LINEAR).
+		Create(d));
+
 
   return true;
 }
@@ -94,8 +104,19 @@ bool TestEffect3::render()
 	_effect->set_vs_variable("mtx", mtx);
 	_effect->set_cbuffer();
 	_effect->set_shaders(context);
+
+	ID3D11SamplerState *samplers[] = { _sampler_state };
+	context->PSSetSamplers(0, 1, samplers);
+
+	ID3D11ShaderResourceView* t[] = { 0, 0 };
+
 	for (int i = 0; i < (int)_meshes.size(); ++i) {
 		Mesh2 *mesh = _meshes[i];
+		Material *material = _materials[mesh->_material_name];
+		t[0] = _textures[material->string_values["map_Kd"]];
+		Material::StringValues::iterator it = material->string_values.find("map_d");
+		t[1] = it != material->string_values.end() ? t[1] = _textures[it->second] : NULL;
+		context->PSSetShaderResources(0, 1 + (t[1] != NULL ? 1 : 0), t);
 		mesh->render(context);
 	}
 
@@ -107,42 +128,6 @@ bool TestEffect3::load_mesh(const string2& filename)
 	container_delete(_meshes);
 
   ObjLoader loader;
-	ObjLoader::Materials mats;
-	auto& s = System::instance();
-  auto d = Graphics::instance().device();
-	loader.load_material_file(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), &mats);
-
-	string2 map_names[] = { "map_Ka", "map_Kd", "map_d", "map_bump", "bump" };
-
-	// load textures
-	for (auto i = mats.begin(); i != mats.end(); ++i) {
-		for (auto j = (*i)->string_values.begin(); j != (*i)->string_values.end(); ++j) {
-			const string2& name = j->first;
-
-			for (int k = 0; k < ELEMS_IN_ARRAY(map_names); ++k) {
-				if (name == map_names[k]) {
-					const string2& value = j->second;
-					// check if we've already loaded the texture
-					if (_textures.find(value) == _textures.end()) {
-
-						Path p(value);
-						string2 filename = Path::replace_extension(p.get_filename(), "bmp");
-            ID3D11ShaderResourceView *t;
-						string2 f = s.convert_path("data/textures/sponza_textures/textures/" + filename, System::kDirDropBox);
-						if (file_exists(f)) {
-							RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, f, NULL, NULL, &t, NULL));
-							_textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(t)));
-						} else {
-							LOG_WARNING_LN_ONESHOT("Unable to load texture: %s", f.c_str());
-							_textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(0)));
-						}
-					}
-
-				}
-			}
-		}
-	}
-
   bool res = loader.load_from_file(filename, &_meshes);
 	if (res) {
 		float r = _meshes[0]->_bounding_radius;
@@ -151,6 +136,7 @@ bool TestEffect3::load_mesh(const string2& filename)
 		float a = (r - r * x) / x;
 		_cam_radius = r + a;
 	}
+
 
 	return res;
 }
@@ -213,4 +199,53 @@ void TestEffect3::on_mouse_down(const MouseInfo& info)
 void TestEffect3::on_mouse_wheel(const MouseInfo& info)
 {
 	_cam_radius -= info.wheel_delta;		
+}
+
+bool TestEffect3::load_material(const string2& material_name)
+{
+	map_delete(_materials);
+	_textures.clear();
+
+	ObjLoader loader;
+	ObjLoader::Materials materials;
+	auto& s = System::instance();
+	auto d = Graphics::instance().device();
+	loader.load_material_file(material_name, &materials);
+
+	for (int i = 0; i < (int)materials.size(); ++i) {
+		_materials.insert(std::make_pair(materials[i]->name, materials[i]));
+	}
+
+	string2 map_names[] = { "map_Ka", "map_Kd", "map_d", "map_bump", "bump" };
+
+	// load textures
+	for (auto i = materials.begin(); i != materials.end(); ++i) {
+		for (auto j = (*i)->string_values.begin(); j != (*i)->string_values.end(); ++j) {
+			const string2& name = j->first;
+
+			for (int k = 0; k < ELEMS_IN_ARRAY(map_names); ++k) {
+				if (name == map_names[k]) {
+					const string2& value = j->second;
+					// check if we've already loaded the texture
+					if (_textures.find(value) == _textures.end()) {
+
+						Path p(value);
+						string2 filename = Path::replace_extension(p.get_filename(), "bmp");
+						ID3D11ShaderResourceView *t;
+						string2 f = s.convert_path("data/textures/sponza_textures/textures/" + filename, System::kDirDropBox);
+						if (file_exists(f)) {
+							RETURN_ON_FAIL_BOOL_E(D3DX11CreateShaderResourceViewFromFile(d, f, NULL, NULL, &t, NULL));
+							_textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(t)));
+						} else {
+							LOG_WARNING_LN_ONESHOT("Unable to load texture: %s", f.c_str());
+							_textures.insert(std::make_pair(value, CComPtr<ID3D11ShaderResourceView>(0)));
+						}
+					}
+
+				}
+			}
+		}
+	}
+
+	return true;
 }

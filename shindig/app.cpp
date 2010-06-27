@@ -7,6 +7,7 @@
 #include "font.hpp"
 #include <celsus/file_utils.hpp>
 #include "debug_writer.hpp"
+#include "debug_menu.hpp"
 
 App* App::_instance = NULL;
 
@@ -18,7 +19,7 @@ App::App()
   , _height(-1)
   , _hwnd(NULL)
 	, _test_effect(NULL)
-	, _debug_writer(new DebugWriter())
+	, _debug_writer(nullptr)
 {
 }
 
@@ -41,13 +42,25 @@ bool App::init(HINSTANCE hinstance)
   create_window();
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
+	_debug_writer = new DebugWriter();
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(_width, _height));
+	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
 
 	_test_effect = new TestEffect3();
 	_test_effect->init();
 
 
 	return true;
+}
+
+void App::on_quit()
+{
+	int a = 10;
+}
+
+void App::init_menu()
+{
+	DebugMenu::instance().add_button("quit", fastdelegate::MakeDelegate(this, &App::on_quit));
 }
 
 bool App::close()
@@ -58,7 +71,8 @@ bool App::close()
   }
 
 	_debug_writer->close();
-  SAFE_DELETE(_debug_writer);
+	SAFE_DELETE(_debug_writer);
+	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().close());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
   RETURN_ON_FAIL_BOOL_E(System::instance().close());
 	return true;
@@ -88,7 +102,7 @@ bool App::create_window()
 
   wcex.cbSize = sizeof(WNDCLASSEXA);
   wcex.style          = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-  wcex.lpfnWndProc    = wnd_proc;
+  wcex.lpfnWndProc    = tramp_wnd_proc;
   wcex.hInstance      = _hinstance;
   wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
   wcex.lpszClassName  = kClassName;
@@ -135,6 +149,7 @@ void App::run()
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
 			_debug_writer->render();
+			DebugMenu::instance().render();
 
 			graphics.present();
 
@@ -143,28 +158,26 @@ void App::run()
 
 }
 
-LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam ) 
+LRESULT App::tramp_wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-  PAINTSTRUCT ps;
-  HDC hdc;
+	return App::instance().wnd_proc(hWnd, message, wParam, lParam);
+}
 
-	App& a = App::instance();
+LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam ) 
+{
+	// See if the debug menu wants to handle the message first
+	LRESULT res = DebugMenu::instance().wnd_proc(hWnd, message, wParam, lParam);
+	if (res != 0)
+		return res;
 
   switch( message ) 
   {
-
   case WM_SIZE:
     {
       const int width = LOWORD(lParam);
       const int height = HIWORD(lParam);
 			Graphics::instance().resize(width, height);
     }
-    break;
-
-  case WM_PAINT:
-    hdc = BeginPaint( hWnd, &ps );
-    //g_derived_system->render(); 
-    EndPaint( hWnd, &ps );
     break;
 
   case WM_DESTROY:
@@ -174,21 +187,21 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
   case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
-		a._mouse_down_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		_mouse_down_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
 		break;
 
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
-		a._mouse_up_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		_mouse_up_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
 		break;
 
 	case WM_MOUSEMOVE:
-		a._mouse_move_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		_mouse_move_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
     break;
 
 	case WM_MOUSEWHEEL:
-		a._mouse_wheel_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam), GET_WHEEL_DELTA_WPARAM(wParam)));
+		_mouse_wheel_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam), GET_WHEEL_DELTA_WPARAM(wParam)));
 		break;
 
   case WM_KEYDOWN:
@@ -211,7 +224,6 @@ LRESULT CALLBACK App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     return DefWindowProc( hWnd, message, wParam, lParam );
   }
   return 0;
-
 }
 
 sig2::connection App::add_mouse_move(const fnMouseMove& slot)

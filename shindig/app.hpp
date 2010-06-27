@@ -54,11 +54,13 @@ private:
 	App();
 	~App();
 
+	void on_quit();
+	void init_menu();
   bool create_window();
   void set_client_size();
 
-
-  static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	LRESULT wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+  static LRESULT CALLBACK tramp_wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	static App* _instance;
 	EffectBase* _test_effect;

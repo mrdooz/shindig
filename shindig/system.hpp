@@ -89,7 +89,6 @@ private:
   void process_frequency_callbacks();
   void process_timed_callbacks();
 
-
 	CRITICAL_SECTION _cs_deferred_files;
 	sigFileChanged _global_signals;
 	SpecificSignals _specific_signals;
@@ -119,7 +118,6 @@ private:
   float *_spectrum_combined;
 
 	std::vector<string2> _custom_dirs;
-
 
   Demo *_demo;
 };
