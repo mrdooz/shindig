@@ -49,6 +49,8 @@ bool App::init(HINSTANCE hinstance)
 	_test_effect = new TestEffect3();
 	_test_effect->init();
 
+  init_menu();
+
 
 	return true;
 }
@@ -61,6 +63,8 @@ void App::on_quit()
 void App::init_menu()
 {
 	DebugMenu::instance().add_button("quit", fastdelegate::MakeDelegate(this, &App::on_quit));
+  DebugMenu::instance().add_button("quit", fastdelegate::MakeDelegate(this, &App::on_quit));
+
 }
 
 bool App::close()
@@ -142,13 +146,13 @@ void App::run()
 			_debug_writer->reset_frame();
 
 			if (_test_effect) {
-				_test_effect->render();
+				//_test_effect->render();
 			}
 
       graphics.tick();
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
-			_debug_writer->render();
+			//_debug_writer->render();
 			DebugMenu::instance().render();
 
 			graphics.present();
