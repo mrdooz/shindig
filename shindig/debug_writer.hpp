@@ -16,10 +16,17 @@ public:
 	void close();
 	void render();
 	void reset_frame();
-	void write(const char *msg);
+	void write(const D3DXVECTOR3& pos, const char *msg);
 
 private:
-	string2	_text;
+	struct TextSegment
+	{
+		TextSegment(const D3DXVECTOR3& pos, const string2& text) : pos(pos), text(text) {}
+		D3DXVECTOR3 pos;
+		string2 text;
+	};
+	typedef std::vector<TextSegment> Text;
+	Text _text;
 	int _width;
 	int _height;
 	Font *_font;

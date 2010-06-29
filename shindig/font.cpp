@@ -179,9 +179,9 @@ bool Font::pack_font()
   return true;
 }
 
-void Font::render(const char *text, PosTex *vtx, int width, int height)
+void Font::render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs)
 {
-  D3DXVECTOR3 pos(0,0,0);
+  D3DXVECTOR3 pos(ofs);
   int max_height = 0;	// max height of a letter on the current row
   while (*text) {
     int new_lines = 0;
@@ -208,7 +208,7 @@ void Font::render(const char *text, PosTex *vtx, int width, int height)
     auto v2 = PosTex(pos + D3DXVECTOR3(0,-h,0), info._uv[2]);
     auto v3 = PosTex(pos + D3DXVECTOR3(w,-h,0), info._uv[3]);
 
-		const D3DXVECTOR3 ofs(-256.0f + info._ofsx, +256 - 20 - info._ofsy, 0);
+		const D3DXVECTOR3 ofs((float)(-256.0f + info._ofsx), (float)(+256 - 20 - info._ofsy), 0);
 		const float f = 1.0f / 256;
 
 		v0.pos = f * (ofs + v0.pos);

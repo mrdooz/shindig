@@ -14,7 +14,6 @@ struct FontInfo
 	int _ofsx, _ofsy;
 };
 
-
 // wrapper around stb-truetype
 class Font
 {
@@ -22,7 +21,7 @@ public:
 	Font();
 	~Font();
 	bool init(const char *filename, float height);
-  void render(const char *text, PosTex *vtx, int width, int height);
+  void render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs);
 
   ID3D11ShaderResourceView *view() const { return _view; }
 private:

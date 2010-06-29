@@ -68,7 +68,9 @@ void DebugWriter::render()
 {
 	auto context = Graphics::instance().context();
   PosTex *v = _verts.map();
-  _font->render(_text, v, _width, _height);
+	for (auto i = _text.begin(); i != _text.end(); ++i) {
+		_font->render(i->text, v, _width, _height, i->pos);
+	}
   _verts.unmap();
 
 	_effect->set_shaders(context);
@@ -92,9 +94,9 @@ void DebugWriter::reset_frame()
 	_text.clear();
 }
 
-void DebugWriter::write(const char *msg)
+void DebugWriter::write(const D3DXVECTOR3& pos, const char *msg)
 {
-	_text += msg;
+	_text.push_back(TextSegment(pos, msg));
 }
 
 void DebugWriter::close()

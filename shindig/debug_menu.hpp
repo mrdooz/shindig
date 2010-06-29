@@ -1,5 +1,6 @@
 #pragma once
 #include "dynamic_vb.hpp"
+#include "debug_writer.hpp"
 #include <celsus/vertex_types.hpp>
 
 class DebugMenu
@@ -16,6 +17,7 @@ public:
 
 	void render();
 	void add_item(const char *text);
+	void add_label();
 	void add_button(const char *text, const ButtonCallback& cb);
 
 private:
@@ -59,7 +61,7 @@ private:
   void create_menu();
   DWORD color_from_state(ButtonState state);
   MenuButton *point_in_button(const POINTS& pt);
-  void reset_button_states();
+  bool reset_button_states();
 
   typedef DynamicVb<PosCol> Verts;
 	Verts _vb;
@@ -69,6 +71,7 @@ private:
 
   std::vector<MenuButton> _buttons;
 
+	DebugWriter _writer;
 	Settings _settings;
 
 	EffectWrapper *_effect;

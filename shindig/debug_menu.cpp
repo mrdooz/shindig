@@ -43,6 +43,9 @@ bool DebugMenu::init()
   _dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(d));
 	_blendstate.Attach(D3D11::BlendDescription().Create(d));
 
+	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
+	_writer.init((int)viewport.Width, (int)viewport.Height);
+
 	return true;
 }
 
@@ -68,10 +71,14 @@ DebugMenu::MenuButton *DebugMenu::point_in_button(const POINTS& pt)
   return NULL;
 }
 
-void DebugMenu::reset_button_states()
+bool DebugMenu::reset_button_states()
 {
-  for (int i = 0; i < (int)_buttons.size(); ++i)
-    _buttons[i].state = kStateDefault;
+	bool state_changed = false;
+  for (int i = 0; i < (int)_buttons.size(); ++i) {
+		state_changed |= _buttons[i].state != kStateDefault;
+		_buttons[i].state = kStateDefault;
+	}
+	return state_changed;
 }
 
 LRESULT DebugMenu::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -80,24 +87,39 @@ LRESULT DebugMenu::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
   {
   case WM_MOUSEMOVE:
     {
-      reset_button_states();
+			bool changed = reset_button_states();
       if (MenuButton *btn = point_in_button(MAKEPOINTS(lParam))) {
-        if (btn->state != kStateMouseOver) {
-          btn->state = kStateMouseOver;
-          create_menu();
-          return TRUE;
-        }
+				changed |= btn->state != kStateMouseOver;
+				btn->state = kStateMouseOver;
       }
+			if (changed)
+				create_menu();
+			return TRUE;
     }
-    break;
+
+	case WM_LBUTTONDOWN:
+		{
+			bool changed = reset_button_states();
+			if (MenuButton *btn = point_in_button(MAKEPOINTS(lParam))) {
+				btn->state = kStateClicked;
+				changed = true;
+			}
+			if (changed)
+				create_menu();
+			return TRUE;
+		}
 
   case WM_LBUTTONUP:
     {
-      reset_button_states();
+			bool changed = reset_button_states();
       if (MenuButton *btn = point_in_button(MAKEPOINTS(lParam))) {
         btn->cb();
-        return TRUE;
+				btn->state = kStateMouseOver;
+				changed = true;
       }
+			if (changed)
+				create_menu();
+			return TRUE;
 
     }
     break;
@@ -167,6 +189,11 @@ DebugMenu& DebugMenu::instance()
 	return *_instance;
 }
 
+void DebugMenu::add_label()
+{
+
+}
+
 void DebugMenu::add_item(const char *text)
 {
 
@@ -204,6 +231,13 @@ void DebugMenu::render()
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   context->OMSetDepthStencilState(_dss, 0xffffffff);
   context->Draw(2 * 6 * _buttons.size(), 0);
+
+	_writer.reset_frame();
+	for (int i = 0; i < (int)_buttons.size(); ++i) {
+		const MenuButton& cur = _buttons[i];
+		_writer.write(cur.center, cur.text);
+	}
+	_writer.render();
 }
 
 
@@ -218,7 +252,7 @@ DWORD DebugMenu::color_from_state(ButtonState state)
   default:
     LOG_ERROR_LN("Unknown state");
   case kStateDefault:
-    return _settings.col_bg;
+    return _settings.col_fg;
   }
 }
 
@@ -254,29 +288,28 @@ void DebugMenu::create_menu()
   D3DXVECTOR3 b2(-extents_x + _settings.border, -extents_y + _settings.border, 0);
   D3DXVECTOR3 b3(+extents_x - _settings.border, -extents_y + _settings.border, 0);
 
-  //D3DXVECTOR3 pos(-w / 2 + _settings.x + extents_x, +h / 2 - _settings.y - extents_y, 0);
-
   for (int i = 0; i < (int)_buttons.size(); ++i) {
     const MenuButton& btn = _buttons[i];
     const D3DXVECTOR3& pos = btn.center;
 
     // draw outer
-    vtx->pos = scale_to_clipspace(pos + v0, w, h); vtx->col = color_from_state(btn.state); ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v1, w, h); vtx->col = color_from_state(btn.state); ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v2, w, h); vtx->col = color_from_state(btn.state); ++vtx;
+    vtx->pos = scale_to_clipspace(pos + v0, w, h); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + v1, w, h); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + v2, w, h); vtx->col = _settings.col_bg; ++vtx;
 
-    vtx->pos = scale_to_clipspace(pos + v2, w, h); vtx->col = color_from_state(btn.state); ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v1, w, h); vtx->col = color_from_state(btn.state); ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v3, w, h); vtx->col = color_from_state(btn.state); ++vtx;
+    vtx->pos = scale_to_clipspace(pos + v2, w, h); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + v1, w, h); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + v3, w, h); vtx->col = _settings.col_bg; ++vtx;
 
     // draw inner
-    vtx->pos = scale_to_clipspace(pos + b0, w, h); vtx->col = _settings.col_fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b1, w, h); vtx->col = _settings.col_fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b2, w, h); vtx->col = _settings.col_fg; ++vtx;
+		D3DXCOLOR fg =  color_from_state(btn.state); 
+    vtx->pos = scale_to_clipspace(pos + b0, w, h); vtx->col = fg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + b1, w, h); vtx->col = fg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + b2, w, h); vtx->col = fg; ++vtx;
 
-    vtx->pos = scale_to_clipspace(pos + b2, w, h); vtx->col = _settings.col_fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b1, w, h); vtx->col = _settings.col_fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b3, w, h); vtx->col = _settings.col_fg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + b2, w, h); vtx->col = fg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + b1, w, h); vtx->col = fg; ++vtx;
+    vtx->pos = scale_to_clipspace(pos + b3, w, h); vtx->col = fg; ++vtx;
 
     //pos.y -= (_settings.spacing + extents_y * 2);
   }
