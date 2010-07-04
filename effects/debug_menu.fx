@@ -1,3 +1,5 @@
+// draws a colored triangle.
+// coordinates are in clip space
 struct psInput
 {
 	float4	pos : SV_Position;

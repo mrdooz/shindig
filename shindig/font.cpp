@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "font.hpp"
 #include <celsus/file_utils.hpp>
+#include <celsus/DX11Utils.hpp>
 
 bool create_empty_texture(int width, int height, DXGI_FORMAT format, int mip_levels, D3D11_SUBRESOURCE_DATA *data, ID3D11Texture2D *texture, ID3D11ShaderResourceView *view)
 {
@@ -174,10 +175,10 @@ bool Font::pack_font()
 		++cur;
 	}
 
-	//save_bmp32("c:/temp/tjong.bmp", buf, 256, 256);
   context->Unmap(_texture, 0);
   return true;
 }
+
 
 void Font::render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs)
 {
@@ -202,20 +203,22 @@ void Font::render(const char *text, PosTex *vtx, int width, int height, const D3
     const FontInfo& info = it->second;
     // 0, 1
     // 2, 3
+		// scale this from pixel coordinates to clip space
+		const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
     float w = (float)info._w, h = (float)info._h;
-    auto v0 = PosTex(pos + D3DXVECTOR3(0,0,0), info._uv[0]);
-    auto v1 = PosTex(pos + D3DXVECTOR3(w,0,0), info._uv[1]);
-    auto v2 = PosTex(pos + D3DXVECTOR3(0,-h,0), info._uv[2]);
-    auto v3 = PosTex(pos + D3DXVECTOR3(w,-h,0), info._uv[3]);
+    auto v0 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + 0, 20 - info._ofsy + 0,0), viewport), info._uv[0]);
+    auto v1 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + w, 20 - info._ofsy + 0,0), viewport), info._uv[1]);
+		auto v2 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + 0, 20 - info._ofsy + h,0), viewport), info._uv[2]);
+		auto v3 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + w, 20 - info._ofsy + h,0), viewport), info._uv[3]);
 
-		const D3DXVECTOR3 ofs((float)(-256.0f + info._ofsx), (float)(+256 - 20 - info._ofsy), 0);
-		const float f = 1.0f / 256;
-
+		//const D3DXVECTOR3 ofs((float)(-256.0f + info._ofsx), (float)(+256 - 20 - info._ofsy), 0);
+		//const float f = 1.0f / 256;
+/*
 		v0.pos = f * (ofs + v0.pos);
 		v1.pos = f * (ofs + v1.pos);
 		v2.pos = f * (ofs + v2.pos);
 		v3.pos = f * (ofs + v3.pos);
-
+		*/
     // 2, 0, 1
     // 2, 1, 3
     *vtx++ = v2;

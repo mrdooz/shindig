@@ -54,7 +54,7 @@ bool DebugWriter::init(int width, int height)
 	_dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(device));
 
   InputDesc().
-    add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+    add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
     add("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0).
     create(_layout, _effect);
 
@@ -94,9 +94,10 @@ void DebugWriter::reset_frame()
 	_text.clear();
 }
 
-void DebugWriter::write(const D3DXVECTOR3& pos, const char *msg)
+void DebugWriter::write(const int top, const int left, const char *msg)
 {
-	_text.push_back(TextSegment(pos, msg));
+	// pos specifies top-left corner in pixel coordinates
+	_text.push_back(TextSegment(D3DXVECTOR3(left, top, 0), msg));
 }
 
 void DebugWriter::close()

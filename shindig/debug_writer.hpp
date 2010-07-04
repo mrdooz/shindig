@@ -16,7 +16,7 @@ public:
 	void close();
 	void render();
 	void reset_frame();
-	void write(const D3DXVECTOR3& pos, const char *msg);
+	void write(const int top, const int left, const char *msg);
 
 private:
 	struct TextSegment

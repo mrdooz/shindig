@@ -4,6 +4,15 @@
 #include "resource_manager.hpp"
 #include <celsus/text_scanner.hpp>
 
+// Note, all the debug code stuff uses pixels as units, with a coordinate system
+// like so: 
+//
+// (0,0) ---------> x+
+//   |
+//   |
+//  +y
+//
+
 DebugMenu *DebugMenu::_instance = nullptr;
 
 D3DXVECTOR3 vp_to_screen(const D3D11_VIEWPORT& vp, const D3DXVECTOR3& pt)
@@ -55,18 +64,19 @@ bool DebugMenu::close()
 	return true;
 }
 
+bool DebugMenu::MenuButton::point_inside(const POINTS& pt) const
+{
+	return pt.x >= center.x - extents.x && pt.x < center.x + extents.x && 
+		pt.y >= center.y - extents.y && pt.y < center.y + extents.y;
+}
+
+
 DebugMenu::MenuButton *DebugMenu::point_in_button(const POINTS& pt)
 {
-  const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
-
   for (int i = 0; i < (int)_buttons.size(); ++i) {
     MenuButton& cur = _buttons[i];
-    D3DXVECTOR3 center(vp_to_screen(viewport, cur.center));
-    ButtonState old_state = cur.state;
-    ButtonState new_state = cur.state;
-    if (pt.x >= center.x - cur.extents.x && pt.x < center.x + cur.extents.x && 
-      pt.y >= center.y - cur.extents.y && pt.y < center.y + cur.extents.y)
-      return &cur;
+		if (cur.point_inside(pt))
+			return &cur;
   }
   return NULL;
 }
@@ -208,13 +218,9 @@ void DebugMenu::add_button(const char *text, const ButtonCallback& cb)
 
   const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
 
-  const float w = viewport.Width;
-  const float h = viewport.Height;
   const float extents_x = 0.5f * _settings.w;
   const float extents_y = 0.5f * _settings.h;
-  D3DXVECTOR3 pos(-w / 2 + _settings.x + extents_x, +h / 2 - _settings.y - extents_y, 0);
-  pos.y -= _buttons.size() * (_settings.h + _settings.spacing);
-  btn.center = pos;
+  btn.center = D3DXVECTOR3((float)_settings.x, _settings.y + (float)_buttons.size() * (_settings.h + _settings.spacing), 0);
   btn.extents = D3DXVECTOR3(extents_x, extents_y, 0);
 
   _buttons.push_back(btn);
@@ -228,14 +234,14 @@ void DebugMenu::render()
   _effect->set_shaders(context);
   set_vb(context, _vb.vb(), Verts::stride);
   context->IASetInputLayout(_layout);
-  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  context->OMSetDepthStencilState(_dss, 0xffffffff);
-  context->Draw(2 * 6 * _buttons.size(), 0);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->OMSetDepthStencilState(_dss, 0xffffffff);
+	context->Draw(2 * 6 * _buttons.size(), 0);
 
 	_writer.reset_frame();
 	for (int i = 0; i < (int)_buttons.size(); ++i) {
 		const MenuButton& cur = _buttons[i];
-		_writer.write(cur.center, cur.text);
+		_writer.write((int)(cur.center.x - cur.extents.x), (int)(cur.center.y - cur.extents.y), cur.text);
 	}
 	_writer.render();
 }

@@ -48,6 +48,7 @@ private:
     ButtonState state;
     D3DXVECTOR3 center;
     D3DXVECTOR3 extents;
+		bool point_inside(const POINTS& pt) const;
   };
 
   struct MenuItem

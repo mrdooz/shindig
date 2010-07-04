@@ -1,10 +1,12 @@
+// coordinates are in clip space
+
 Texture2D g_texture;
 extern sampler g_sampler;
 
 struct vsInput
 {
-	float3 pos : POSITION;
-	float2 tex : TEXCOORD;
+	float4 pos : SV_Position;
+	float2 tex : TexCoord;
 };
 
 struct psInput
@@ -16,7 +18,7 @@ struct psInput
 psInput vsMain(in vsInput v)
 {
 	psInput o;
-	o.pos = float4(v.pos, 1);
+	o.pos = v.pos;
 	o.tex = v.tex;
 	return o;
 }
