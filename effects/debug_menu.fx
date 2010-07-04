@@ -22,5 +22,6 @@ psInput vsMain(in vsInput v)
 
 float4 psMain(in psInput v) : SV_Target
 {
+	return float4(1,1,1,1);
 	return v.col;
 }

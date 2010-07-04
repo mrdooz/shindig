@@ -220,7 +220,9 @@ void DebugMenu::add_button(const char *text, const ButtonCallback& cb)
 
   const float extents_x = 0.5f * _settings.w;
   const float extents_y = 0.5f * _settings.h;
-  btn.center = D3DXVECTOR3((float)_settings.x, _settings.y + (float)_buttons.size() * (_settings.h + _settings.spacing), 0);
+  btn.center = D3DXVECTOR3(
+    (float)_settings.x + extents_x, 
+    _settings.y + extents_y + (float)_buttons.size() * (_settings.h + _settings.spacing), 0);
   btn.extents = D3DXVECTOR3(extents_x, extents_y, 0);
 
   _buttons.push_back(btn);
@@ -237,13 +239,14 @@ void DebugMenu::render()
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->OMSetDepthStencilState(_dss, 0xffffffff);
 	context->Draw(2 * 6 * _buttons.size(), 0);
-
+/*
 	_writer.reset_frame();
 	for (int i = 0; i < (int)_buttons.size(); ++i) {
 		const MenuButton& cur = _buttons[i];
 		_writer.write((int)(cur.center.x - cur.extents.x), (int)(cur.center.y - cur.extents.y), cur.text);
 	}
 	_writer.render();
+*/
 }
 
 
@@ -262,23 +265,19 @@ DWORD DebugMenu::color_from_state(ButtonState state)
   }
 }
 
-D3DXVECTOR3 scale_to_clipspace(const D3DXVECTOR3& v, float width, float height)
-{
-  return D3DXVECTOR3(2 * v.x / width, 2 * v.y / height, v.z);
-}
-
 void DebugMenu::create_menu()
 {
   PosCol *vtx = _vb.map();
 
-  // map to clipspace, -1..1
   // 0--1
   // |  |
   // 2--3
   // 0, 1, 2
   // 2, 1, 3
 
+
   const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
+
   const float w = viewport.Width;
   const float h = viewport.Height;
   const float extents_x = 0.5f * _settings.w;
@@ -299,25 +298,23 @@ void DebugMenu::create_menu()
     const D3DXVECTOR3& pos = btn.center;
 
     // draw outer
-    vtx->pos = scale_to_clipspace(pos + v0, w, h); vtx->col = _settings.col_bg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v1, w, h); vtx->col = _settings.col_bg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v2, w, h); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = screen_to_clip(pos + v0, viewport); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = screen_to_clip(pos + v1, viewport); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = screen_to_clip(pos + v2, viewport); vtx->col = _settings.col_bg; ++vtx;
 
-    vtx->pos = scale_to_clipspace(pos + v2, w, h); vtx->col = _settings.col_bg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v1, w, h); vtx->col = _settings.col_bg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + v3, w, h); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = screen_to_clip(pos + v2, viewport); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = screen_to_clip(pos + v1, viewport); vtx->col = _settings.col_bg; ++vtx;
+    vtx->pos = screen_to_clip(pos + v3, viewport); vtx->col = _settings.col_bg; ++vtx;
 
     // draw inner
 		D3DXCOLOR fg =  color_from_state(btn.state); 
-    vtx->pos = scale_to_clipspace(pos + b0, w, h); vtx->col = fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b1, w, h); vtx->col = fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b2, w, h); vtx->col = fg; ++vtx;
+    vtx->pos = screen_to_clip(pos + b0, viewport); vtx->col = fg; ++vtx;
+    vtx->pos = screen_to_clip(pos + b1, viewport); vtx->col = fg; ++vtx;
+    vtx->pos = screen_to_clip(pos + b2, viewport); vtx->col = fg; ++vtx;
 
-    vtx->pos = scale_to_clipspace(pos + b2, w, h); vtx->col = fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b1, w, h); vtx->col = fg; ++vtx;
-    vtx->pos = scale_to_clipspace(pos + b3, w, h); vtx->col = fg; ++vtx;
-
-    //pos.y -= (_settings.spacing + extents_y * 2);
+    vtx->pos = screen_to_clip(pos + b2, viewport); vtx->col = fg; ++vtx;
+    vtx->pos = screen_to_clip(pos + b1, viewport); vtx->col = fg; ++vtx;
+    vtx->pos = screen_to_clip(pos + b3, viewport); vtx->col = fg; ++vtx;
   }
 
   _vb.unmap();
