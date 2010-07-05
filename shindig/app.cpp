@@ -43,7 +43,7 @@ bool App::init(HINSTANCE hinstance)
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
 	_debug_writer = new DebugWriter();
-	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(_width, _height));
+	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(_width, _height, 30));
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
 
 	_test_effect = new TestEffect3();
@@ -57,14 +57,13 @@ bool App::init(HINSTANCE hinstance)
 
 void App::on_quit()
 {
-	int a = 10;
+	SendMessage(_hwnd, WM_DESTROY, 0, 0);
 }
 
 void App::init_menu()
 {
 	DebugMenu::instance().add_button("quit", fastdelegate::MakeDelegate(this, &App::on_quit));
-  DebugMenu::instance().add_button("quit", fastdelegate::MakeDelegate(this, &App::on_quit));
-
+	DebugMenu::instance().add_button("quit2", fastdelegate::MakeDelegate(this, &App::on_quit));
 }
 
 bool App::close()
@@ -146,13 +145,13 @@ void App::run()
 			_debug_writer->reset_frame();
 
 			if (_test_effect) {
-				//_test_effect->render();
+				_test_effect->render();
 			}
 
       graphics.tick();
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
-			//_debug_writer->render();
+			_debug_writer->render();
 			DebugMenu::instance().render();
 
 			graphics.present();
@@ -185,7 +184,7 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
     break;
 
   case WM_DESTROY:
-    PostQuitMessage( 0 );
+    PostQuitMessage(0);
     break;
 
   case WM_LBUTTONDOWN:

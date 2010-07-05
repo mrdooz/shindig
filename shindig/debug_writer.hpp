@@ -12,11 +12,11 @@ class DebugWriter
 public:
 	DebugWriter();
 	~DebugWriter();
-	bool init(int width, int height);
+	bool init(int width, int height, float font_height);
 	void close();
 	void render();
 	void reset_frame();
-	void write(const int top, const int left, const char *msg);
+	void write(const int left, const int top, const char *msg);
 
 private:
 	struct TextSegment
@@ -29,9 +29,8 @@ private:
 	Text _text;
 	int _width;
 	int _height;
+	float _font_height;
 	Font *_font;
-	CComPtr<ID3D11Texture2D> _texture;
-	CComPtr<ID3D11ShaderResourceView> _view;
   CComPtr<ID3D11SamplerState> _sampler_state;
   CComPtr<ID3D11BlendState> _blend_state;
   CComPtr<ID3D11InputLayout> _layout;

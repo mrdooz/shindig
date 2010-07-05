@@ -50,5 +50,7 @@ private:
 	Materials _materials;
 	Meshes _meshes;
   EffectWrapper *_effect;
+
+	D3DXVECTOR3 _test;
 };
 

@@ -15,11 +15,6 @@
 
 DebugMenu *DebugMenu::_instance = nullptr;
 
-D3DXVECTOR3 vp_to_screen(const D3D11_VIEWPORT& vp, const D3DXVECTOR3& pt)
-{
-  return D3DXVECTOR3(pt.x + vp.Width / 2, vp.Height/2 - pt.y, pt.z);
-}
-
 DebugMenu::DebugMenu()
 	: _effect(nullptr)
 {
@@ -53,7 +48,7 @@ bool DebugMenu::init()
 	_blendstate.Attach(D3D11::BlendDescription().Create(d));
 
 	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
-	_writer.init((int)viewport.Width, (int)viewport.Height);
+	_writer.init((int)viewport.Width, (int)viewport.Height, 20);
 
 	return true;
 }
@@ -64,19 +59,19 @@ bool DebugMenu::close()
 	return true;
 }
 
-bool DebugMenu::MenuButton::point_inside(const POINTS& pt) const
+bool DebugMenu::ButtonBase::point_inside(const POINTS& pt) const
 {
 	return pt.x >= center.x - extents.x && pt.x < center.x + extents.x && 
 		pt.y >= center.y - extents.y && pt.y < center.y + extents.y;
 }
 
 
-DebugMenu::MenuButton *DebugMenu::point_in_button(const POINTS& pt)
+DebugMenu::ButtonBase *DebugMenu::point_in_button(const POINTS& pt)
 {
   for (int i = 0; i < (int)_buttons.size(); ++i) {
-    MenuButton& cur = _buttons[i];
-		if (cur.point_inside(pt))
-			return &cur;
+    ButtonBase *cur = _buttons[i];
+		if (cur->point_inside(pt))
+			return cur;
   }
   return NULL;
 }
@@ -85,8 +80,8 @@ bool DebugMenu::reset_button_states()
 {
 	bool state_changed = false;
   for (int i = 0; i < (int)_buttons.size(); ++i) {
-		state_changed |= _buttons[i].state != kStateDefault;
-		_buttons[i].state = kStateDefault;
+		state_changed |= _buttons[i]->state != kStateDefault;
+		_buttons[i]->state = kStateDefault;
 	}
 	return state_changed;
 }
@@ -98,7 +93,7 @@ LRESULT DebugMenu::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
   case WM_MOUSEMOVE:
     {
 			bool changed = reset_button_states();
-      if (MenuButton *btn = point_in_button(MAKEPOINTS(lParam))) {
+      if (ButtonBase *btn = point_in_button(MAKEPOINTS(lParam))) {
 				changed |= btn->state != kStateMouseOver;
 				btn->state = kStateMouseOver;
       }
@@ -110,7 +105,7 @@ LRESULT DebugMenu::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_LBUTTONDOWN:
 		{
 			bool changed = reset_button_states();
-			if (MenuButton *btn = point_in_button(MAKEPOINTS(lParam))) {
+			if (ButtonBase *btn = point_in_button(MAKEPOINTS(lParam))) {
 				btn->state = kStateClicked;
 				changed = true;
 			}
@@ -122,8 +117,8 @@ LRESULT DebugMenu::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
   case WM_LBUTTONUP:
     {
 			bool changed = reset_button_states();
-      if (MenuButton *btn = point_in_button(MAKEPOINTS(lParam))) {
-        btn->cb();
+      if (ButtonBase *btn = point_in_button(MAKEPOINTS(lParam))) {
+        btn->apply();
 				btn->state = kStateMouseOver;
 				changed = true;
       }
@@ -199,65 +194,88 @@ DebugMenu& DebugMenu::instance()
 	return *_instance;
 }
 
-void DebugMenu::add_label()
+void DebugMenu::render()
 {
+	for (int i = 0; i < (int)_buttons.size(); ++i)
+		_buttons[i]->update();
+
+	auto context = Graphics::instance().context();
+	_effect->set_shaders(context);
+	set_vb(context, _vb.vb(), Verts::stride);
+	context->IASetInputLayout(_layout);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->OMSetDepthStencilState(_dss, 0xffffffff);
+	float blend_factor[] = { 1, 1, 1, 1 };
+	context->OMSetBlendState(_blendstate, blend_factor, 0xffffffff);
+	context->Draw(2 * 6 * _buttons.size(), 0);
+
+	_writer.reset_frame();
+	for (int i = 0; i < (int)_buttons.size(); ++i) {
+		const ButtonBase *cur = _buttons[i];
+		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), cur->text);
+	}
+	_writer.render();
 
 }
-
-void DebugMenu::add_item(const char *text)
-{
-
-}
-
 
 void DebugMenu::add_button(const char *text, const ButtonCallback& cb)
 {
-  MenuButton btn(text, cb);
-
-  // calc pos
-
+  MenuButton *btn = new MenuButton(text, cb);
   const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
 
+	// calc center and extents
   const float extents_x = 0.5f * _settings.w;
   const float extents_y = 0.5f * _settings.h;
-  btn.center = D3DXVECTOR3(
+  btn->center = D3DXVECTOR3(
     (float)_settings.x + extents_x, 
     _settings.y + extents_y + (float)_buttons.size() * (_settings.h + _settings.spacing), 0);
-  btn.extents = D3DXVECTOR3(extents_x, extents_y, 0);
+  btn->extents = D3DXVECTOR3(extents_x, extents_y, 0);
 
   _buttons.push_back(btn);
-
   create_menu();
 }
 
-void DebugMenu::render()
+void DebugMenu::add_label(const char *text, int *ptr)
 {
-  auto context = Graphics::instance().context();
-  _effect->set_shaders(context);
-  set_vb(context, _vb.vb(), Verts::stride);
-  context->IASetInputLayout(_layout);
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	context->OMSetDepthStencilState(_dss, 0xffffffff);
-	context->Draw(2 * 6 * _buttons.size(), 0);
-/*
-	_writer.reset_frame();
-	for (int i = 0; i < (int)_buttons.size(); ++i) {
-		const MenuButton& cur = _buttons[i];
-		_writer.write((int)(cur.center.x - cur.extents.x), (int)(cur.center.y - cur.extents.y), cur.text);
-	}
-	_writer.render();
-*/
+
 }
 
-
-DWORD DebugMenu::color_from_state(ButtonState state)
+void DebugMenu::add_label(const char *text, float *ptr)
 {
-  switch (state)
+
+}
+
+void DebugMenu::add_label(const char *text, bool *ptr)
+{
+
+}
+
+void DebugMenu::add_label(const char *text, D3DXVECTOR3 *ptr)
+{
+	MenuLabel *btn = new MenuLabel(text, ptr);
+	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
+
+	// calc center and extents
+	const float extents_x = 0.5f * _settings.w;
+	const float extents_y = 0.5f * _settings.h;
+	btn->center = D3DXVECTOR3(
+		(float)_settings.x + extents_x, 
+		_settings.y + extents_y + (float)_buttons.size() * (_settings.h + _settings.spacing), 0);
+	btn->extents = D3DXVECTOR3(extents_x, extents_y, 0);
+
+	_buttons.push_back(btn);
+	create_menu();
+
+}
+
+DWORD DebugMenu::color_from_state(const ButtonBase *btn) const
+{
+  switch (btn->state)
   {
   case kStateMouseOver:
     return _settings.col_mouse_over;
   case kStateClicked:
-    return _settings.col_clicked;
+    return btn->clickable() ? _settings.col_clicked : _settings.col_mouse_over;
   default:
     LOG_ERROR_LN("Unknown state");
   case kStateDefault:
@@ -283,19 +301,19 @@ void DebugMenu::create_menu()
   const float extents_x = 0.5f * _settings.w;
   const float extents_y = 0.5f * _settings.h;
 
-  D3DXVECTOR3 v0(-extents_x, +extents_y, 0);
-  D3DXVECTOR3 v1(+extents_x, +extents_y, 0);
-  D3DXVECTOR3 v2(-extents_x, -extents_y, 0);
-  D3DXVECTOR3 v3(+extents_x, -extents_y, 0);
+  D3DXVECTOR3 v0(-extents_x, -extents_y, 0);
+  D3DXVECTOR3 v1(+extents_x, -extents_y, 0);
+  D3DXVECTOR3 v2(-extents_x, +extents_y, 0);
+  D3DXVECTOR3 v3(+extents_x, +extents_y, 0);
 
-  D3DXVECTOR3 b0(-extents_x + _settings.border, +extents_y - _settings.border, 0);
-  D3DXVECTOR3 b1(+extents_x - _settings.border, +extents_y - _settings.border, 0);
-  D3DXVECTOR3 b2(-extents_x + _settings.border, -extents_y + _settings.border, 0);
-  D3DXVECTOR3 b3(+extents_x - _settings.border, -extents_y + _settings.border, 0);
+  D3DXVECTOR3 b0(-extents_x + _settings.border, -extents_y + _settings.border, 0);
+  D3DXVECTOR3 b1(+extents_x - _settings.border, -extents_y + _settings.border, 0);
+  D3DXVECTOR3 b2(-extents_x + _settings.border, +extents_y - _settings.border, 0);
+  D3DXVECTOR3 b3(+extents_x - _settings.border, +extents_y - _settings.border, 0);
 
   for (int i = 0; i < (int)_buttons.size(); ++i) {
-    const MenuButton& btn = _buttons[i];
-    const D3DXVECTOR3& pos = btn.center;
+    const ButtonBase *btn = _buttons[i];
+    const D3DXVECTOR3& pos = btn->center;
 
     // draw outer
     vtx->pos = screen_to_clip(pos + v0, viewport); vtx->col = _settings.col_bg; ++vtx;
@@ -307,7 +325,7 @@ void DebugMenu::create_menu()
     vtx->pos = screen_to_clip(pos + v3, viewport); vtx->col = _settings.col_bg; ++vtx;
 
     // draw inner
-		D3DXCOLOR fg =  color_from_state(btn.state); 
+		D3DXCOLOR fg =  color_from_state(btn); 
     vtx->pos = screen_to_clip(pos + b0, viewport); vtx->col = fg; ++vtx;
     vtx->pos = screen_to_clip(pos + b1, viewport); vtx->col = fg; ++vtx;
     vtx->pos = screen_to_clip(pos + b2, viewport); vtx->col = fg; ++vtx;
@@ -318,4 +336,14 @@ void DebugMenu::create_menu()
   }
 
   _vb.unmap();
+}
+
+bool DebugMenu::MenuLabel::update()
+{
+	switch (_type) {
+	case kTypeVector3:
+		text = string2::fmt("%s: %f, %f, %f", _prefix.c_str(), _value._v3->x, _value._v3->y, _value._v3->z);
+		break;
+	}
+	return true;
 }

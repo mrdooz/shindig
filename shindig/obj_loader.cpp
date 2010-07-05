@@ -98,8 +98,10 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 		return true;
 
 	Groups groups;
-	if (!parse_file(filename, &groups))
+	if (!parse_file(filename, &groups)) {
+		LOG_WARNING_LN("Error parsing file: %s", filename);
 		return false;
+		}
 
 	// write binary header
 	FileWriter w;
@@ -374,8 +376,10 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 
 
   TextScanner scanner;
-  if (!scanner.load(filename))
-    return false;
+  if (!scanner.load(filename)) {
+		LOG_WARNING_LN("Error loading file in text scanner: %s", filename);
+		return false;
+	}
 
 	int running_vert_idx = 0, running_normal_idx = 0, running_tex_idx = 0;
 	int running_face_idx = 0;

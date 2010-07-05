@@ -20,13 +20,15 @@ class Font
 public:
 	Font();
 	~Font();
-	bool init(const char *filename, float height);
-  void render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs);
+	bool init(const char *filename, float font_height, int texture_width, int texture_height);
+  PosTex *render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs);
 
   ID3D11ShaderResourceView *view() const { return _view; }
 private:
 	bool pack_font();
-	float _height;
+	float _font_height;
+	int _texture_width;
+	int _texture_height;
 	float _scale;
 	RefPtr<FileReader> _font_file;
 	stbtt_fontinfo _font;

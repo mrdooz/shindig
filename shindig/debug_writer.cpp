@@ -19,25 +19,25 @@ DebugWriter::~DebugWriter()
 	SAFE_DELETE(_font);
 }
 
-bool DebugWriter::init(int width, int height)
+bool DebugWriter::init(int width, int height, float font_height)
 {
-	RETURN_ON_FAIL_BOOL_E(_font->init("c:/windows/fonts/arialbd.ttf", 20));
+	auto& sys = System::instance();
+
+	_font_height = font_height;
+	RETURN_ON_FAIL_BOOL_E(_font->init(sys.convert_path("data/fonts/arial.ttf", System::kDirRelative), font_height, width, height));
 	_width = width;
 	_height = height;
 
 	ID3D11Device* device = Graphics::instance().device();
 	CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
-	RETURN_ON_FAIL_BOOL_E(device->CreateTexture2D(&desc, NULL, &_texture));
-	RETURN_ON_FAIL_BOOL_E(device->CreateShaderResourceView(_texture, NULL, &_view));
 
-	System& sys = System::instance();
 	RETURN_ON_FAIL_BOOL_E(_effect->load_shaders(sys.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain"));
 
   using namespace rt;
   _sampler_state.Attach(D3D11::SamplerDescription().
     AddressU_(D3D11_TEXTURE_ADDRESS_CLAMP).
     AddressV_(D3D11_TEXTURE_ADDRESS_CLAMP).
-    Filter_(D3D11_FILTER_MIN_MAG_MIP_LINEAR).
+    Filter_(D3D11_FILTER_MIN_MAG_MIP_POINT).
     Create(device));
 
   _blend_state.Attach(D3D11::BlendDescription().
@@ -68,8 +68,10 @@ void DebugWriter::render()
 {
 	auto context = Graphics::instance().context();
   PosTex *v = _verts.map();
+	int chars = 0;
 	for (auto i = _text.begin(); i != _text.end(); ++i) {
-		_font->render(i->text, v, _width, _height, i->pos);
+		v = _font->render(i->text, v, _width, _height, i->pos);
+		chars += i->text.size();
 	}
   _verts.unmap();
 
@@ -86,7 +88,7 @@ void DebugWriter::render()
   set_vb(context, _verts.vb(), Verts::stride);
   context->IASetInputLayout(_layout);
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	context->Draw(6 * _text.size(), 0);
+	context->Draw(6 * chars, 0);
 }
 
 void DebugWriter::reset_frame()
@@ -94,10 +96,10 @@ void DebugWriter::reset_frame()
 	_text.clear();
 }
 
-void DebugWriter::write(const int top, const int left, const char *msg)
+void DebugWriter::write(const int left, const int top, const char *msg)
 {
 	// pos specifies top-left corner in pixel coordinates
-	_text.push_back(TextSegment(D3DXVECTOR3(left, top, 0), msg));
+	_text.push_back(TextSegment(D3DXVECTOR3((float)left, (float)top, 0), msg));
 }
 
 void DebugWriter::close()
