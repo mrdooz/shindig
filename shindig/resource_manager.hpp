@@ -26,7 +26,8 @@ public:
 
 	// callbacks
   typedef fastdelegate::FastDelegate1<const EffectStates& > fnStateLoaded;
-	typedef fastdelegate::FastDelegate1<EffectWrapper*> fnEffectLoaded;
+  //typedef fastdelegate::FastDelegate1<EffectWrapper*> fnEffectLoaded;
+  typedef std::function< void (EffectWrapper*) > fnEffectLoaded;
 	typedef fastdelegate::FastDelegate1<Scene* > fnSceneLoaded;
 	typedef fastdelegate::FastDelegate1<const MaterialFile&> fnMaterialsLoaded;
 

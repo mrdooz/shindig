@@ -2,6 +2,7 @@
 #include "debug_writer.hpp"
 #include "font.hpp"
 #include "render_target.hpp"
+#include "resource_manager.hpp"
 #include "system.hpp"
 #include <celsus/effect_wrapper.hpp>
 
@@ -31,7 +32,12 @@ bool DebugWriter::init(int width, int height, float font_height)
 	ID3D11Device* device = Graphics::instance().device();
 	CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
 
-	RETURN_ON_FAIL_BOOL_E(_effect->load_shaders(sys.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain"));
+  auto& s = System::instance();
+  auto& r = ResourceManager::instance();
+    RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain", ff));
+    MakeDelegate(this, &DebugMenu::load_effect)));
+
+	//RETURN_ON_FAIL_BOOL_E(_effect->load_shaders(sys.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain"));
 
   using namespace rt;
   _sampler_state.Attach(D3D11::SamplerDescription().

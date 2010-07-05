@@ -48,7 +48,7 @@ bool DebugMenu::init()
 	_blendstate.Attach(D3D11::BlendDescription().Create(d));
 
 	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
-	_writer.init((int)viewport.Width, (int)viewport.Height, 20);
+	_writer.init((int)viewport.Width, (int)viewport.Height, 30);
 
 	return true;
 }

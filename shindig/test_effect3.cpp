@@ -56,8 +56,8 @@ bool TestEffect3::init()
   //RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), 
     //MakeDelegate(this, &TestEffect3::load_mesh), true));
 
-	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("C:/Users/dooz/Downloads/PC-03_ON_OFF_Redux (1)/PC-03_Redux/Assets/Models/Scene1_Intro_Cube.obj", System::kDirAbsolute), 
-		MakeDelegate(this, &TestEffect3::load_mesh), true));
+	//RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("C:/Users/dooz/Downloads/PC-03_ON_OFF_Redux (1)/PC-03_Redux/Assets/Models/Scene1_Intro_Cube.obj", System::kDirAbsolute), 
+		//MakeDelegate(this, &TestEffect3::load_mesh), true));
 
 /*
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), 
@@ -95,6 +95,9 @@ D3DXVECTOR3 TestEffect3::calc_cam_pos() const
 
 bool TestEffect3::render()
 {
+  if (_meshes.empty())
+    return true;
+
   ID3D11Device* device = Graphics::instance().device();
   ID3D11DeviceContext* context = Graphics::instance().context();
 
