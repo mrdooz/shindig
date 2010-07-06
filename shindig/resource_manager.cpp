@@ -71,9 +71,9 @@ bool ResourceManager::load_shaders(const char *filename, const char *vs, const c
 	auto f = Path::make_canonical(Path::get_full_path_name(filename));
 	const int flags = !!vs * kVertexShader | !!gs * kGeometryShader | !!ps * kPixelShader;
 	_shader_callbacks[std::make_pair(f, flags)].push_back(ShaderCallbackData(f, vs, gs, ps, fn));
-	return System::instance().add_file_changed(f, 
-    MakeDelegate(&Trampoline(MakeDelegate(this, &ResourceManager::reload_shader), flags), &Trampoline::run), true);
-
+  auto ff = [this, flags](const char *filename) { return reload_shader(filename, flags); };
+	return System::instance().add_file_changed(f, ff, true);
+//    MakeDelegate(&Trampoline(MakeDelegate(this, &ResourceManager::reload_shader), flags), &Trampoline::run), true);
 }
 
 bool ResourceManager::reload_shader(const char* filename, const int shaders)

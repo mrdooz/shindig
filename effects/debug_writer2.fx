@@ -25,6 +25,7 @@ psInput vsMain(in vsInput v)
 
 float4 psMain(in psInput v) : SV_Target
 {
+	//return float4(1,1,1,1);
 	float4 col = g_texture.Sample(g_sampler, v.tex);
 	clip(col.a == 0 ? -1 : 1);
 	return g_texture.Sample(g_sampler, v.tex);

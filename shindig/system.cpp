@@ -32,25 +32,17 @@ DWORD WINAPI System::WatcherThread(void* param)
 
   while (true) {
 
-		sys._dir_handle = CreateFile("./", FILE_LIST_DIRECTORY, FILE_SHARE_READ, NULL, OPEN_EXISTING, 
-      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
-
-    if (sys._dir_handle == INVALID_HANDLE_VALUE) {
+		if ((sys._dir_handle = CreateFile("./", FILE_LIST_DIRECTORY, FILE_SHARE_READ, NULL, OPEN_EXISTING, 
+      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE)
       return 1;
-    }
 
-    sys._watcher_completion_port = CreateIoCompletionPort(sys._dir_handle, NULL, COMPLETION_KEY_IO, 0);
-
-    if (sys._watcher_completion_port == INVALID_HANDLE_VALUE) {
+    if ((sys._watcher_completion_port = CreateIoCompletionPort(sys._dir_handle, NULL, COMPLETION_KEY_IO, 0)) == INVALID_HANDLE_VALUE)
       return 1;
-    }
 
     OVERLAPPED overlapped;
     ZeroMemory(&overlapped, sizeof(overlapped));
-    const BOOL res = ReadDirectoryChangesW(sys._dir_handle, info, sizeof(info), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &overlapped, NULL);
-    if (!res) {
+    if (!ReadDirectoryChangesW(sys._dir_handle, info, sizeof(info), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &overlapped, NULL))
       return 1;
-    }
 
     DWORD bytes;
     ULONG key = COMPLETION_KEY_NONE;

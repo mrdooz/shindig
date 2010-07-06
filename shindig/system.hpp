@@ -3,7 +3,8 @@
 
 #include <fmod.hpp>
 
-typedef fastdelegate::FastDelegate1<const string2&, bool> fnFileChanged;
+typedef std::function<bool (const string2&)> fnFileChanged;
+//typedef fastdelegate::FastDelegate1<const string2&, bool> fnFileChanged;
 typedef fastdelegate::FastDelegate2<float, float, void> FrequencyCallback;
 
 namespace FMOD
