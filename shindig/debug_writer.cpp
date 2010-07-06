@@ -22,6 +22,9 @@ DebugWriter::~DebugWriter()
 
 bool DebugWriter::init(int width, int height, float font_height)
 {
+	using namespace fastdelegate;
+	using namespace rt;
+
 	auto& sys = System::instance();
 
 	_font_height = font_height;
@@ -34,12 +37,9 @@ bool DebugWriter::init(int width, int height, float font_height)
 
   auto& s = System::instance();
   auto& r = ResourceManager::instance();
-    RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain", ff));
-    MakeDelegate(this, &DebugMenu::load_effect)));
+  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
+		MakeDelegate(this, &DebugWriter::load_effect)));
 
-	//RETURN_ON_FAIL_BOOL_E(_effect->load_shaders(sys.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain"));
-
-  using namespace rt;
   _sampler_state.Attach(D3D11::SamplerDescription().
     AddressU_(D3D11_TEXTURE_ADDRESS_CLAMP).
     AddressV_(D3D11_TEXTURE_ADDRESS_CLAMP).
@@ -58,12 +58,6 @@ bool DebugWriter::init(int width, int height, float font_height)
     Create(device));
 		
 	_dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(device));
-
-  InputDesc().
-    add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
-    add("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0).
-    create(_layout, _effect);
-
 
   _verts.create(10000);
 
@@ -111,4 +105,15 @@ void DebugWriter::write(const int left, const int top, const char *msg)
 void DebugWriter::close()
 {
 
+}
+
+void DebugWriter::load_effect(EffectWrapper *effect)
+{
+	SAFE_DELETE(_effect);
+	_effect = effect;
+
+	InputDesc().
+		add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+		add("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0).
+		create(_layout, _effect);
 }

@@ -25,6 +25,9 @@ private:
 		D3DXVECTOR3 pos;
 		string2 text;
 	};
+
+	void load_effect(EffectWrapper *effect);
+
 	typedef std::vector<TextSegment> Text;
 	Text _text;
 	int _width;
