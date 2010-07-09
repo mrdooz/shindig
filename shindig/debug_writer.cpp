@@ -4,6 +4,7 @@
 #include "render_target.hpp"
 #include "resource_manager.hpp"
 #include "system.hpp"
+#include "lua_utils.hpp"
 #include <celsus/effect_wrapper.hpp>
 
 DebugWriter::DebugWriter()
@@ -40,24 +41,7 @@ bool DebugWriter::init(int width, int height, float font_height)
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
 		MakeDelegate(this, &DebugWriter::load_effect)));
 
-  _sampler_state.Attach(D3D11::SamplerDescription().
-    AddressU_(D3D11_TEXTURE_ADDRESS_CLAMP).
-    AddressV_(D3D11_TEXTURE_ADDRESS_CLAMP).
-    Filter_(D3D11_FILTER_MIN_MAG_MIP_POINT).
-    Create(device));
-
-  _blend_state.Attach(D3D11::BlendDescription().
-    RenderTarget_(0, D3D11::RenderTargetBlendDescription().
-    BlendEnable_(TRUE).
-    BlendOp_(D3D11_BLEND_OP_ADD).
-    BlendOpAlpha_(D3D11_BLEND_OP_ADD).
-    SrcBlend_(D3D11_BLEND_SRC_COLOR).
-    DestBlend_(D3D11_BLEND_DEST_COLOR).
-    SrcBlendAlpha_(D3D11_BLEND_SRC_ALPHA).
-    DestBlendAlpha_(D3D11_BLEND_INV_SRC_ALPHA)).
-    Create(device));
-		
-	_dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(device));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/debug_writer.lua", System::kDirRelative), MakeDelegate(this, &DebugWriter::load_states), true));
 
   _verts.create(10000);
 
@@ -116,4 +100,13 @@ void DebugWriter::load_effect(EffectWrapper *effect)
 		add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
 		add("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0).
 		create(_layout, _effect);
+}
+
+bool DebugWriter::load_states(const string2& filename)
+{
+	auto& s = System::instance();
+	if (!::load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+		return false;
+
+	return true;
 }

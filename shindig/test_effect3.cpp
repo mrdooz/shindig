@@ -14,6 +14,7 @@
 #include "app.hpp"
 #include "material.hpp"
 #include "debug_menu.hpp"
+#include "lua_utils.hpp"
 
 
 TestEffect3::TestEffect3()
@@ -31,6 +32,7 @@ TestEffect3::~TestEffect3()
   SAFE_DELETE(_effect);
 	container_delete(_meshes);
 }
+
 
 bool TestEffect3::init()
 {
@@ -66,15 +68,10 @@ bool TestEffect3::init()
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sponza.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect3::effect_loaded)));
 
-	_dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
-	_blend_state.Attach(rt::D3D11::BlendDescription().Create(d));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/1.lua", System::kDirRelative), MakeDelegate(this, &TestEffect3::load_states), true));
 
-	_sampler_state.Attach(rt::D3D11::SamplerDescription().
-		AddressU_(D3D11_TEXTURE_ADDRESS_CLAMP).
-		AddressV_(D3D11_TEXTURE_ADDRESS_CLAMP).
-		Filter_(D3D11_FILTER_MIN_MAG_MIP_LINEAR).
-		Create(d));
-
+	//_dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
+	//_blend_state.Attach(rt::D3D11::BlendDescription().Create(d));
 
   return true;
 }
@@ -156,8 +153,20 @@ bool TestEffect3::load_mesh(const string2& filename)
 	return res;
 }
 
+bool TestEffect3::load_states(const string2& filename)
+{
+	auto& s = System::instance();
+	if (!::load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+		return false;
+
+	return true;
+}
+
 void TestEffect3::effect_loaded(EffectWrapper *effect)
 {
+	if (!effect)
+		return;
+
   SAFE_DELETE(_effect);
   _effect = effect;
 	for (int i = 0; i < (int)_meshes.size(); ++i)

@@ -32,6 +32,7 @@ private:
 	bool load_material(const string2& material_name);
   bool load_mesh(const string2& filename);
   void effect_loaded(EffectWrapper *effect);
+	bool load_states(const string2& filename);
 
   float _alpha;
   float _theta;

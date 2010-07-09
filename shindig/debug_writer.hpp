@@ -27,6 +27,7 @@ private:
 	};
 
 	void load_effect(EffectWrapper *effect);
+	bool load_states(const string2& filename);
 
 	typedef std::vector<TextSegment> Text;
 	Text _text;

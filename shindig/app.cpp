@@ -51,7 +51,6 @@ bool App::init(HINSTANCE hinstance)
 
   init_menu();
 
-
 	return true;
 }
 
