@@ -212,7 +212,7 @@ void DebugMenu::render()
 	_writer.reset_frame();
 	for (int i = 0; i < (int)_buttons.size(); ++i) {
 		const ButtonBase *cur = _buttons[i];
-		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), cur->text);
+		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), cur->text, 40, 40);
 	}
 	_writer.render();
 

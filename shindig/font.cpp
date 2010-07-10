@@ -181,7 +181,7 @@ bool Font::pack_font()
 }
 
 
-PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs)
+PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float w, float h, const D3DXVECTOR3& ofs)
 {
 	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
 
@@ -204,14 +204,14 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, const
     }
 
     const FontInfo& info = it->second;
+		float s = h / _font_height;
     // 0, 1
     // 2, 3
-    float w = (float)info._w, h = (float)info._h;
 
-		auto v0 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + 0, info._ofsy + _font_height + 0,0), viewport), info._uv[0]);
-		auto v1 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + w, info._ofsy + _font_height + 0,0), viewport), info._uv[1]);
-		auto v2 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + 0, info._ofsy + _font_height + h,0), viewport), info._uv[2]);
-		auto v3 = PosTex(screen_to_clip(pos + D3DXVECTOR3(info._ofsx + w, info._ofsy + _font_height + h,0), viewport), info._uv[3]);
+		auto v0 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * info._ofsx + 0, s * (info._ofsy + _font_height + 0),0), viewport), info._uv[0]);
+		auto v1 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * (info._ofsx + info._w), s * (info._ofsy + _font_height + 0),0), viewport), info._uv[1]);
+		auto v2 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * (info._ofsx + 0), s * (info._ofsy + _font_height + info._h),0), viewport), info._uv[2]);
+		auto v3 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * (info._ofsx + info._w), s * (info._ofsy + _font_height + info._h),0), viewport), info._uv[3]);
 
     // 2, 0, 1
     // 2, 1, 3

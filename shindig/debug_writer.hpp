@@ -16,14 +16,15 @@ public:
 	void close();
 	void render();
 	void reset_frame();
-	void write(const int left, const int top, const char *msg);
+	void write(const int left, const int top, const char *msg, const float w, const float h);
 
 private:
 	struct TextSegment
 	{
-		TextSegment(const D3DXVECTOR3& pos, const string2& text) : pos(pos), text(text) {}
+		TextSegment(const D3DXVECTOR3& pos, const string2& text, float w, float h) : pos(pos), text(text), w(w), h(h) {}
 		D3DXVECTOR3 pos;
 		string2 text;
+		float w, h;
 	};
 
 	void load_effect(EffectWrapper *effect);

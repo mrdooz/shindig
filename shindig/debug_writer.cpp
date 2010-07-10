@@ -54,7 +54,7 @@ void DebugWriter::render()
   PosTex *v = _verts.map();
 	int chars = 0;
 	for (auto i = _text.begin(); i != _text.end(); ++i) {
-		v = _font->render(i->text, v, _width, _height, i->pos);
+		v = _font->render(i->text, v, _width, _height, i->w, i->h, i->pos);
 		chars += i->text.size();
 	}
   _verts.unmap();
@@ -80,10 +80,10 @@ void DebugWriter::reset_frame()
 	_text.clear();
 }
 
-void DebugWriter::write(const int left, const int top, const char *msg)
+void DebugWriter::write(const int left, const int top, const char *msg, const float w, const float h)
 {
 	// pos specifies top-left corner in pixel coordinates
-	_text.push_back(TextSegment(D3DXVECTOR3((float)left, (float)top, 0), msg));
+	_text.push_back(TextSegment(D3DXVECTOR3((float)left, (float)top, 0), msg, w, h));
 }
 
 void DebugWriter::close()
