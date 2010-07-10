@@ -12,6 +12,22 @@ typedef CComPtr<ID3D11InputLayout> ID3D11InputLayoutPtr;
 typedef CComPtr<ID3D11Device> ID3D11DevicePtr;
 
 
+// objects that want to be debug drawn can implement this
+struct DebugDraw
+{
+  enum Bounding {
+    kSphere = 1 << 0,
+    kBox = 1 << 1,
+  };
+
+  string2 name;
+  D3DXMATRIX orientation;
+
+  D3DXVECTOR3 center;
+  float radius;
+};
+typedef std::function<void (string2 *name)> DebugRenderDelegate;
+
 class DebugRenderer
 {
 public:
