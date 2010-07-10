@@ -114,6 +114,21 @@ bool Font::init(const char *filename, float font_height, int texture_width, int 
 
 bool Font::pack_font()
 {
+  {
+    Node *root = new Node();
+    root->_rc = PixelRect(0, 0, 4, 4);
+
+    Image *img0 = new Image(); img0->_rc = PixelRect(0, 0, 2, 2);
+    Image *img1 = new Image(); img1->_rc = PixelRect(0, 0, 2, 2);
+    Image *img2 = new Image(); img2->_rc = PixelRect(0, 0, 2, 2);
+    Image *img3 = new Image(); img3->_rc = PixelRect(0, 0, 2, 2);
+    Node *n0 = root->insert(img0); n0->_image = (Image*)0x1;
+    Node *n1 = root->insert(img1); n1->_image = (Image*)0x1;
+    Node *n2 = root->insert(img2); n2->_image = (Image*)0x1;
+    Node *n3 = root->insert(img3); n3->_image = (Image*)0x1;
+    int a = 10;
+
+  }
   ID3D11Device* device = Graphics::instance().device();
   CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_R8G8B8A8_UNORM, _texture_width, _texture_height, 1, 1, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
   RETURN_ON_FAIL_BOOL_E(device->CreateTexture2D(&desc, NULL, &_texture));
@@ -133,10 +148,17 @@ bool Font::pack_font()
 	}
 	char_map[255] = 0;
 	char *cur = char_map;
+
+  // we offset the far side tex coords with 1 texel so the point correctly
+  float ww = (float)_texture_width;
+  float hh = (float)_texture_height;
+  float tx_ofs = 1.0f / ww;
+  float ty_ofs = 1.0f / hh;
+
 	while (*cur) {
     char ch = *cur;
 		int w, h, ofsx, ofsy;
-		uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, 0,_scale, ch, &w, &h, &ofsx, &ofsy);
+		uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, _scale, _scale, ch, &w, &h, &ofsx, &ofsy);
 		Image *img = new Image();
 		img->_rc = PixelRect(0, 0, h, w);
 		if (Node *n = root->insert(img)) {
@@ -146,8 +168,6 @@ bool Font::pack_font()
       // 2, 3
       D3DXVECTOR2 _uv[4];
       FontInfo info;
-      float ww = (float)_texture_width;
-      float hh = (float)_texture_height;
       info._uv[0] = D3DXVECTOR2(n->_rc._left / ww, n->_rc._top / hh);
       info._uv[1] = D3DXVECTOR2((n->_rc._left + img->_rc.width()) / ww, n->_rc._top / hh);
       info._uv[2] = D3DXVECTOR2(n->_rc._left / ww, (n->_rc._top + img->_rc.height()) / hh);
@@ -173,8 +193,11 @@ bool Font::pack_font()
 		} else {
 			SAFE_DELETE(img);
 		}
+    stbtt_FreeBitmap(bitmap, NULL);
 		++cur;
 	}
+
+  save_bmp32("c:/temp/tjong.bmp", buf, _texture_width, _texture_height);
 
   context->Unmap(_texture, 0);
   return true;
@@ -204,7 +227,7 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float
     }
 
     const FontInfo& info = it->second;
-		float s = h / _font_height;
+		float s = 1; //h / _font_height;
     // 0, 1
     // 2, 3
 

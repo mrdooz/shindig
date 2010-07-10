@@ -9,6 +9,7 @@ public:
   enum { stride = sizeof(Vtx) };
   DynamicVb()
     : _mapped(false)
+    , _org(nullptr)
   {
   }
 
@@ -29,21 +30,30 @@ public:
       return NULL;
 
     _mapped = true;
-    return (Vtx*)r.pData;
+    _org = (Vtx*)r.pData;
+    return _org;
   }
 
-  void unmap()
+  int unmap(Vtx *final = NULL)
   {
     assert(_mapped);
-    if (!_mapped) return;
+    if (!_mapped) return -1;
     ID3D11DeviceContext *c = Graphics::instance().context();
     c->Unmap(_vb, 0);
     _mapped = false;
+
+    int res = 0;
+    // calc # verts inserted
+    if (final != NULL)
+      res = final - _org;
+    return res;
+
   }
 
   ID3D11Buffer *vb() { return _vb; }
 
 private:
+  Vtx *_org;
   bool _mapped;
   CComPtr<ID3D11Buffer> _vb;
 };

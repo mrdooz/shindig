@@ -50,7 +50,7 @@ bool TestEffect3::init()
 	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down));
 	App::instance().add_mouse_wheel(MakeDelegate(this, &TestEffect3::on_mouse_wheel));
   
-  float v = 0.5f;
+  float v = 0; //0.5f;
   g.set_clear_color(D3DXCOLOR(v, v, v, 1));
 
   //RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true));

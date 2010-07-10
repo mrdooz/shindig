@@ -4,6 +4,7 @@
 #include "test_effect.hpp"
 #include "test_effect2.hpp"
 #include "test_effect3.hpp"
+#include "test_effect4.hpp"
 #include "font.hpp"
 #include <celsus/file_utils.hpp>
 #include "debug_writer.hpp"

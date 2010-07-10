@@ -122,6 +122,7 @@
     <ClCompile Include="test_effect.cpp" />
     <ClCompile Include="test_effect2.cpp" />
     <ClCompile Include="test_effect3.cpp" />
+    <ClCompile Include="test_effect4.cpp" />
     <ClCompile Include="vector_font.cpp" />
     <ClCompile Include="parser\state_parser_lexer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -159,6 +160,7 @@
     <ClInclude Include="test_effect.hpp" />
     <ClInclude Include="test_effect2.hpp" />
     <ClInclude Include="test_effect3.hpp" />
+    <ClInclude Include="test_effect4.hpp" />
     <ClInclude Include="vector_font.hpp" />
     <ClInclude Include="parser\state_parser.hpp" />
   </ItemGroup>
