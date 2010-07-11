@@ -20,9 +20,8 @@ class Font
 public:
 	Font();
 	~Font();
-	bool init(const char *filename, float font_height, int texture_width, int texture_height);
-  PosTex *render(const char *text, PosTex *vtx, int width, int height, float w, float h, const D3DXVECTOR3& ofs);
-
+	bool init(const char *filename, float font_height);
+  PosTex *render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs);
   ID3D11ShaderResourceView *view() const { return _view; }
 private:
 	bool pack_font();

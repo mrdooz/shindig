@@ -48,7 +48,9 @@ bool DebugMenu::init()
 	_blendstate.Attach(D3D11::BlendDescription().Create(d));
 
 	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
-	_writer.init((int)viewport.Width, (int)viewport.Height, 20);
+
+  //RETURN_ON_FAIL_BOOL_E(_writer.init(s.convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, 600, 600));
+  RETURN_ON_FAIL_BOOL_E(_writer.init(s.convert_path("data/fonts/arialbd.ttf", System::kDirRelative), 0, 0, 600, 600));
 
 	return true;
 }
@@ -212,7 +214,7 @@ void DebugMenu::render()
 	_writer.reset_frame();
 	for (int i = 0; i < (int)_buttons.size(); ++i) {
 		const ButtonBase *cur = _buttons[i];
-		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), cur->text, 20, 20);
+		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), 20, cur->text);
 	}
 	_writer.render();
 

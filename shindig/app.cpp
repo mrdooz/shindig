@@ -44,7 +44,7 @@ bool App::init(HINSTANCE hinstance)
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
 	_debug_writer = new DebugWriter();
-	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(_width, _height, 30));
+	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, _width, _height));
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
 
 	_test_effect = new TestEffect3();
@@ -259,5 +259,5 @@ void App::add_dbg_message(const char* fmt, ...)
   char* buf = (char*)_alloca(len);
   vsprintf_s(buf, len, fmt, arg);
   va_end(arg);
-  _debug_writer->write(0, 0, buf, 10, 10);
+  _debug_writer->write(0, 0, 10, buf);
 }

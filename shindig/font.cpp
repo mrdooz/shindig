@@ -98,15 +98,16 @@ Font::~Font()
 {
 }
 
-bool Font::init(const char *filename, float font_height, int texture_width, int texture_height)
+bool Font::init(const char *filename, float font_height)
 {
-	_texture_width = texture_width;
-	_texture_height = texture_height;
+  // worst case should be square glyphs of size "font_height", and assume 256 glyps, so 16 * x * 16 * x size
+  _font_height = font_height;
+  _texture_width = (int)(16 * font_height);
+  _texture_height = (int)(16 * font_height);
 	RETURN_ON_FAIL_BOOL_E(_font_file->load(filename));
 	ZeroMemory(&_font, sizeof(_font));
 	if (stbtt_InitFont(&_font, _font_file->data(), stbtt_GetFontOffsetForIndex(_font_file->data(),0)) == 0)
 		return false;
-	_font_height = font_height;
 	_scale = stbtt_ScaleForPixelHeight(&_font, _font_height);
 	pack_font();
 	return true;
@@ -189,8 +190,11 @@ bool Font::pack_font()
 }
 
 
-PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float w, float h, const D3DXVECTOR3& ofs)
+PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs)
 {
+  if (!text)
+    return vtx;
+
 	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
 
   D3DXVECTOR3 pos(ofs);
@@ -212,14 +216,13 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float
     }
 
     const FontInfo& info = it->second;
-		float s = h / _font_height;
     // 0, 1
     // 2, 3
 
-		auto v0 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * info._ofsx + 0, s * (info._ofsy + _font_height + 0),0), viewport), info._uv[0]);
-		auto v1 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * (info._ofsx + info._w), s * (info._ofsy + _font_height + 0),0), viewport), info._uv[1]);
-		auto v2 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * (info._ofsx + 0), s * (info._ofsy + _font_height + info._h),0), viewport), info._uv[2]);
-		auto v3 = PosTex(screen_to_clip(pos + D3DXVECTOR3(s * (info._ofsx + info._w), s * (info._ofsy + _font_height + info._h),0), viewport), info._uv[3]);
+		auto v0 = PosTex(screen_to_clip(pos + D3DXVECTOR3((float)info._ofsx + 0, info._ofsy + _font_height + 0,0), viewport), info._uv[0]);
+		auto v1 = PosTex(screen_to_clip(pos + D3DXVECTOR3((float)info._ofsx + info._w, info._ofsy + _font_height + 0,0), viewport), info._uv[1]);
+		auto v2 = PosTex(screen_to_clip(pos + D3DXVECTOR3((float)info._ofsx + 0.0f, info._ofsy + _font_height + info._h,0), viewport), info._uv[2]);
+		auto v3 = PosTex(screen_to_clip(pos + D3DXVECTOR3((float)info._ofsx + info._w, info._ofsy + _font_height + info._h,0), viewport), info._uv[3]);
 
     // 2, 0, 1
     // 2, 1, 3
@@ -231,7 +234,7 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float
     *vtx++ = v1;
     *vtx++ = v3;
 
-    if (pos.x + w > width)
+    if (pos.x + info._w > width)
       new_lines = 1;
     if (new_lines) {
       // check if it's possible..
@@ -242,8 +245,8 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float
       max_height = 0;
     }
 
-    pos.x += s * (info._w);
-    max_height = std::max<int>(max_height, (int)h);
+    pos.x += info._w;
+    max_height = std::max<int>(max_height, (int)_font_height);
     ++text;
   }
 	return vtx;
