@@ -3,6 +3,7 @@
 #include "system.hpp"
 #include "resource_manager.hpp"
 #include <celsus/text_scanner.hpp>
+#include "lua_utils.hpp"
 
 // Note, all the debug code stuff uses pixels as units, with a coordinate system
 // like so: 
@@ -36,7 +37,7 @@ bool DebugMenu::init()
   if (!_vb.create(10000))
     return false;
 
-	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("shindig/debug_menu.cfg", System::kDirRelative), 
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("shindig/debug_menu.lua", System::kDirRelative), 
 		MakeDelegate(this, &DebugMenu::load_settings), true));
 
 	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_menu.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
@@ -49,8 +50,7 @@ bool DebugMenu::init()
 
 	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
 
-  //RETURN_ON_FAIL_BOOL_E(_writer.init(s.convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, 600, 600));
-  RETURN_ON_FAIL_BOOL_E(_writer.init(s.convert_path("data/fonts/arialbd.ttf", System::kDirRelative), 0, 0, 600, 600));
+  RETURN_ON_FAIL_BOOL_E(_writer.init(s.convert_path("data/fonts/arial.ttf", System::kDirRelative), 0, 0, 600, 600));
 
 	return true;
 }
@@ -136,45 +136,40 @@ LRESULT DebugMenu::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 bool DebugMenu::load_settings(const string2& filename)
 {
-	TextScanner scanner;
-  scanner.set_line_mode(true);
-	if (!scanner.load(filename))
+	lua_State *l;
+	if (!lua_init(&l, filename))
 		return false;
 
-  // read window pos and size
-  std::vector<int> dims;
-  if (!scanner.read_ints(&dims))
-    return false;
-  _settings.x = dims[0];
-  _settings.y = dims[1];
+	SCOPED_OBJ([l](){lua_close(l); } );
 
-  // read window size
-  if (!scanner.read_ints(&dims))
-    return false;
-  _settings.w = dims[0];
-  _settings.h = dims[1];
+	if (lua_pcall(l, 0, 0, 0)) {
+		LOG_WARNING_LN(lua_tostring(l, -1));
+		return false;
+	}
 
-  if (!scanner.read_int(&_settings.border))
-    return false;
+	// push state table on stack
+	lua_getglobal(l, "debug_menu");
 
-  if (!scanner.read_int(&_settings.spacing))
-    return false;
+	try {
+		Settings tmp;
+		tmp.x = get_int_field(l, "top");
+		tmp.y = get_int_field(l, "left");
 
-  // read colors
-  if (!scanner.read_hex(&_settings.col_bg))
-    return false;
+		tmp.w = get_int_field(l, "item_size_w");
+		tmp.h = get_int_field(l, "item_size_h");
 
-  if (!scanner.read_hex(&_settings.col_fg))
-    return false;
+		tmp.border = get_int_field(l, "border");
+		tmp.spacing = get_int_field(l, "spacing");
 
-  if (!scanner.read_hex(&_settings.col_mouse_over))
-    return false;
-
-  if (!scanner.read_hex(&_settings.col_clicked))
-    return false;
-
-  create_menu();
-
+		tmp.col_bg = (uint32_t)get_int_field(l, "background");
+		tmp.col_fg = (uint32_t)get_int_field(l, "foreground");
+		tmp.col_mouse_over = (uint32_t)get_int_field(l, "mouse-over");
+		tmp.col_clicked = (uint32_t)get_int_field(l, "clicked");
+		_settings = tmp;
+		create_menu();
+	} catch (std::runtime_error&) {
+		return false;
+	}
 	return true;
 }
 
@@ -214,7 +209,7 @@ void DebugMenu::render()
 	_writer.reset_frame();
 	for (int i = 0; i < (int)_buttons.size(); ++i) {
 		const ButtonBase *cur = _buttons[i];
-		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), 20, cur->text);
+		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), 15, cur->text);
 	}
 	_writer.render();
 

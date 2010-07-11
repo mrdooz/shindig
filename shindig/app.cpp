@@ -259,5 +259,5 @@ void App::add_dbg_message(const char* fmt, ...)
   char* buf = (char*)_alloca(len);
   vsprintf_s(buf, len, fmt, arg);
   va_end(arg);
-  _debug_writer->write(0, 0, 10, buf);
+  _debug_writer->write(0, 0, 15, buf);
 }

@@ -1,11 +1,5 @@
 #include "stdafx.h"
 
-extern "C"
-{
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-};
 
 #include "lua_utils.hpp"
 
@@ -17,9 +11,9 @@ int get_int_field(lua_State *l, const char *key)
 	lua_gettable(l, -2);	// pop key, and push value on stack. the table is at -2
 	if (!lua_isnumber(l, -1)) {
 		LOG_WARNING_LN("Error reading value for key: %s", key);
-		throw rt::Exception(__FUNCTION__);
+		throw std::runtime_error(__FUNCTION__);
 	}
-	return (int)lua_tonumber(l, -1);
+	return (int)((int64_t)lua_tonumber(l, -1));
 }
 
 float get_float_field(lua_State *l, const char *key)
@@ -30,7 +24,7 @@ float get_float_field(lua_State *l, const char *key)
 	lua_gettable(l, -2);	// pop key, and push value on stack
 	if (!lua_isnumber(l, -1)) {
 		LOG_WARNING_LN("Error reading value for key: %s", key);
-		throw rt::Exception(__FUNCTION__);
+		throw std::runtime_error(__FUNCTION__);
 	}
 	return (float)lua_tonumber(l, -1);
 }

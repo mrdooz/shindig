@@ -101,12 +101,7 @@ void DebugWriter::render()
 
 void DebugWriter::reset_frame()
 {
-  for (auto i = _text_segments.begin(); i != _text_segments.end(); ++i) {
-    std::vector<TextSegment>& s = i->second;
-    for (auto j = s.begin(); j != s.end(); ++j) {
-      j->text.clear();
-    }
-  }
+	_text_segments.clear();
 }
 
 void DebugWriter::write(const int left, const int top, float h, const char *fmt, ...)
