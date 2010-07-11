@@ -114,21 +114,6 @@ bool Font::init(const char *filename, float font_height, int texture_width, int 
 
 bool Font::pack_font()
 {
-  {
-    Node *root = new Node();
-    root->_rc = PixelRect(0, 0, 4, 4);
-
-    Image *img0 = new Image(); img0->_rc = PixelRect(0, 0, 2, 2);
-    Image *img1 = new Image(); img1->_rc = PixelRect(0, 0, 2, 2);
-    Image *img2 = new Image(); img2->_rc = PixelRect(0, 0, 2, 2);
-    Image *img3 = new Image(); img3->_rc = PixelRect(0, 0, 2, 2);
-    Node *n0 = root->insert(img0); n0->_image = (Image*)0x1;
-    Node *n1 = root->insert(img1); n1->_image = (Image*)0x1;
-    Node *n2 = root->insert(img2); n2->_image = (Image*)0x1;
-    Node *n3 = root->insert(img3); n3->_image = (Image*)0x1;
-    int a = 10;
-
-  }
   ID3D11Device* device = Graphics::instance().device();
   CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_R8G8B8A8_UNORM, _texture_width, _texture_height, 1, 1, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
   RETURN_ON_FAIL_BOOL_E(device->CreateTexture2D(&desc, NULL, &_texture));
@@ -227,7 +212,7 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float
     }
 
     const FontInfo& info = it->second;
-		float s = 1; //h / _font_height;
+		float s = h / _font_height;
     // 0, 1
     // 2, 3
 
@@ -257,7 +242,7 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, float
       max_height = 0;
     }
 
-    pos.x += w;
+    pos.x += s * (info._w);
     max_height = std::max<int>(max_height, (int)h);
     ++text;
   }

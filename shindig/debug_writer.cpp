@@ -29,7 +29,7 @@ bool DebugWriter::init(int width, int height, float font_height)
 	auto& sys = System::instance();
 
 	_font_height = font_height;
-	RETURN_ON_FAIL_BOOL_E(_font->init(sys.convert_path("data/fonts/arialbd.ttf", System::kDirRelative), font_height, width, height));
+	RETURN_ON_FAIL_BOOL_E(_font->init(sys.convert_path("data/fonts/TCCM____.ttf", System::kDirRelative), font_height, width, height));
 	_width = width;
 	_height = height;
 
