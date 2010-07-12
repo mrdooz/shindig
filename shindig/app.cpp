@@ -154,6 +154,7 @@ void App::run()
 			System::instance().tick();
 			graphics.clear();
 			_debug_writer->reset_frame();
+			IMGui::instance().init_frame();
 
 			if (_test_effect) {
 				_test_effect->render();
@@ -162,8 +163,12 @@ void App::run()
       graphics.tick();
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
+			if (IMGui::instance().button(GEN_ID, 50, 50, 100, 40))
+				on_quit();
+
 			_debug_writer->render();
 			DebugMenu::instance().render();
+			IMGui::instance().render();
 
 			graphics.present();
 
@@ -181,8 +186,6 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
 	// See if the debug menu wants to handle the message first
 	LRESULT res = DebugMenu::instance().wnd_proc(hWnd, message, wParam, lParam);
-	if (res != 0)
-		return res;
 
   UIState& ui_state = IMGui::instance().ui_state();
 
@@ -247,7 +250,7 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
   default:
     return DefWindowProc( hWnd, message, wParam, lParam );
   }
-  return 0;
+	return res;
 }
 
 sig2::connection App::add_mouse_move(const fnMouseMove& slot)

@@ -15,6 +15,8 @@
 #include "material.hpp"
 #include "debug_menu.hpp"
 #include "lua_utils.hpp"
+#include "imgui.hpp"
+
 
 
 TestEffect3::TestEffect3()

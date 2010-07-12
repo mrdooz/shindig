@@ -162,7 +162,7 @@ bool sampler_from_lua(const char *filename, const char *sampler_name, CComPtr<ID
 		LOG_WARNING_LN(lua_tostring(l, -1));
 		return false;
 	}
-
+ 
 	// push sampler table on stack
 	lua_getglobal(l, sampler_name);
 
@@ -203,9 +203,9 @@ bool load_states(const char *filename, const char *blend, const char *depth, con
 	if (sampler && !sampler_from_lua(filename, sampler, tmp_sampler))
 		return false;
 
-	*b = tmp_blend.Detach();
-	*d = tmp_dss.Detach();
-	*s = tmp_sampler.Detach();
+	if (b) *b = tmp_blend.Detach();
+	if (d) *d = tmp_dss.Detach();
+	if (s) *s = tmp_sampler.Detach();
 
 	return true;
 }

@@ -3,6 +3,12 @@
 #include "dynamic_vb.hpp"
 #include <celsus/vertex_types.hpp>
 
+#ifdef IMGUI_SRC_ID
+#define GEN_ID ((IMGUI_SRC_ID) + (__LINE__))
+#else
+#define GEN_ID (__LINE__)
+#endif
+
 // IMGUI state
 struct UIState
 {
@@ -33,6 +39,11 @@ public:
   bool init_frame();
   bool render();
 
+	// in screen space
+	void add_rect(int x, int y, int width, int height, const D3DXCOLOR& color);
+
+	static int button(int id, int x, int y, int width, int height);
+
 private:
   IMGui();
 
@@ -42,12 +53,13 @@ private:
   UIState _ui_state;
 
   typedef DynamicVb<PosCol> Verts;
-  Verts _vb;
+  Verts _verts;
 
   CComPtr<ID3D11InputLayout> _layout;
   CComPtr<ID3D11DepthStencilState> _dss;
   CComPtr<ID3D11BlendState> _blend_state;
   EffectWrapper *_effect;
+	PosCol *_vtx;
 
   static IMGui *_instance;
 };
