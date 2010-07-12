@@ -104,6 +104,22 @@ void DebugWriter::reset_frame()
 	_text_segments.clear();
 }
 
+void DebugWriter::calc_extents(int *width, int *height, float h, const char *fmt, ...)
+{
+	FontInstance *f = find_font(h);
+	if (!f)
+		return;
+
+	va_list arg;
+	va_start(arg, fmt);
+
+	const int len = _vscprintf(fmt, arg) + 1;
+	char* buf = (char*)_alloca(len);
+	vsprintf_s(buf, len, fmt, arg);
+
+	f->font->calc_extents(buf, _width, _height, width, height);
+}
+
 void DebugWriter::write(const int left, const int top, float h, const char *fmt, ...)
 {
   FontInstance *f = find_font(h);

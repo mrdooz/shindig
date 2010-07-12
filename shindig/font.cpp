@@ -189,6 +189,48 @@ bool Font::pack_font()
   return true;
 }
 
+void Font::calc_extents(const char *text, int width, int height, int *req_width, int *req_height)
+{
+	D3DXVECTOR3 pos(0, 0, 0);
+	int max_height = 0;	// max height of a letter on the current row
+	while (*text) {
+		int new_lines = 0;
+		while (*text == '\n' && *text != NULL) {
+			new_lines++;
+			text++;
+		}
+		char ch = *text;
+		if (ch == 0)
+			break;
+
+		FontMap::const_iterator it = _font_map.find(ch);
+		if (it == _font_map.end()) {
+			++text;
+			continue;
+		}
+
+		const FontInfo& info = it->second;
+
+		if (pos.x + info._w > width)
+			new_lines = 1;
+		if (new_lines) {
+			// check if it's possible..
+			pos.y += new_lines * (max_height != 0 ? max_height : (int)_font_height);
+			if (pos.y > height)
+				break;
+			pos.x  = 0;
+			max_height = 0;
+		}
+
+		pos.x += info._w;
+		max_height = std::max<int>(max_height, (int)_font_height);
+		++text;
+	}
+	pos.y += _font_height;
+
+	*req_width = (int)pos.x;
+	*req_height = (int)pos.y;
+}
 
 PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs)
 {

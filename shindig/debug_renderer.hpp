@@ -26,7 +26,19 @@ struct DebugDraw
   D3DXVECTOR3 center;
   float radius;
 };
-typedef std::function<void (string2 *name)> DebugRenderDelegate;
+
+struct DebugCamera
+{
+	D3DXVECTOR3 pos;
+	D3DXVECTOR3 lookat;
+	D3DXVECTOR3 up;
+	float fov;
+	float near_plane, far_plane;
+};
+
+typedef fastdelegate::FastDelegate1<DebugDraw> DebugRenderDelegate;
+typedef fastdelegate::FastDelegate1<DebugCamera> DebugCameraDelegate;
+
 
 class DebugRenderer
 {
@@ -37,8 +49,11 @@ public:
     Color = 1 << 2,
   };
 
-  DebugRenderer(const ID3D11DevicePtr& device);
-  ~DebugRenderer();
+
+	static DebugRenderer& instance();
+
+	void add_debug_render_delegate(const DebugRenderDelegate& d, bool add);
+	void add_debug_camera_delegate(const DebugCameraDelegate& d, bool add);
 
   bool init();
   void close();
@@ -67,46 +82,48 @@ private:
     D3DXMATRIX  view_proj;
   };
 
+	typedef std::vector<DrawCall> DrawCalls;
+	typedef std::map< D3D11_PRIMITIVE_TOPOLOGY, DrawCalls > DrawCallsByTopology;
+
+	struct VertexFormatData
+	{
+		VertexFormatData()
+			: data_(NULL)
+			, vertex_size_(0)
+			, num_verts(0)
+			, buffer_size_(0)
+			, data_ofs_(0)
+			, input_layout_(NULL)
+			, vertex_count_(0)
+		{
+		}
+		uint32_t vertex_size_;
+		uint32_t num_verts;
+		uint32_t buffer_size_;
+		uint32_t data_ofs_;
+		uint8_t* data_;
+		uint32_t vertex_count_;
+		std::string technique_name_;
+
+		DrawCallsByTopology draw_calls_by_topology_;
+
+		ID3D11BufferPtr _vertex_buffer;
+		ID3D11InputLayoutPtr input_layout_;
+	};
+
+
+	DebugRenderer();
+	~DebugRenderer();
+
   void draw_line(const float* proj, float x1,float y1,float z1, float x2,float y2, float z2);
-
-  typedef std::vector<DrawCall> DrawCalls;
-  typedef std::map< D3D11_PRIMITIVE_TOPOLOGY, DrawCalls > DrawCallsByTopology;
-
-  struct VertexFormatData
-  {
-    VertexFormatData()
-      : data_(NULL)
-      , vertex_size_(0)
-      , num_verts(0)
-      , buffer_size_(0)
-      , data_ofs_(0)
-      , input_layout_(NULL)
-      , vertex_count_(0)
-    {
-    }
-    uint32_t vertex_size_;
-    uint32_t num_verts;
-    uint32_t buffer_size_;
-    uint32_t data_ofs_;
-    uint8_t* data_;
-    uint32_t vertex_count_;
-    std::string technique_name_;
-
-    DrawCallsByTopology draw_calls_by_topology_;
-
-    ID3D11BufferPtr _vertex_buffer;
-    ID3D11InputLayoutPtr input_layout_;
-  };
 
   bool init_vertex_buffers();
   void init_unit_sphere();
   void  color_sphere(const D3DXCOLOR& col);
 
-  ID3D11Buffer* create_dynamic_vertex_buffer(const uint32_t vertex_count, const uint32_t vertex_size);
   typedef std::map< uint32_t, VertexFormatData > VertexFormats;
   VertexFormats vertex_formats_;
 
-  ID3D11DevicePtr _device;
 /*
   EffectWrapper* effect_;
 
@@ -118,11 +135,17 @@ private:
 
   std::vector<PosCol> sphere_verts_;
 
-  //CComPtr<ID3DX11Font> _font;
   VectorFont* vector_font_;
 
-  std::vector< std::string >  debug_text_;
+  std::vector< string2 >  debug_text_;
 
+	typedef std::vector<DebugRenderDelegate> DebugRenderDelegates;
+	typedef std::vector<DebugCameraDelegate> DebugCameraDelegates;
+
+	DebugRenderDelegates _debug_render_delegates;
+	DebugCameraDelegates _debug_camera_delegates;
+
+	static DebugRenderer *_instance;
 };
 
 

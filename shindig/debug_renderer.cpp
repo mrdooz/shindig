@@ -55,10 +55,17 @@ namespace
 
 }
 
-DebugRenderer::DebugRenderer(const ID3D11DevicePtr& device)
-  : _device(device)
-  //, effect_(new EffectWrapper(device))
-  , vector_font_(createVectorFont())
+DebugRenderer *DebugRenderer::_instance = nullptr;
+
+DebugRenderer& DebugRenderer::instance()
+{
+	if (!_instance)
+		_instance = new DebugRenderer();
+	return *_instance;
+}
+
+DebugRenderer::DebugRenderer()
+	: vector_font_(createVectorFont())
 {
 /*
   D3DX10CreateFont( _device, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
@@ -132,24 +139,6 @@ void DebugRenderer::add_wireframe_sphere(const D3DXMATRIX& world, const D3DXCOLO
 {
   color_sphere(color);
   add_verts(Pos | Color, D3D11_PRIMITIVE_TOPOLOGY_LINELIST, sphere_verts_[0].pos, sphere_verts_.size(), world, view_proj);
-}
-
-ID3D11Buffer* DebugRenderer::create_dynamic_vertex_buffer(const uint32_t vertex_count, const uint32_t vertex_size)
-{
-  const uint32_t buffer_size = vertex_count * vertex_size;
-
-  D3D11_BUFFER_DESC buffer_desc;
-  ZeroMemory(&buffer_desc, sizeof(buffer_desc));
-  buffer_desc.Usage     = D3D11_USAGE_DYNAMIC;
-  buffer_desc.ByteWidth = buffer_size;
-  buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-  buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-  ID3D11Buffer* vertex_buffer = NULL;
-  if (FAILED(_device->CreateBuffer(&buffer_desc, NULL, &vertex_buffer))) {
-    return NULL;
-  }
-  return vertex_buffer;
 }
 
 bool DebugRenderer::init()
@@ -382,4 +371,34 @@ void DebugRenderer::add_debug_string(const char* format, ...)
   va_end(arg);
 
   debug_text_.push_back(buf);
+}
+
+void DebugRenderer::add_debug_render_delegate(const DebugRenderDelegate& d, bool add)
+{
+	if (add) {
+		_debug_render_delegates.push_back(d);
+		return;
+	} else {
+		for (auto i = _debug_render_delegates.begin(), e = _debug_render_delegates.end(); i != e; ++i) {
+			if ((*i) == d) {
+				_debug_render_delegates.erase(i);
+				return;
+			}
+		}
+	}
+}
+
+void DebugRenderer::add_debug_camera_delegate(const DebugCameraDelegate& d, bool add)
+{
+	if (add) {
+		_debug_camera_delegates.push_back(d);
+	} else {
+		for (auto i = _debug_camera_delegates.begin(), e = _debug_camera_delegates.end(); i != e; ++i) {
+			if (*i == d) {
+				_debug_camera_delegates.erase(i);
+				return;
+			}
+		}
+
+	}
 }

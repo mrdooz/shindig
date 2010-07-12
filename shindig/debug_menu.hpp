@@ -7,6 +7,14 @@ class DebugMenu
 {
 public:
 
+	enum AlignFlags {
+		kAlignHoriz = 0,
+		kAlignVert = 1 << 8,
+		kAlignLeft = 1,
+		kAlignRight = 2,
+		kAlignCenter = 3,
+	};
+
 	typedef std::function<void()> ButtonCallback;
 
 	static DebugMenu& instance();

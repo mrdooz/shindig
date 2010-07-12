@@ -152,8 +152,8 @@ bool DebugMenu::load_settings(const string2& filename)
 
 	try {
 		Settings tmp;
-		tmp.x = get_int_field(l, "top");
-		tmp.y = get_int_field(l, "left");
+		tmp.x = get_int_field(l, "left");
+		tmp.y = get_int_field(l, "top");
 
 		tmp.w = get_int_field(l, "item_size_w");
 		tmp.h = get_int_field(l, "item_size_h");
@@ -207,9 +207,12 @@ void DebugMenu::render()
 	context->Draw(2 * 6 * _buttons.size(), 0);
 
 	_writer.reset_frame();
+	const float height = 20;
 	for (int i = 0; i < (int)_buttons.size(); ++i) {
 		const ButtonBase *cur = _buttons[i];
-		_writer.write((int)(cur->center.x - cur->extents.x), (int)(cur->center.y - cur->extents.y), 15, cur->text);
+		int w, h;
+		_writer.calc_extents(&w, &h, height, cur->text);
+		_writer.write((int)(cur->center.x - w / 2), (int)(cur->center.y - h / 2), height, cur->text);
 	}
 	_writer.render();
 

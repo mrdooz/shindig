@@ -21,7 +21,8 @@ public:
 	Font();
 	~Font();
 	bool init(const char *filename, float font_height);
-  PosTex *render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs);
+	PosTex *render(const char *text, PosTex *vtx, int width, int height, const D3DXVECTOR3& ofs);
+	void calc_extents(const char *text, int width, int height, int *req_width, int *req_height);
   ID3D11ShaderResourceView *view() const { return _view; }
 private:
 	bool pack_font();

@@ -18,7 +18,7 @@ public:
 	void render();
 	void reset_frame();
 	void write(const int left, const int top, float h, const char *fmt, ...);
-
+	void calc_extents(int *width, int *height, float h, const char *fmt, ...);
 private:
 
   typedef DynamicVb<PosTex> Verts;

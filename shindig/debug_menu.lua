@@ -1,7 +1,7 @@
 debug_menu = {
-	["top"] = 20,
+	["top"] = 10,
 	["left"] = 10,
-	["item_size_w"] = 120,
+	["item_size_w"] = 350,
 	["item_size_h"] = 40,
 	["border"] = 2,
 	["spacing"] = 5,
