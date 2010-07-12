@@ -43,7 +43,7 @@ bool TestEffect3::init()
   auto& g = Graphics::instance();
   auto* d = Graphics::instance().device();
 
-	DebugMenu::instance().add_label("Trackball", &_test);
+	//DebugMenu::instance().add_label("Trackball", &_test);
 
 	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move));
 	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up));

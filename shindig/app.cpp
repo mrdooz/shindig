@@ -5,12 +5,19 @@
 #include "test_effect2.hpp"
 #include "test_effect3.hpp"
 #include "test_effect4.hpp"
-#include "font.hpp"
+#include "imgui.hpp"
 #include <celsus/file_utils.hpp>
-#include "debug_writer.hpp"
+#include "font_writer.hpp"
 #include "debug_menu.hpp"
 
 App* App::_instance = NULL;
+
+#ifndef GET_X_LPARAM
+#define GET_X_LPARAM(lParam)	((int)(short)LOWORD(lParam))
+#endif
+#ifndef GET_Y_LPARAM
+#define GET_Y_LPARAM(lParam)	((int)(short)HIWORD(lParam))
+#endif
 
 
 
@@ -43,9 +50,11 @@ bool App::init(HINSTANCE hinstance)
   create_window();
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
-	_debug_writer = new DebugWriter();
+	_debug_writer = new FontWriter();
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, _width, _height));
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
+
+  RETURN_ON_FAIL_BOOL_E(IMGui::instance().init());
 
 	_test_effect = new TestEffect3();
 	_test_effect->init();
@@ -62,12 +71,14 @@ void App::on_quit()
 
 void App::init_menu()
 {
-	DebugMenu::instance().add_button("quit", fastdelegate::MakeDelegate(this, &App::on_quit));
-	DebugMenu::instance().add_button("quit2", fastdelegate::MakeDelegate(this, &App::on_quit));
+	//DebugMenu::instance().add_button("quit", fastdelegate::MakeDelegate(this, &App::on_quit));
+	//DebugMenu::instance().add_button("quit2", fastdelegate::MakeDelegate(this, &App::on_quit));
 }
 
 bool App::close()
 {
+  IMGui::instance().close();
+
   if (_test_effect) {
     _test_effect->close();
     delete _test_effect;
@@ -173,6 +184,8 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	if (res != 0)
 		return res;
 
+  UIState& ui_state = IMGui::instance().ui_state();
+
   switch( message ) 
   {
   case WM_SIZE:
@@ -190,16 +203,20 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
   case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
+    ui_state.mouse_down = 1;
 		_mouse_down_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
 		break;
 
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
+    ui_state.mouse_down = 0;
 		_mouse_up_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
 		break;
 
 	case WM_MOUSEMOVE:
+    ui_state.mouse_x = GET_X_LPARAM(lParam);
+    ui_state.mouse_y = GET_Y_LPARAM(lParam);
 		_mouse_move_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
     break;
 
@@ -210,6 +227,10 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
   case WM_KEYDOWN:
 		//App::instance()._key_signal(IoKey(wParam, lParam));
 		break;
+
+  case WM_CHAR:
+    ui_state.key_entered = wParam;
+    break;
 
   case WM_KEYUP:
     switch (wParam) 
@@ -259,5 +280,5 @@ void App::add_dbg_message(const char* fmt, ...)
   char* buf = (char*)_alloca(len);
   vsprintf_s(buf, len, fmt, arg);
   va_end(arg);
-  _debug_writer->write(0, 0, 15, buf);
+  _debug_writer->write(0, 0, 16, buf);
 }

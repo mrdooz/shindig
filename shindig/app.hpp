@@ -5,7 +5,7 @@
 #include <MMSystem.h>
 
 class EffectBase;
-class DebugWriter;
+class FontWriter;
 
 struct MouseInfo
 {
@@ -28,6 +28,7 @@ typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseDown;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseWheel;
 
 namespace sig2 = boost::signals2;
+
 
 class App
 {
@@ -76,7 +77,8 @@ private:
 	sig2::signal<void (const MouseInfo&)> _mouse_down_signal;
 	sig2::signal<void (const MouseInfo&)> _mouse_wheel_signal;
 
-	DebugWriter *_debug_writer;
+	FontWriter *_debug_writer;
+
 };
 
 #endif

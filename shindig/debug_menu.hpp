@@ -1,6 +1,6 @@
 #pragma once
 #include "dynamic_vb.hpp"
-#include "debug_writer.hpp"
+#include "font_writer.hpp"
 #include <celsus/vertex_types.hpp>
 
 class DebugMenu
@@ -120,7 +120,7 @@ private:
 
   std::vector<ButtonBase *> _buttons;
 
-	DebugWriter _writer;
+	FontWriter _writer;
 	Settings _settings;
 
 	EffectWrapper *_effect;

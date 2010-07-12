@@ -43,7 +43,6 @@ bool DebugMenu::init()
 	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_menu.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
 		MakeDelegate(this, &DebugMenu::load_effect)));
 
-
   using namespace rt;
   _dss.Attach(D3D11::DepthStencilDescription().DepthEnable_(FALSE).Create(d));
 	_blendstate.Attach(D3D11::BlendDescription().Create(d));
