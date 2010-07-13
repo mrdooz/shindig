@@ -34,6 +34,7 @@
 #include <fstream>
 
 #include <boost/scoped_array.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/signals2.hpp>
 //#include <boost/filesystem.hpp>
 
@@ -51,6 +52,10 @@
 #include <celsus/effect_wrapper.hpp>
 #include <celsus/section_reader.hpp>
 #include <celsus/D3D11Descriptions.hpp>
+#include <celsus/file_utils.hpp>
+#include <celsus/vertex_types.hpp>
+#include <celsus/refptr.hpp>
+#include <celsus/text_scanner.hpp>
 
 #include "fast_delegate.hpp"
 #include "fast_delegate_bind.hpp"
@@ -61,3 +66,10 @@
 #include <hash_map>
 
 #include <agents.h>
+
+extern "C"
+{
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+};

@@ -102,6 +102,7 @@
     <ClCompile Include="debug_renderer.cpp" />
     <ClCompile Include="font_writer.cpp" />
     <ClCompile Include="demo.cpp" />
+    <ClCompile Include="geometry.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="lua_utils.cpp" />
     <ClCompile Include="material.cpp" />
@@ -133,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp" />
+    <ClInclude Include="bounding.hpp" />
     <ClInclude Include="debug_menu.hpp" />
     <ClInclude Include="debug_renderer.hpp" />
     <ClInclude Include="font_writer.hpp" />
@@ -141,6 +143,7 @@
     <ClInclude Include="effect_base.hpp" />
     <ClInclude Include="fast_delegate.hpp" />
     <ClInclude Include="fast_delegate_bind.hpp" />
+    <ClInclude Include="geometry.hpp" />
     <ClInclude Include="imgui.hpp" />
     <ClInclude Include="lua_utils.hpp" />
     <ClInclude Include="material.hpp" />

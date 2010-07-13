@@ -6,9 +6,9 @@
 #include "test_effect3.hpp"
 #include "test_effect4.hpp"
 #include "imgui.hpp"
-#include <celsus/file_utils.hpp>
 #include "font_writer.hpp"
 #include "debug_menu.hpp"
+#include "debug_renderer.hpp"
 
 App* App::_instance = NULL;
 
@@ -48,13 +48,14 @@ bool App::init(HINSTANCE hinstance)
   _width = 800;
   _height = 600;
   create_window();
+
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
-	_debug_writer = new FontWriter();
+  _debug_writer = new FontWriter();
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, _width, _height));
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
-
   RETURN_ON_FAIL_BOOL_E(IMGui::instance().init());
+  RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().init());
 
 	_test_effect = new TestEffect3();
 	_test_effect->init();
@@ -86,6 +87,8 @@ bool App::close()
 
 	_debug_writer->close();
 	SAFE_DELETE(_debug_writer);
+  RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().close());
+  RETURN_ON_FAIL_BOOL_E(IMGui::instance().close());
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().close());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
   RETURN_ON_FAIL_BOOL_E(System::instance().close());

@@ -1,12 +1,5 @@
 #pragma once
 
-extern "C"
-{
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-};
-
 struct lua_State;
 bool lua_init(lua_State **ll, const char *filename);
 float get_float_field(lua_State *l, const char *key);

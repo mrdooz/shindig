@@ -2,7 +2,6 @@
 #include "debug_menu.hpp"
 #include "system.hpp"
 #include "resource_manager.hpp"
-#include <celsus/text_scanner.hpp>
 #include "lua_utils.hpp"
 
 // Note, all the debug code stuff uses pixels as units, with a coordinate system

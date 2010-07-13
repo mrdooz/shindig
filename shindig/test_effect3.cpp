@@ -45,8 +45,6 @@ bool TestEffect3::init()
   auto& g = Graphics::instance();
   auto* d = Graphics::instance().device();
 
-	//DebugMenu::instance().add_label("Trackball", &_test);
-
 	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move));
 	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up));
 	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down));
@@ -57,23 +55,19 @@ bool TestEffect3::init()
 
   //RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true));
 
-  //RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), 
-    //MakeDelegate(this, &TestEffect3::load_mesh), true));
+  RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), 
+    MakeDelegate(this, &TestEffect3::load_mesh), true));
 
 	//RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("C:/Users/dooz/Downloads/PC-03_ON_OFF_Redux (1)/PC-03_Redux/Assets/Models/Scene1_Intro_Cube.obj", System::kDirAbsolute), 
 		//MakeDelegate(this, &TestEffect3::load_mesh), true));
 
-/*
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), 
 		MakeDelegate(this, &TestEffect3::load_material), true));
-*/
+
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sponza.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect3::effect_loaded)));
 
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/1.lua", System::kDirRelative), MakeDelegate(this, &TestEffect3::load_states), true));
-
-	//_dss.Attach(rt::D3D11::DepthStencilDescription().Create(d));
-	//_blend_state.Attach(rt::D3D11::BlendDescription().Create(d));
 
   return true;
 }
@@ -107,7 +101,7 @@ bool TestEffect3::render()
 	context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
 
   D3DXMATRIX view, proj;
-	D3DXMatrixLookAtLH(&view, &(_meshes[0]->_bounding_center + calc_cam_pos()), &_meshes[0]->_bounding_center, &D3DXVECTOR3(0,1,0));
+	D3DXMatrixLookAtLH(&view, &(_meshes[0]->bounding_sphere().center + calc_cam_pos()), &_meshes[0]->bounding_sphere().center, &D3DXVECTOR3(0,1,0));
 	D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 5000 /*_meshes[0]->_bounding_radius*/);
 	D3DXMATRIX mtx;
 	D3DXMatrixTranspose(&mtx, &(view * proj));
@@ -122,7 +116,7 @@ bool TestEffect3::render()
 
 	for (int i = 0; i < (int)_meshes.size(); ++i) {
 		Mesh2 *mesh = _meshes[i];
-		if (Material *material = _materials[mesh->_material_name]) {
+		if (Material *material = _materials[mesh->material_name()]) {
 			t[0] = _textures[material->string_values["map_Kd"]];
 			Material::StringValues::iterator it = material->string_values.find("map_d");
 			t[1] = it != material->string_values.end() ? t[1] = _textures[it->second] : NULL;
@@ -130,7 +124,7 @@ bool TestEffect3::render()
 			mesh->render(context);
 		} else {
 			mesh->render(context);
-			LOG_WARNING_LN_ONESHOT("Unable to find material: %s", mesh->_material_name.c_str());
+			LOG_WARNING_LN_ONESHOT("Unable to find material: %s", mesh->material_name().c_str());
 		}
 	}
 
@@ -144,7 +138,7 @@ bool TestEffect3::load_mesh(const string2& filename)
   ObjLoader loader;
   bool res = loader.load_from_file(filename, &_meshes);
 	if (res) {
-		float r = _meshes[0]->_bounding_radius;
+		float r = _meshes[0]->bounding_sphere().radius;
 		float fov = deg_to_rad(45) / (4/3.0f);
 		float x = atanf(fov);
 		float a = (r - r * x) / x;

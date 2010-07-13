@@ -42,8 +42,8 @@ bool ObjLoader::load_binary_file(const char *filename, Meshes *meshes)
 		std::vector<uint8_t> verts, indices;
 		r.read_vector(&verts);
 		r.read_vector(&indices);
-		r.read(&m->_bounding_radius);
-		r.read(&m->_bounding_center);
+		r.read(&m->_sphere.radius);
+		r.read(&m->_sphere.center);
 		int vtx_flags;
 		r.read(&vtx_flags);
 		r.read(&m->_ib_format);
@@ -167,8 +167,8 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			RETURN_ON_FAIL_BOOL_E(create_static_vertex_buffer(d, new_verts.size(), sizeof(PosNormalTex), (const uint8_t *)&new_verts[0], &m->_vb));
 			RETURN_ON_FAIL_BOOL_E(create_static_index_buffer(d, new_indices.size(), sizeof(int), (const uint8_t *)&new_indices[0], &m->_ib));
 
-			m->_bounding_radius = radius;
-			m->_bounding_center = center;
+			m->_sphere.radius = radius;
+			m->_sphere.center = center;
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0));
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12));
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24));
@@ -184,8 +184,8 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			// save mesh
 			w.write_vector(new_verts);
 			w.write_vector(new_indices);
-			w.write(m->_bounding_radius);
-			w.write(m->_bounding_center);
+			w.write(m->_sphere.radius);
+			w.write(m->_sphere.center);
 			w.write(VtxPos | (faces[0].na != -1 ? VtxNormal : 0) | (faces[0].ta != -1 ? VtxTex : 0));
 			w.write(m->_ib_format);
 			w.write(m->_stride);
@@ -238,8 +238,8 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			if (FAILED(create_static_index_buffer(d, faces.size() * 3, sizeof(int), (const uint8_t *)&faces[0], &m->_ib)))
 				return false;
 
-			m->_bounding_radius = radius;
-			m->_bounding_center = center;
+			m->_sphere.radius = radius;
+			m->_sphere.center = center;
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0));
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12));
 			m->_ib_format = DXGI_FORMAT_R32_UINT;
@@ -253,8 +253,8 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			// save mesh
 			w.write_raw(interleaved, verts.size() * 2 * sizeof(D3DXVECTOR3));
 			w.write_vector(faces);
-			w.write(m->_bounding_radius);
-			w.write(m->_bounding_center);
+			w.write(m->_sphere.radius);
+			w.write(m->_sphere.center);
 			w.write(VtxPos | VtxNormal);
 			w.write(m->_ib_format);
 			w.write(m->_stride);

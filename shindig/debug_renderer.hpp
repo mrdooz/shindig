@@ -2,8 +2,7 @@
 #define DEBUG_RENDERER_HPP
 
 #include "vector_font.hpp"
-#include <d3dx10math.h>
-#include <celsus/vertex_types.hpp>
+#include "bounding.hpp"
 
 class EffectWrapper;
 
@@ -15,16 +14,11 @@ typedef CComPtr<ID3D11Device> ID3D11DevicePtr;
 // objects that want to be debug drawn can implement this
 struct DebugDraw
 {
-  enum Bounding {
-    kSphere = 1 << 0,
-    kBox = 1 << 1,
-  };
-
   string2 name;
   D3DXMATRIX orientation;
 
-  D3DXVECTOR3 center;
-  float radius;
+  uint32_t bounding_flags;
+  Sphere sphere;
 };
 
 struct DebugCamera
@@ -36,8 +30,8 @@ struct DebugCamera
 	float near_plane, far_plane;
 };
 
-typedef fastdelegate::FastDelegate1<DebugDraw> DebugRenderDelegate;
-typedef fastdelegate::FastDelegate1<DebugCamera> DebugCameraDelegate;
+typedef fastdelegate::FastDelegate1<DebugDraw *> DebugRenderDelegate;
+typedef fastdelegate::FastDelegate1<DebugCamera *> DebugCameraDelegate;
 
 
 class DebugRenderer
@@ -49,14 +43,13 @@ public:
     Color = 1 << 2,
   };
 
-
 	static DebugRenderer& instance();
 
 	void add_debug_render_delegate(const DebugRenderDelegate& d, bool add);
 	void add_debug_camera_delegate(const DebugCameraDelegate& d, bool add);
 
   bool init();
-  void close();
+  bool close();
   void start_frame();
   void end_frame();
   // vertex_format is a bitmask made from Pos, Normal, Color

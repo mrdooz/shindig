@@ -1,7 +1,6 @@
 #pragma once
 #include "dynamic_vb.hpp"
 #include "font_writer.hpp"
-#include <celsus/vertex_types.hpp>
 
 class DebugMenu
 {

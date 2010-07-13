@@ -208,8 +208,9 @@ bool DebugRenderer::init_vertex_buffers()
   return true;
 }
 
-void DebugRenderer::close()
+bool DebugRenderer::close()
 {
+  return true;
 }
 
 void DebugRenderer::start_frame()

@@ -1,4 +1,7 @@
 #pragma once
+#include "bounding.hpp"
+
+struct DebugDraw;
 
 // Simple mesh format.
 // Verts are just pos/normal
@@ -13,11 +16,9 @@ public:
 	const std::vector<D3D11_INPUT_ELEMENT_DESC>& input_desc() const { return _input_desc; }
 	void set_layout(ID3D11InputLayout *layout) { _layout = NULL; _layout.Attach(layout); }
 
-//private:
+  const string2& material_name() const { return _material_name; }
+private:
 	friend class ObjLoader;
-
-	float _bounding_radius;
-	D3DXVECTOR3 _bounding_center;
 
   CComPtr<ID3D11Buffer> _vb;
   CComPtr<ID3D11Buffer> _ib;
