@@ -1,16 +1,11 @@
 #include "stdafx.h"
 #include "obj_loader.hpp"
-#include "celsus/text_scanner.hpp"
-#include "celsus/math_utils.hpp"
-#include "celsus/file_utils.hpp"
-#include <celsus/refptr.hpp>
-#include <celsus/vertex_types.hpp>
 #include "mesh2.hpp"
+#include "geometry.hpp"
 #include "material.hpp"
 
 void ObjLoader::handle_face_transition(bool *reading_face_data, Groups *groups, Group **cur_group, int running_face_idx, int running_vert_idx, int running_normal_idx, int running_tex_idx)
 {
-
 	if (*reading_face_data) {
 		*reading_face_data = false;
 		groups->push_back(*cur_group);
@@ -27,7 +22,7 @@ void ObjLoader::handle_face_transition(bool *reading_face_data, Groups *groups, 
 	}
 }
 
-bool ObjLoader::load_binary_file(const char *filename, Meshes *meshes)
+bool ObjLoader::load_binary_file(const char *filename, Geometries *geometries)
 {
 	RefPtr<FileReader> file(new FileReader());
 	if (!file->load(filename))
@@ -38,12 +33,13 @@ bool ObjLoader::load_binary_file(const char *filename, Meshes *meshes)
 
 	for (int i = 0; i < h.mesh_count; ++i) {
 
+		Geometry *g = new Geometry();
 		Mesh2 *m = new Mesh2();
 		std::vector<uint8_t> verts, indices;
 		r.read_vector(&verts);
 		r.read_vector(&indices);
-		r.read(&m->_sphere.radius);
-		r.read(&m->_sphere.center);
+		r.read(&g->_sphere.radius);
+		r.read(&g->_sphere.center);
 		int vtx_flags;
 		r.read(&vtx_flags);
 		r.read(&m->_ib_format);
@@ -62,7 +58,8 @@ bool ObjLoader::load_binary_file(const char *filename, Meshes *meshes)
 		RETURN_ON_FAIL_BOOL_E(create_static_vertex_buffer(d, verts, &m->_vb));
 		RETURN_ON_FAIL_BOOL_E(create_static_index_buffer(d, indices.size() / sizeof(int), sizeof(int), (const uint8_t *)&indices[0], &m->_ib));
 
-		meshes->push_back(m);
+		g->_mesh.reset(m);
+		geometries->push_back(g);
 	}
 
 	return true;
@@ -88,13 +85,12 @@ void ObjLoader::calc_bounding_sphere(const Verts& verts, float *radius, D3DXVECT
 	*center = c;
 }
 
-bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
+bool ObjLoader::load_from_file(const char *filename, Geometries *geometries)
 {
-
 	string2 binary_name(filename);
 	binary_name += ".bin";
 
-	if (load_binary_file(binary_name, meshes))
+	if (load_binary_file(binary_name, geometries))
 		return true;
 
 	Groups groups;
@@ -162,13 +158,15 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 				}
 			}
 
+			Geometry *g = new Geometry();
 			Mesh2 *m = new Mesh2();
+			g->_mesh.reset(m);
 			auto d = Graphics::instance().device();
 			RETURN_ON_FAIL_BOOL_E(create_static_vertex_buffer(d, new_verts.size(), sizeof(PosNormalTex), (const uint8_t *)&new_verts[0], &m->_vb));
 			RETURN_ON_FAIL_BOOL_E(create_static_index_buffer(d, new_indices.size(), sizeof(int), (const uint8_t *)&new_indices[0], &m->_ib));
 
-			m->_sphere.radius = radius;
-			m->_sphere.center = center;
+			g->_sphere.radius = radius;
+			g->_sphere.center = center;
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0));
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12));
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24));
@@ -179,13 +177,13 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			m->_index_count = new_indices.size();
       m->_material_name = cur->material_name;
 
-			meshes->push_back(m);
+			geometries->push_back(g);
 
 			// save mesh
 			w.write_vector(new_verts);
 			w.write_vector(new_indices);
-			w.write(m->_sphere.radius);
-			w.write(m->_sphere.center);
+			w.write(g->_sphere.radius);
+			w.write(g->_sphere.center);
 			w.write(VtxPos | (faces[0].na != -1 ? VtxNormal : 0) | (faces[0].ta != -1 ? VtxTex : 0));
 			w.write(m->_ib_format);
 			w.write(m->_stride);
@@ -230,7 +228,9 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 				interleaved[i*2+1] = vertex_normals[i];
 			}
 
+			Geometry *g = new Geometry();
 			Mesh2 *m = new Mesh2();
+			g->_mesh.reset(m);
 			auto d = Graphics::instance().device();
 			if (FAILED(create_static_vertex_buffer(d, verts.size(), 2 * sizeof(D3DXVECTOR3), (const uint8_t *)interleaved, &m->_vb)))
 				return false;
@@ -238,8 +238,8 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			if (FAILED(create_static_index_buffer(d, faces.size() * 3, sizeof(int), (const uint8_t *)&faces[0], &m->_ib)))
 				return false;
 
-			m->_sphere.radius = radius;
-			m->_sphere.center = center;
+			g->_sphere.radius = radius;
+			g->_sphere.center = center;
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0));
 			m->_input_desc.push_back(CD3D11_INPUT_ELEMENT_DESC("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12));
 			m->_ib_format = DXGI_FORMAT_R32_UINT;
@@ -248,13 +248,13 @@ bool ObjLoader::load_from_file(const char *filename, Meshes *meshes)
 			m->_vertex_size = 2 * sizeof(D3DXVECTOR3);
 			m->_index_count = faces.size() * 3;
 
-			meshes->push_back(m);
+			geometries->push_back(g);
 
 			// save mesh
 			w.write_raw(interleaved, verts.size() * 2 * sizeof(D3DXVECTOR3));
 			w.write_vector(faces);
-			w.write(m->_sphere.radius);
-			w.write(m->_sphere.center);
+			w.write(g->_sphere.radius);
+			w.write(g->_sphere.center);
 			w.write(VtxPos | VtxNormal);
 			w.write(m->_ib_format);
 			w.write(m->_stride);

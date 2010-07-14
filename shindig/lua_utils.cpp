@@ -188,7 +188,7 @@ bool sampler_from_lua(const char *filename, const char *sampler_name, CComPtr<ID
 	return true;
 }
 
-bool load_states(const char *filename, const char *blend, const char *depth, const char *sampler, ID3D11BlendState **b, ID3D11DepthStencilState **d, ID3D11SamplerState **s)
+bool lua_load_states(const char *filename, const char *blend, const char *depth, const char *sampler, ID3D11BlendState **b, ID3D11DepthStencilState **d, ID3D11SamplerState **s)
 {
 	CComPtr<ID3D11BlendState> tmp_blend;
 	CComPtr<ID3D11SamplerState> tmp_sampler;

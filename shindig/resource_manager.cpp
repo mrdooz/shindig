@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "resource_manager.hpp"
-#include "parser/state_parser.hpp"
 #include "redux_loader.hpp"
 #include "scene.hpp"
 #include "system.hpp"
@@ -25,30 +24,6 @@ ResourceManager& ResourceManager::instance()
 	}
 
 	return *_instance;
-}
-
-extern int parse_tokens(Tokens& tokens, char* str);
-char* make_string(const char* ts, const char* te)
-{
-	const int len = te - ts;
-	char* buf = new char[len+1];
-	memcpy(buf, ts, len);
-	buf[len] = 0;
-	return buf;
-}
-
-int make_hex(const char* ts, const char* te)
-{
-	char* tmp = _strdup(ts);
-	char* ptr = tmp;
-	char* pe = ptr + (te - ts);
-	while (ptr < pe) {
-		*ptr++ = tolower(*ptr);
-	}
-	int value = 0;
-	sscanf(tmp, "0x%x", &value);
-	free(tmp);
-	return value;
 }
 
 // This can be removed once I stop being stupid and fix a proper bind
@@ -96,60 +71,6 @@ bool ResourceManager::reload_shader(const char* filename, const int shaders)
 
 		i->fn(effect);
 	}
-	return true;
-}
-
-bool ResourceManager::load_effect_states(const char* filename, const fnStateLoaded& fn)
-{
-	SUPER_ASSERT(_state_callbacks.find(filename) == _state_callbacks.end());
-	_state_callbacks[filename].push_back(fn);
-	return reload_effect_states(filename);
-}
-
-bool ResourceManager::reload_effect_states(const char* filename)
-{
-	// load the effect state file
-	uint32_t len = 0;
-	uint8_t* buf = load_file_with_zero_terminate(filename, &len);
-	if (buf == NULL) {
-		return false;
-	}
-
-	// parse it
-	Tokens tokens;
-	parse_tokens(tokens, (char*)buf);
-	StateParser p(tokens);
-	if (!p.run()) {
-		return false;
-	}
-	BigState b = p._states;
-
-	ID3D11Device* device = Graphics::instance().device();
-
-	EffectStates effect_states;
-
-	// Collect blend states
-	for (auto i = b._blend_descs.begin(), e = b._blend_descs.end(); i != e; ++i) {
-		CComPtr<ID3D11BlendState> s;
-		device->CreateBlendState(&i->second, &s);
-		effect_states.blend_states.insert(std::make_pair(i->first, s));
-	}
-
-	// Collect sampler states
-	SamplerStates sampler_states;
-	for (auto i = b._sampler_descs.begin(), e = b._sampler_descs.end(); i != e; ++i) {
-		CComPtr<ID3D11SamplerState> s;
-		device->CreateSamplerState(&i->second, &s);
-		effect_states.sampler_states.insert(std::make_pair(i->first, s));
-	}
-
-
-	// call the callbacks that are watching this file
-	auto callbacks = _state_callbacks[filename];
-	for (auto i = callbacks.begin(), e = callbacks.end(); i != e; ++i) {
-		(*i)(effect_states);
-	}
-
 	return true;
 }
 

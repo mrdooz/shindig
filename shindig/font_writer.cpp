@@ -342,8 +342,7 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, const
 
 
 FontWriter::FontWriter()
-  : _effect(new EffectWrapper())
-  , _top(-1)
+  : _top(-1)
   , _left(-1)
   , _width(-1)
   , _height(-1)
@@ -352,7 +351,6 @@ FontWriter::FontWriter()
 
 FontWriter::~FontWriter()
 {
-	SAFE_DELETE(_effect);
   container_delete(_fonts);
 }
 
@@ -476,19 +474,17 @@ void FontWriter::close()
 
 void FontWriter::load_effect(EffectWrapper *effect)
 {
-	SAFE_DELETE(_effect);
-	_effect = effect;
-
+	_effect.reset(effect);
 	InputDesc().
 		add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
 		add("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0).
-		create(_layout, _effect);
+		create(_layout, _effect.get());
 }
 
 bool FontWriter::load_states(const string2& filename)
 {
 	auto& s = System::instance();
-	if (!::load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
 		return false;
 
 	return true;

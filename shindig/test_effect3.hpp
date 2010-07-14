@@ -8,6 +8,7 @@
 #include "app.hpp"
 
 class Mesh2;
+class Geometry;
 struct Material;
 
 class TestEffect3 : public EffectBase
@@ -47,10 +48,10 @@ private:
 	CComPtr<ID3D11SamplerState> _sampler_state;
 
 	typedef std::map< string2, Material *> Materials;
-	typedef std::vector<Mesh2 *> Meshes;
+	typedef std::vector<Geometry *> Geometries;
 	Materials _materials;
-	Meshes _meshes;
-  EffectWrapper *_effect;
+	Geometries _geometries;
+	std::auto_ptr<EffectWrapper> _effect;
 
 	D3DXVECTOR3 _test;
 };

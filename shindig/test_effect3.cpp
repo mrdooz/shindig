@@ -16,12 +16,12 @@
 #include "debug_menu.hpp"
 #include "lua_utils.hpp"
 #include "imgui.hpp"
+#include "geometry.hpp"
 
 
 
 TestEffect3::TestEffect3()
-  : _effect(NULL)
-	, _cam_radius(150)
+	: _cam_radius(150)
   , _alpha(0)
   , _theta(0)
   , _first_update(true)
@@ -31,8 +31,7 @@ TestEffect3::TestEffect3()
 
 TestEffect3::~TestEffect3()
 {
-  SAFE_DELETE(_effect);
-	container_delete(_meshes);
+	container_delete(_geometries);
 }
 
 
@@ -88,7 +87,7 @@ D3DXVECTOR3 TestEffect3::calc_cam_pos() const
 
 bool TestEffect3::render()
 {
-  if (_meshes.empty())
+  if (_geometries.empty())
     return true;
 
   ID3D11Device* device = Graphics::instance().device();
@@ -101,7 +100,7 @@ bool TestEffect3::render()
 	context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
 
   D3DXMATRIX view, proj;
-	D3DXMatrixLookAtLH(&view, &(_meshes[0]->bounding_sphere().center + calc_cam_pos()), &_meshes[0]->bounding_sphere().center, &D3DXVECTOR3(0,1,0));
+	D3DXMatrixLookAtLH(&view, &(_geometries[0]->bounding_sphere().center + calc_cam_pos()), &_geometries[0]->bounding_sphere().center, &D3DXVECTOR3(0,1,0));
 	D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 5000 /*_meshes[0]->_bounding_radius*/);
 	D3DXMATRIX mtx;
 	D3DXMatrixTranspose(&mtx, &(view * proj));
@@ -114,8 +113,8 @@ bool TestEffect3::render()
 
 	ID3D11ShaderResourceView* t[] = { 0, 0 };
 
-	for (int i = 0; i < (int)_meshes.size(); ++i) {
-		Mesh2 *mesh = _meshes[i];
+	for (int i = 0; i < (int)_geometries.size(); ++i) {
+		Mesh2 *mesh = _geometries[i]->mesh();
 		if (Material *material = _materials[mesh->material_name()]) {
 			t[0] = _textures[material->string_values["map_Kd"]];
 			Material::StringValues::iterator it = material->string_values.find("map_d");
@@ -133,12 +132,12 @@ bool TestEffect3::render()
 
 bool TestEffect3::load_mesh(const string2& filename)
 {
-	container_delete(_meshes);
+	container_delete(_geometries);
 
   ObjLoader loader;
-  bool res = loader.load_from_file(filename, &_meshes);
+  bool res = loader.load_from_file(filename, &_geometries);
 	if (res) {
-		float r = _meshes[0]->bounding_sphere().radius;
+		float r = _geometries[0]->bounding_sphere().radius;
 		float fov = deg_to_rad(45) / (4/3.0f);
 		float x = atanf(fov);
 		float a = (r - r * x) / x;
@@ -152,7 +151,7 @@ bool TestEffect3::load_mesh(const string2& filename)
 bool TestEffect3::load_states(const string2& filename)
 {
 	auto& s = System::instance();
-	if (!::load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
 		return false;
 
 	return true;
@@ -163,10 +162,9 @@ void TestEffect3::effect_loaded(EffectWrapper *effect)
 	if (!effect)
 		return;
 
-  SAFE_DELETE(_effect);
-  _effect = effect;
-	for (int i = 0; i < (int)_meshes.size(); ++i)
-		_meshes[i]->set_layout(_effect->create_input_layout(_meshes[i]->input_desc()));
+	_effect.reset(effect);
+	for (int i = 0; i < (int)_geometries.size(); ++i)
+		_geometries[i]->mesh()->set_layout(_effect.get()->create_input_layout(_geometries[i]->mesh()->input_desc()));
 }
 
 void TestEffect3::on_mouse_move(const MouseInfo& info)

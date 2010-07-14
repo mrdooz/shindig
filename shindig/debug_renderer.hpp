@@ -33,6 +33,7 @@ struct DebugCamera
 typedef fastdelegate::FastDelegate1<DebugDraw *> DebugRenderDelegate;
 typedef fastdelegate::FastDelegate1<DebugCamera *> DebugCameraDelegate;
 
+class FontWriter;
 
 class DebugRenderer
 {
@@ -57,13 +58,17 @@ public:
     const D3DXMATRIX& world, const D3DXMATRIX& view_proj);
   void render();
 
+	// helper functions to draw debug info in the scene's space
+	// the calls are enclosed in begin/end blocks so we don't have to worry about the
+	// scene rendering to strange render targets etc
+	void begin_debug_draw();
   void add_wireframe_sphere(const D3DXVECTOR3& center, const float radius, const D3DXCOLOR& color, const D3DXMATRIX& world, const D3DXMATRIX& view_proj);
   void add_wireframe_sphere(const D3DXMATRIX& world, const D3DXCOLOR& color, const D3DXMATRIX& view_proj);
 
-  void  add_line(const D3DXVECTOR3& a, const D3DXVECTOR3& b, const D3DXCOLOR& color, const D3DXMATRIX& view_proj);
-  void  add_text(const D3DXVECTOR3& pos, const D3DXMATRIX& view, const D3DXMATRIX& proj, const bool billboard, const char* format, ...);
-
-  void  add_debug_string(const char* format, ...);
+  void add_line(const D3DXVECTOR3& a, const D3DXVECTOR3& b, const D3DXCOLOR& color, const D3DXMATRIX& view_proj);
+  void add_text(const D3DXVECTOR3& pos, const D3DXMATRIX& view, const D3DXMATRIX& proj, const bool billboard, const char* format, ...);
+  void add_debug_string(const char* format, ...);
+	void end_debug_draw();
 
 private:
   struct DrawCall
@@ -108,27 +113,25 @@ private:
 	DebugRenderer();
 	~DebugRenderer();
 
+	void load_effect(EffectWrapper *effect);
+	bool load_states(const string2& filename);
+
   void draw_line(const float* proj, float x1,float y1,float z1, float x2,float y2, float z2);
 
   bool init_vertex_buffers();
-  void init_unit_sphere();
   void  color_sphere(const D3DXCOLOR& col);
 
   typedef std::map< uint32_t, VertexFormatData > VertexFormats;
   VertexFormats vertex_formats_;
 
-/*
-  EffectWrapper* effect_;
+	CComPtr<ID3D11InputLayout> _layout;
+	CComPtr<ID3D11DepthStencilState> _dss;
+	CComPtr<ID3D11BlendState> _blend_state;
+	std::auto_ptr<EffectWrapper> _effect;
 
-  ID3D11BlendStatePtr blend_state_;
-  ID3D11DepthStencilStatePtr  depth_stencil_state_;
+  std::vector<PosCol> _sphere_verts;
 
-  ID3DX10FontPtr  font_;
-*/
-
-  std::vector<PosCol> sphere_verts_;
-
-  VectorFont* vector_font_;
+  VectorFont* _vector_font;
 
   std::vector< string2 >  debug_text_;
 
@@ -138,6 +141,7 @@ private:
 	DebugRenderDelegates _debug_render_delegates;
 	DebugCameraDelegates _debug_camera_delegates;
 
+	FontWriter *_font_writer;
 	static DebugRenderer *_instance;
 };
 

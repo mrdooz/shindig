@@ -1,59 +1,10 @@
 #include "stdafx.h"
 #include "debug_renderer.hpp"
 #include "vector_font.hpp"
-//#include <celsus/D3D11Descriptions.hpp>
-
-//namespace mpl = boost::mpl;
-
-
-const D3DXMATRIX kMtxId(1,0,0,0,
-                        0,1,0,0,
-                        0,0,1,0,
-                        0,0,0,1);
-
-const D3DXVECTOR3 kVec3Zero(0,0,0);
-const D3DXVECTOR3 kVec3One(1,1,1);
-const D3DXQUATERNION kQuatId(0, 0, 0, 1);
-
-inline D3DXMATRIX get_rotation(const D3DXMATRIX& mtx)
-{
-  return D3DXMATRIX(
-    mtx._11, mtx._12, mtx._13, 0,
-    mtx._21, mtx._22, mtx._23, 0,
-    mtx._31, mtx._32, mtx._33, 0,
-    0, 0, 0, 1);
-}
-
-inline D3DXVECTOR3 get_translation(const D3DXMATRIX& transform)
-{
-  return D3DXVECTOR3(transform._41, transform._42, transform._43);
-}
-
-inline D3DXVECTOR3 get_scale(const D3DXMATRIX& transform)
-{
-  return D3DXVECTOR3(transform._11, transform._22, transform._33);
-}
-
-inline D3DXVECTOR3 normalize(const D3DXVECTOR3& a)
-{
-  const float len = D3DXVec3Length(&a);
-  if (len > 0 ) {
-    return a / len;
-  }
-  return kVec3Zero;
-}
-
-namespace
-{
-  struct VtxCol
-  {
-    VtxCol() {}
-    VtxCol(const D3DXVECTOR3& pos, const D3DXCOLOR& col) : pos(pos), col(col) {}
-    D3DXVECTOR3 pos;
-    D3DXCOLOR col;
-  };
-
-}
+#include "font_writer.hpp"
+#include "resource_manager.hpp"
+#include "system.hpp"
+#include "lua_utils.hpp"
 
 DebugRenderer *DebugRenderer::_instance = nullptr;
 
@@ -65,7 +16,7 @@ DebugRenderer& DebugRenderer::instance()
 }
 
 DebugRenderer::DebugRenderer()
-	: vector_font_(createVectorFont())
+	: _vector_font(createVectorFont())
 {
 /*
   D3DX10CreateFont( _device, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
@@ -76,18 +27,20 @@ DebugRenderer::DebugRenderer()
 
 DebugRenderer::~DebugRenderer()
 {
-  SAFE_DELETE(vector_font_);
+  SAFE_DELETE(_vector_font);
+	SAFE_DELETE(_font_writer);
 //  SAFE_DELETE(effect_);
 }
 
-void DebugRenderer::init_unit_sphere()
+void create_unit_sphere(std::vector<PosCol> *sphere_verts)
 {
   const int32_t num_lines = 20;
   const float horiz_angle_inc = 2 * (float)D3DX_PI / (num_lines-1);
   const float vert_angle_inc = (float)D3DX_PI / (num_lines-1);
   float vert_angle = 0;
   float radius = 1;
-  sphere_verts_.reserve(2 * num_lines * num_lines);
+	sphere_verts->clear();
+  sphere_verts->reserve(2 * num_lines * num_lines);
 
   for (int32_t i = 0; i < num_lines; ++i) {
     float horiz_angle = 0;
@@ -97,8 +50,8 @@ void DebugRenderer::init_unit_sphere()
 
     for (int32_t j = 0; j < num_lines; ++j) {
       D3DXVECTOR3 next = D3DXVECTOR3(scaled_radius * sinf(horiz_angle + horiz_angle_inc), ofs, scaled_radius * cosf(horiz_angle + horiz_angle_inc));
-      sphere_verts_.push_back(PosCol(cur));
-      sphere_verts_.push_back(PosCol(next));
+      sphere_verts->push_back(PosCol(cur));
+      sphere_verts->push_back(PosCol(next));
       cur = next;
       horiz_angle += horiz_angle_inc;
     }
@@ -109,14 +62,14 @@ void DebugRenderer::init_unit_sphere()
 
 void DebugRenderer::color_sphere(const D3DXCOLOR& col)
 {
-  for (int32_t i = 0, e = sphere_verts_.size(); i < e; ++i) {
-    sphere_verts_[i].col = col;
+  for (int32_t i = 0, e = _sphere_verts.size(); i < e; ++i) {
+    _sphere_verts[i].col = col;
   }
 }
 
 void  DebugRenderer::add_line(const D3DXVECTOR3& a, const D3DXVECTOR3& b, const D3DXCOLOR& color, const D3DXMATRIX& view_proj)
 {
-  VtxCol pts[2];
+  PosCol pts[2];
   pts[0].pos = a;
   pts[0].col = color;
 
@@ -132,17 +85,30 @@ void DebugRenderer::add_wireframe_sphere(const D3DXVECTOR3& center, const float 
   D3DXMATRIX world2;
   D3DXMatrixAffineTransformation(&world2, radius, &kVec3Zero, &kQuatId, &center);
   color_sphere(color);
-  add_verts(Pos | Color, D3D11_PRIMITIVE_TOPOLOGY_LINELIST, sphere_verts_[0].pos, sphere_verts_.size(), world2 * world, view_proj);
+  add_verts(Pos | Color, D3D11_PRIMITIVE_TOPOLOGY_LINELIST, _sphere_verts[0].pos, _sphere_verts.size(), world2 * world, view_proj);
 }
 
 void DebugRenderer::add_wireframe_sphere(const D3DXMATRIX& world, const D3DXCOLOR& color, const D3DXMATRIX& view_proj)
 {
   color_sphere(color);
-  add_verts(Pos | Color, D3D11_PRIMITIVE_TOPOLOGY_LINELIST, sphere_verts_[0].pos, sphere_verts_.size(), world, view_proj);
+  add_verts(Pos | Color, D3D11_PRIMITIVE_TOPOLOGY_LINELIST, _sphere_verts[0].pos, _sphere_verts.size(), world, view_proj);
 }
 
 bool DebugRenderer::init()
 {
+	using namespace fastdelegate;
+
+	auto& v = Graphics::instance().viewport();
+	auto& s = System::instance();
+	auto& r = ResourceManager::instance();
+
+	_font_writer = new FontWriter();
+	RETURN_ON_FAIL_BOOL_E(_font_writer->init(s.convert_path("data/fonts/arial.ttf", System::kDirRelative), 0, 0, 600, 600));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/debug_renderer_states.lua", System::kDirRelative), MakeDelegate(this, &DebugRenderer::load_states), true));
+	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_renderer.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &DebugRenderer::load_effect)));
+
+
+
 /*
   if (!effect_->load("effects/DebugRenderer.fx")) {
     return false;
@@ -159,7 +125,7 @@ bool DebugRenderer::init()
     return false;
   }
 */
-  init_unit_sphere();
+	create_unit_sphere(&_sphere_verts);
 
   return true;
 }
@@ -281,6 +247,11 @@ void DebugRenderer::add_verts(const uint32_t vertex_format, const D3D11_PRIMITIV
 
 void DebugRenderer::render()
 {
+	for (auto i = _debug_render_delegates.begin(), e = _debug_render_delegates.end(); i != e; ++i) {
+		DebugDraw d;
+		(*i)(&d);
+		int a = 10;
+	}
 /*
   float blend_factor[] = {0, 0, 0, 0};
   _device->OMSetBlendState(blend_state_, blend_factor, 0xffffffff);
@@ -350,7 +321,7 @@ void DebugRenderer::add_text(const D3DXVECTOR3& pos, const D3DXMATRIX& view, con
   va_end(arg);
 
   std::vector<float> verts;
-  vector_font_->vprintf(verts, 1, false, buf);
+  _vector_font->vprintf(verts, 1, false, buf);
   if (billboard) {
     D3DXMATRIX rot = get_rotation(view);
     D3DXMatrixTranspose(&rot, &rot);
@@ -402,4 +373,33 @@ void DebugRenderer::add_debug_camera_delegate(const DebugCameraDelegate& d, bool
 		}
 
 	}
+}
+
+void DebugRenderer::begin_debug_draw()
+{
+
+}
+
+void DebugRenderer::end_debug_draw()
+{
+
+}
+
+bool DebugRenderer::load_states(const string2& filename)
+{
+	auto& s = System::instance();
+	if (!lua_load_states(filename, "default_blend", "default_dss", NULL, &_blend_state.p, &_dss.p, NULL))
+		return false;
+
+	return true;
+}
+
+void DebugRenderer::load_effect(EffectWrapper *effect)
+{
+	_effect.reset(effect);
+
+	InputDesc(). 
+		add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+		add("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0).
+		create(_layout, _effect.get());
 }

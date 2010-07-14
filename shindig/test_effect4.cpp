@@ -19,13 +19,11 @@
 // test to make sure my texture coords are pixel correct
 
 TestEffect4::TestEffect4()
-  : _effect(NULL)
 {
 }
 
 TestEffect4::~TestEffect4()
 {
-  SAFE_DELETE(_effect);
 }
 
 
@@ -136,7 +134,7 @@ bool TestEffect4::render()
 bool TestEffect4::load_states(const string2& filename)
 {
 	auto& s = System::instance();
-	if (!::load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
 		return false;
 
 	return true;
@@ -144,12 +142,10 @@ bool TestEffect4::load_states(const string2& filename)
 
 void TestEffect4::effect_loaded(EffectWrapper *effect)
 {
-  SAFE_DELETE(_effect);
-  _effect = effect;
-
+	_effect.reset(effect);
   InputDesc(). 
     add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
     add("TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0).
-    create(_layout, _effect);
+    create(_layout, _effect.get());
 }
 

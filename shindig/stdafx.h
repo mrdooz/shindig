@@ -56,6 +56,7 @@
 #include <celsus/vertex_types.hpp>
 #include <celsus/refptr.hpp>
 #include <celsus/text_scanner.hpp>
+#include <celsus/math_utils.hpp>
 
 #include "fast_delegate.hpp"
 #include "fast_delegate_bind.hpp"

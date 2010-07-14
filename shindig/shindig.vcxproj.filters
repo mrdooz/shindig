@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="parser">
-      <UniqueIdentifier>{9c787931-96d3-416d-85d6-40608122bc88}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp">
@@ -50,9 +47,6 @@
     </ClCompile>
     <ClCompile Include="vector_font.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="parser\state_parser_lexer.cpp">
-      <Filter>parser</Filter>
     </ClCompile>
     <ClCompile Include="render_target.cpp">
       <Filter>Source Files</Filter>
@@ -140,9 +134,6 @@
     <ClInclude Include="vector_font.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="parser\state_parser.hpp">
-      <Filter>parser</Filter>
-    </ClInclude>
     <ClInclude Include="render_target.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -197,13 +188,5 @@
     <ClInclude Include="geometry.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="parser\parser.rl">
-      <Filter>parser</Filter>
-    </CustomBuild>
-    <CustomBuild Include="parser\states.sm">
-      <Filter>parser</Filter>
-    </CustomBuild>
   </ItemGroup>
 </Project>

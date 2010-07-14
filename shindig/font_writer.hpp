@@ -46,5 +46,5 @@ private:
   CComPtr<ID3D11BlendState> _blend_state;
   CComPtr<ID3D11InputLayout> _layout;
 	CComPtr<ID3D11DepthStencilState> _dss;
-	EffectWrapper *_effect;
+	std::auto_ptr<EffectWrapper> _effect;
 };

@@ -58,7 +58,7 @@ private:
   CComPtr<ID3D11InputLayout> _layout;
   CComPtr<ID3D11DepthStencilState> _dss;
   CComPtr<ID3D11BlendState> _blend_state;
-  EffectWrapper *_effect;
+	std::auto_ptr<EffectWrapper> _effect;
 	PosCol *_vtx;
 
   static IMGui *_instance;

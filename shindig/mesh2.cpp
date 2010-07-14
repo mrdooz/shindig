@@ -24,9 +24,3 @@ void Mesh2::render(ID3D11DeviceContext *context)
   context->IASetIndexBuffer(_ib, _ib_format, 0);
   context->DrawIndexed(_index_count, 0, 0);
 }
-
-void Mesh2::debug_draw(DebugDraw *d)
-{
-  d->name = _name;
-  d->
-}

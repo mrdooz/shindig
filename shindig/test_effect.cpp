@@ -52,8 +52,8 @@ bool TestEffect::init()
   System& sys = System::instance();
 	ResourceManager& r = ResourceManager::instance();
 
-  RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative), MakeDelegate(this, &TestEffect::states_loaded)),
-		LOG_ERROR_LN);
+  //RETURN_ON_FAIL_BOOL(r.load_effect_states(sys.convert_path("effects/states.fx", System::kDirRelative), MakeDelegate(this, &TestEffect::states_loaded)),
+//		LOG_ERROR_LN);
 
 	RETURN_ON_FAIL_BOOL(r.load_shaders(sys.convert_path("effects/post_process.fx", System::kDirRelative), "vsMain", NULL, NULL, MakeDelegate(this, &TestEffect::post_vs_loaded)),
 		LOG_ERROR_LN);

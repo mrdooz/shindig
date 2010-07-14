@@ -3,13 +3,14 @@
 
 #include <hash_map>
 #include "fast_delegate_bind.hpp"
-#include "parser/state_parser_symbols.hpp"
 
 class EffectWrapper;
 class Scene;
 struct MaterialFile;
 
-
+// TODO: This class is pretty much a pile of shit, as the effects that want to do stuff can watch
+// files manually for changes, and call the relevant loader functions from their callbacks when
+// stuff changes, which is pretty much what ResourceManager does internally..
 class ResourceManager
 {
 public:
@@ -33,7 +34,6 @@ public:
 
 	// All the loading functions are synchronous, but the given callback can be
 	// called multiple times if the specified file is modified
-	bool load_effect_states(const char* filename, const fnStateLoaded& fn);
 	bool  load_shaders(const char *filename, const char *vs, const char *gs, const char *ps, const fnEffectLoaded& fn);
 
 	bool load_scene(const char* filename, const fnSceneLoaded& fn);

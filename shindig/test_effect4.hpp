@@ -33,6 +33,6 @@ private:
   typedef DynamicVb<PosTex> Verts;
   Verts _verts;
 
-  EffectWrapper *_effect;
+	std::auto_ptr<EffectWrapper> _effect;
 };
 

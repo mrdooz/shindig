@@ -171,6 +171,7 @@ void App::run()
 
 			_debug_writer->render();
 			DebugMenu::instance().render();
+			DebugRenderer::instance().render();
 			IMGui::instance().render();
 
 			graphics.present();

@@ -1,6 +1,6 @@
 #pragma once
 
-class Mesh2;
+class Geometry;
 struct Material;
 
 // wavefront obj loader
@@ -8,8 +8,8 @@ class ObjLoader
 {
 public:
 	typedef std::vector<Material *> Materials;
-	typedef std::vector<Mesh2 *> Meshes;
-  bool load_from_file(const char *filename, Meshes *meshes);
+	typedef std::vector<Geometry *> Geometries;
+  bool load_from_file(const char *filename, Geometries *geometries);
 	bool load_material_file(const char *filename, Materials *materials);
 private:
 
@@ -71,10 +71,8 @@ private:
 	typedef std::vector<Group *> Groups;
 
 
-  bool load_binary_file(const char *filename, Mesh2 **mesh);
-	bool save_binary_file(const char *filename, const Groups& groups);
 	bool load_binary_file(const char *filename, Groups* groups);
-	bool load_binary_file(const char *filename, Meshes *meshes);
+	bool load_binary_file(const char *filename, Geometries *geometries);
 
 	void calc_bounding_sphere(const Verts& verts, float *radius, D3DXVECTOR3 *center);
 
