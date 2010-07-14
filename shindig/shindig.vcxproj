@@ -98,6 +98,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp" />
+    <ClCompile Include="camera.cpp" />
     <ClCompile Include="debug_menu.cpp" />
     <ClCompile Include="debug_renderer.cpp" />
     <ClCompile Include="font_writer.cpp" />
@@ -129,6 +130,7 @@
   <ItemGroup>
     <ClInclude Include="app.hpp" />
     <ClInclude Include="bounding.hpp" />
+    <ClInclude Include="camera.hpp" />
     <ClInclude Include="debug_menu.hpp" />
     <ClInclude Include="debug_renderer.hpp" />
     <ClInclude Include="font_writer.hpp" />

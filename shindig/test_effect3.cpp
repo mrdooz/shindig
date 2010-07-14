@@ -17,8 +17,7 @@
 #include "lua_utils.hpp"
 #include "imgui.hpp"
 #include "geometry.hpp"
-
-
+#include "camera.hpp"
 
 TestEffect3::TestEffect3()
 	: _cam_radius(150)

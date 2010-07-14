@@ -9,6 +9,7 @@
 
 class Mesh2;
 class Geometry;
+class Camera;
 struct Material;
 
 class TestEffect3 : public EffectBase
@@ -52,6 +53,7 @@ private:
 	Materials _materials;
 	Geometries _geometries;
 	std::auto_ptr<EffectWrapper> _effect;
+	std::auto_ptr<Camera> _camera;
 
 	D3DXVECTOR3 _test;
 };

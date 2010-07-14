@@ -106,7 +106,7 @@ bool DebugRenderer::init()
 	RETURN_ON_FAIL_BOOL_E(_font_writer->init(s.convert_path("data/fonts/arial.ttf", System::kDirRelative), 0, 0, 600, 600));
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/debug_renderer_states.lua", System::kDirRelative), MakeDelegate(this, &DebugRenderer::load_states), true));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_renderer.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &DebugRenderer::load_effect)));
-  RETURN_ON_FAIL_BOOL_E(_verts.create(100000));
+  RETURN_ON_FAIL_BOOL_E(_verts.create(1000000));
 
   create_unit_sphere(&_sphere_verts);
 
@@ -237,19 +237,21 @@ void DebugRenderer::render()
   PosCol *vtx = _verts.map();
 
   DebugDraw d;
+	int idx = 0;
 	for (auto i = _debug_render_delegates.begin(), e = _debug_render_delegates.end(); i != e; ++i) {
 		(*i)(&d);
+		++idx;
 
     for (int j = 0; j < (int)_sphere_verts.size(); ++j) {
-      *vtx++ = PosCol(_sphere_verts[j].pos, D3DXCOLOR(1,1,1,1));
+      *vtx++ = PosCol(d.sphere.radius * _sphere_verts[j].pos + d.sphere.center, D3DXCOLOR(1,1,1,1));
     }
 	}
 
   int vertex_count = _verts.unmap(vtx);
 
   D3DXMATRIX mtx, view, proj;
-  D3DXMatrixIdentity(&view);
-  D3DXMatrixIdentity(&proj);
+	D3DXMatrixLookAtLH(&view, &D3DXVECTOR3(0,0,-100), &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
+	D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4/3.0f, 1, 1000);
   D3DXMatrixTranspose(&mtx, &(view * proj));
   _effect->set_vs_variable("mtx", mtx);
   _effect->set_cbuffer();
