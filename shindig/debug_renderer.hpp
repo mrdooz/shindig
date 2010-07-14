@@ -3,6 +3,7 @@
 
 #include "vector_font.hpp"
 #include "bounding.hpp"
+#include "dynamic_vb.hpp"
 
 class EffectWrapper;
 
@@ -130,6 +131,7 @@ private:
 	std::auto_ptr<EffectWrapper> _effect;
 
   std::vector<PosCol> _sphere_verts;
+  DynamicVb<PosCol> _verts;
 
   VectorFont* _vector_font;
 

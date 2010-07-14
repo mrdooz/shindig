@@ -105,27 +105,10 @@ bool DebugRenderer::init()
 	_font_writer = new FontWriter();
 	RETURN_ON_FAIL_BOOL_E(_font_writer->init(s.convert_path("data/fonts/arial.ttf", System::kDirRelative), 0, 0, 600, 600));
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/debug_renderer_states.lua", System::kDirRelative), MakeDelegate(this, &DebugRenderer::load_states), true));
-	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_renderer.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &DebugRenderer::load_effect)));
+  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_renderer.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &DebugRenderer::load_effect)));
+  RETURN_ON_FAIL_BOOL_E(_verts.create(100000));
 
-
-
-/*
-  if (!effect_->load("effects/DebugRenderer.fx")) {
-    return false;
-  }
-
-  blend_state_.Attach(rt::D3D11::BlendDescription()
-    .BlendEnable_(0, FALSE)
-    .Create(_device));
-
-  depth_stencil_state_.Attach(rt::D3D11::DepthStencilDescription()
-    .Create(_device));
-
-  if (!init_vertex_buffers()) {
-    return false;
-  }
-*/
-	create_unit_sphere(&_sphere_verts);
+  create_unit_sphere(&_sphere_verts);
 
   return true;
 }
@@ -247,11 +230,43 @@ void DebugRenderer::add_verts(const uint32_t vertex_format, const D3D11_PRIMITIV
 
 void DebugRenderer::render()
 {
+
+  ID3D11Device* device = Graphics::instance().device();
+  ID3D11DeviceContext* context = Graphics::instance().context();
+
+  PosCol *vtx = _verts.map();
+
+  DebugDraw d;
 	for (auto i = _debug_render_delegates.begin(), e = _debug_render_delegates.end(); i != e; ++i) {
-		DebugDraw d;
 		(*i)(&d);
-		int a = 10;
+
+    for (int j = 0; j < (int)_sphere_verts.size(); ++j) {
+      *vtx++ = PosCol(_sphere_verts[j].pos, D3DXCOLOR(1,1,1,1));
+    }
 	}
+
+  int vertex_count = _verts.unmap(vtx);
+
+  D3DXMATRIX mtx, view, proj;
+  D3DXMatrixIdentity(&view);
+  D3DXMatrixIdentity(&proj);
+  D3DXMatrixTranspose(&mtx, &(view * proj));
+  _effect->set_vs_variable("mtx", mtx);
+  _effect->set_cbuffer();
+  _effect->set_shaders(context);
+
+  float blend_factors[] = {1, 1, 1, 1};
+  context->OMSetDepthStencilState(_dss, 0);
+
+  float blend_factor[] = { 1, 1, 1, 1 };
+  context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
+
+  context->IASetInputLayout(_layout);
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+  set_vb(context, _verts.vb(), _verts.stride);
+  context->Draw(vertex_count, 0);
+
 /*
   float blend_factor[] = {0, 0, 0, 0};
   _device->OMSetBlendState(blend_state_, blend_factor, 0xffffffff);
@@ -399,7 +414,7 @@ void DebugRenderer::load_effect(EffectWrapper *effect)
 	_effect.reset(effect);
 
 	InputDesc(). 
-		add("SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+		add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
 		add("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0).
 		create(_layout, _effect.get());
 }

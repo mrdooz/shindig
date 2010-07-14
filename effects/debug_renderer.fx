@@ -1,26 +1,26 @@
-// draws a colored triangle.
-// coordinates are in clip space
-struct psInput
-{
-	float4	pos : SV_Position;
-	float4	col : Color;
-};
+matrix mtx;
 
 struct vsInput
 {
-	float4	pos : SV_Position;
-	float4	col : Color;
+	float4 position : POSITION;
+	float4 color : COLOR;
 };
 
-psInput vsMain(in vsInput v)
+struct vsOutput
 {
-	psInput o = (psInput)0;
-	o.pos = v.pos;
-	o.col = v.col;
+	float4 color : COLOR;
+	float4 position : SV_POSITION;
+};
+
+vsOutput vsMain( in vsInput v )
+{
+	vsOutput o;
+	o.position = mul(v.position, mtx);
+	o.color = v.color;
 	return o;
 }
 
-float4 psMain(in psInput v) : SV_Target
+float4 psMain(in vsOutput v) : SV_TARGET
 {
-	return v.col;
+	return v.color;
 }
