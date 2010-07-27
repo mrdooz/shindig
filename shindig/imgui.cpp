@@ -118,8 +118,11 @@ void IMGui::add_rect(int x, int y, int width, int height, const D3DXCOLOR& color
 	*_vtx++ = v1;
 	*_vtx++ = v3;
 
-	if (text)
-		_writer.write(x, y, 16, text);
+	if (text) {
+		int w, h;
+		_writer.calc_extents(&w, &h, 16, text);
+		_writer.write(x + (width - w) / 2, y + (height-h)/2, 16, text);
+	}
 }
 
 bool IMGui::load_states(const string2& filename)

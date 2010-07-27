@@ -19,6 +19,15 @@ public:
 	void write(const int left, const int top, float h, const char *fmt, ...);
 	void calc_extents(int *width, int *height, float h, const char *fmt, ...);
 
+	enum AlignFlags {
+		kAlignLeft				= 1 << 0,
+		kAlightRight			= 1 << 1,
+		kAlignHorizCenter = 1 << 2,
+		kAlignTop					= 1 << 3,
+		kAlignBottom			= 1 << 4,
+		kAlignVertCenter	= 1 << 5,
+	};
+
 private:
   struct TextSegment
   {
