@@ -27,9 +27,6 @@ typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseUp;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseDown;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseWheel;
 
-namespace sig2 = boost::signals2;
-
-
 class App
 {
 public:
@@ -45,10 +42,10 @@ public:
 
   void run();
 
-	sig2::connection add_mouse_move(const fnMouseMove& slot);
-	sig2::connection add_mouse_up(const fnMouseUp& slot);
-	sig2::connection add_mouse_down(const fnMouseDown& slot);
-	sig2::connection add_mouse_wheel(const fnMouseWheel& slot);
+	void add_mouse_move(const fnMouseMove& fn);
+	void add_mouse_up(const fnMouseUp& fn);
+	void add_mouse_down(const fnMouseDown& fn);
+	void add_mouse_wheel(const fnMouseWheel& fn);
 
 private:
 	DISALLOW_COPY_AND_ASSIGN(App);
@@ -72,10 +69,10 @@ private:
 
 	CRITICAL_SECTION _cs_queue;
 
-	sig2::signal<void (const MouseInfo&)> _mouse_move_signal;
-	sig2::signal<void (const MouseInfo&)> _mouse_up_signal;
-	sig2::signal<void (const MouseInfo&)> _mouse_down_signal;
-	sig2::signal<void (const MouseInfo&)> _mouse_wheel_signal;
+  std::vector< std::function<void (const MouseInfo&)> > _mouse_move_signal;
+	std::vector< std::function<void (const MouseInfo&)> > _mouse_up_signal;
+	std::vector< std::function<void (const MouseInfo&)> > _mouse_down_signal;
+	std::vector< std::function<void (const MouseInfo&)> > _mouse_wheel_signal;
 
 	FontWriter *_debug_writer;
 

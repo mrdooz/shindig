@@ -35,8 +35,6 @@
 
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/signals2.hpp>
-//#include <boost/filesystem.hpp>
 
 #include <celsus/celsus.hpp>
 #include <celsus/logger.hpp>
@@ -57,9 +55,11 @@
 #include <celsus/refptr.hpp>
 #include <celsus/text_scanner.hpp>
 #include <celsus/math_utils.hpp>
-
-#include "fast_delegate.hpp"
-#include "fast_delegate_bind.hpp"
+#include <celsus/file_utils.hpp>
+#include <celsus/file_watcher.hpp>
+#include <celsus/UnicodeUtils.hpp>
+#include <celsus/fast_delegate.hpp>
+#include <celsus/fast_delegate_bind.hpp>
 
 #include <libs/json_spirit/json_spirit.h>
 
@@ -74,3 +74,8 @@ extern "C"
 #include <lauxlib.h>
 #include <lualib.h>
 };
+
+#include <shobjidl.h>
+#include <Shlguid.h>
+#include <Shlobj.h>
+#include <direct.h>

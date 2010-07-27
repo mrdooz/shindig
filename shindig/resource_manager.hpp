@@ -2,7 +2,6 @@
 #define _RESOURCE_MANAGER_HPP
 
 #include <hash_map>
-#include "fast_delegate_bind.hpp"
 
 class EffectWrapper;
 class Scene;

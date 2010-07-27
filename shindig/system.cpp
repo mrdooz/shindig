@@ -1,81 +1,7 @@
 #include "stdafx.h"
 #include "system.hpp"
-#include "fast_delegate.hpp"
-#include <celsus/UnicodeUtils.hpp>
-#include <shobjidl.h>
-#include <Shlguid.h>
-#include <Shlobj.h>
-#include <direct.h>
-#include <celsus/file_utils.hpp>
-
-using namespace boost::signals2;
 
 System* System::_instance = NULL;
-
-enum {
-	COMPLETION_KEY_NONE         =   0,
-	COMPLETION_KEY_SHUTDOWN     =   1,
-	COMPLETION_KEY_IO           =   2
-};
-
-
-/*
-  Directory watcher thread. Uses completion ports to block until it detects a change in the directory tree
-  or until a shutdown event is posted
-*/
-
-DWORD WINAPI System::WatcherThread(void* param)
-{
-	System& sys = System::instance();
-  const int32_t NUM_ENTRIES = 128;
-  FILE_NOTIFY_INFORMATION info[NUM_ENTRIES];
-
-  while (true) {
-
-		if ((sys._dir_handle = CreateFile("./", FILE_LIST_DIRECTORY, FILE_SHARE_READ, NULL, OPEN_EXISTING, 
-      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE)
-      return 1;
-
-    if ((sys._watcher_completion_port = CreateIoCompletionPort(sys._dir_handle, NULL, COMPLETION_KEY_IO, 0)) == INVALID_HANDLE_VALUE)
-      return 1;
-
-    OVERLAPPED overlapped;
-    ZeroMemory(&overlapped, sizeof(overlapped));
-    if (!ReadDirectoryChangesW(sys._dir_handle, info, sizeof(info), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &overlapped, NULL))
-      return 1;
-
-    DWORD bytes;
-    ULONG key = COMPLETION_KEY_NONE;
-    OVERLAPPED *overlapped_ptr = NULL;
-    bool done = false;
-    GetQueuedCompletionStatus(sys._watcher_completion_port, &bytes, &key, &overlapped_ptr, INFINITE);
-    switch (key) {
-    case COMPLETION_KEY_NONE: 
-      done = true;
-      break;
-    case COMPLETION_KEY_SHUTDOWN: 
-      return 1;
-
-    case COMPLETION_KEY_IO: 
-      break;
-    }
-    CloseHandle(sys._dir_handle);
-    CloseHandle(sys._watcher_completion_port);
-
-    if (done) {
-      break;
-    } else {
-      info[0].FileName[info[0].FileNameLength/2+0] = 0;
-      info[0].FileName[info[0].FileNameLength/2+1] = 0;
-			
-			char tmp[MAX_PATH];
-			UnicodeToAnsiToBuffer(info[0].FileName, tmp, MAX_PATH);
-			const std::string filename(Path::make_canonical(Path::get_full_path_name(tmp)));
-			System::instance().file_changed_internal(filename);
-    }
-  }
-  return 0;
-}
 
 System::System()
 	: _fmod_system(NULL)
@@ -107,9 +33,9 @@ bool System::init()
 {
   enum_known_folders();
 
-	DWORD thread_id;
-	_watcher_thread = CreateThread(0, 0, WatcherThread, NULL, 0, &thread_id);
-	InitializeCriticalSection(&_cs_deferred_files);
+  if (!FileWatcher::instance().init())
+    return false;
+
 
 	if (FMOD::System_Create(&_fmod_system) != FMOD_OK)
 		return false;
@@ -125,35 +51,15 @@ bool System::init()
 
 bool System::close()
 {
-	_specific_signals.clear();
-	DeleteCriticalSection(&_cs_deferred_files);
-
-	PostQueuedCompletionStatus(_watcher_completion_port, 0, COMPLETION_KEY_SHUTDOWN, 0);
-	WaitForSingleObject(_watcher_thread, INFINITE);
+  if (!FileWatcher::instance().close())
+    return false;
 
 	return true;
 }
 
 bool System::tick()
 {
-	// process the deferred files
-	SCOPED_CS(&_cs_deferred_files);
-
-	if (!_deferred_files.empty()) {
-		for (DeferredFiles::iterator i = _deferred_files.begin(), e = _deferred_files.end(); i != e; ++i) {
-			const std::string& filename = *i;
-			_global_signals(filename);
-
-			for (SpecificSignals::iterator i = _specific_signals.begin(), e = _specific_signals.end(); i != e; ++i) {
-				if (i->first == filename) {
-					(*i->second)(filename);
-				}
-			}
-		}
-
-		_deferred_files.clear();
-	}
-
+  FileWatcher::instance().tick();    
 
 	if (_channel) {
     process_frequency_callbacks();
@@ -216,15 +122,6 @@ void System::process_timed_callbacks()
 
 }
 
-
-void System::file_changed_internal(const std::string& filename)
-{
-	// queue the file change
-	SCOPED_CS(&_cs_deferred_files);
-	_deferred_files.insert(filename);
-
-}
-
 // Loads callbacks from a file containing a list of floats (exported from Sonic Visualiser)
 void System::load_callback_times(const char *filename)
 {
@@ -239,28 +136,9 @@ void System::load_callback_times(const char *filename)
   fclose(f);
 }
 
-bool System::add_file_changed(const fnFileChanged& slot)
+bool System::add_file_changed(const string2& filename, const fnFileChanged& fn, const bool initial_load)
 {
-	auto s = _global_signals.connect(slot);
-  return true;
-}
-
-bool System::add_file_changed(const string2& filename, const fnFileChanged& slot, const bool initial_load)
-{
-	auto f = Path::make_canonical(Path::get_full_path_name(filename));
-	auto it = _specific_signals.find(f);
-	if (it == _specific_signals.end()) {
-		_specific_signals.insert(std::make_pair(f, new sigFileChanged()));
-	}
-
-  // if initial_load is set, we fake a "file changed" event, and call the callback at once
-  bool res = true;
-  if (initial_load) {
-    res = slot(f);
-  }
-
-	auto s = _specific_signals[f]->connect(slot);
-  return res;
+  return FileWatcher::instance().add_file_changed(filename, fn, initial_load);
 }
 
 void System::enum_known_folders()
@@ -385,4 +263,3 @@ void System::add_custom_dir(const string2& dir)
 {
 	_custom_dirs.push_back(dir);
 }
-

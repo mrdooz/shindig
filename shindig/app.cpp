@@ -211,24 +211,28 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
     ui_state.mouse_down = 1;
-		_mouse_down_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+    for (auto i = _mouse_down_signal.begin(), e = _mouse_down_signal.end(); i != e; ++i)
+		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
 		break;
 
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
     ui_state.mouse_down = 0;
-		_mouse_up_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+    for (auto i = _mouse_up_signal.begin(), e = _mouse_up_signal.end(); i != e; ++i)
+		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
 		break;
 
 	case WM_MOUSEMOVE:
     ui_state.mouse_x = GET_X_LPARAM(lParam);
     ui_state.mouse_y = GET_Y_LPARAM(lParam);
-		_mouse_move_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+    for (auto i = _mouse_move_signal.begin(), e = _mouse_move_signal.end(); i != e; ++i)
+		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
     break;
 
 	case WM_MOUSEWHEEL:
-		_mouse_wheel_signal(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam), GET_WHEEL_DELTA_WPARAM(wParam)));
+    for (auto i = _mouse_wheel_signal.begin(), e = _mouse_wheel_signal.end(); i != e; ++i)
+		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam), GET_WHEEL_DELTA_WPARAM(wParam)));
 		break;
 
   case WM_KEYDOWN:
@@ -257,24 +261,24 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	return res;
 }
 
-sig2::connection App::add_mouse_move(const fnMouseMove& slot)
+void App::add_mouse_move(const fnMouseMove& fn)
 {
-	return _mouse_move_signal.connect(slot);
+  _mouse_move_signal.push_back(fn);
 }
 
-sig2::connection App::add_mouse_up(const fnMouseUp& slot)
+void App::add_mouse_up(const fnMouseUp& fn)
 {
-	return _mouse_up_signal.connect(slot);
+  _mouse_up_signal.push_back(fn);
 }
 
-sig2::connection App::add_mouse_down(const fnMouseDown& slot)
+void App::add_mouse_down(const fnMouseDown& fn)
 {
-	return _mouse_down_signal.connect(slot);
+	_mouse_down_signal.push_back(fn);
 }
 
-sig2::connection App::add_mouse_wheel(const fnMouseWheel& slot)
+void App::add_mouse_wheel(const fnMouseWheel& fn)
 {
-	return _mouse_wheel_signal.connect(slot);
+	_mouse_wheel_signal.push_back(fn);
 }
 
 void App::add_dbg_message(const char* fmt, ...)

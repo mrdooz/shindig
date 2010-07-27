@@ -101,12 +101,6 @@
     <ClInclude Include="debug_renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fast_delegate.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="fast_delegate_bind.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

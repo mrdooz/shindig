@@ -137,8 +137,6 @@
     <ClInclude Include="demo.hpp" />
     <ClInclude Include="dynamic_vb.hpp" />
     <ClInclude Include="effect_base.hpp" />
-    <ClInclude Include="fast_delegate.hpp" />
-    <ClInclude Include="fast_delegate_bind.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="imgui.hpp" />
     <ClInclude Include="lua_utils.hpp" />

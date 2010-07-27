@@ -4,7 +4,6 @@
 #include <fmod.hpp>
 
 typedef std::function<bool (const string2&)> fnFileChanged;
-//typedef fastdelegate::FastDelegate1<const string2&, bool> fnFileChanged;
 typedef fastdelegate::FastDelegate2<float, float, void> FrequencyCallback;
 
 namespace FMOD
@@ -15,7 +14,6 @@ namespace FMOD
 }
 
 struct Demo;
-
 
 class System
 {
@@ -43,8 +41,7 @@ public:
 	bool close();
 	bool tick();
 
-  bool add_file_changed(const fnFileChanged& slot);
-  bool add_file_changed(const string2& filename, const fnFileChanged& slot, const bool initial_load);
+  bool add_file_changed(const string2& filename, const fnFileChanged& fn, const bool initial_load);
 
   const string2& dropbox() const { return _dropbox; }
   const string2& working_dir() const { return _working_dir; }
@@ -73,8 +70,7 @@ private:
 	System();
 	~System();
 
-	typedef boost::signals2::signal< void(std::string) > sigFileChanged;
-	typedef std::map< string2, boost::shared_ptr<sigFileChanged> > SpecificSignals;
+	typedef std::map< string2, std::vector<fnFileChanged> > FileChangedCallbacks;
 	typedef std::set< std::string > DeferredFiles;
 
   struct TimeStamp
@@ -83,22 +79,12 @@ private:
     float value;
   };
 
-	static DWORD WINAPI WatcherThread(void* param);
-	void file_changed_internal(const std::string& filename);
   void enum_known_folders();
 
   void process_frequency_callbacks();
   void process_timed_callbacks();
 
-	CRITICAL_SECTION _cs_deferred_files;
-	sigFileChanged _global_signals;
-	SpecificSignals _specific_signals;
-	DeferredFiles _deferred_files;
-
 	DWORD _main_thread_id;
-	HANDLE _watcher_thread;
-	HANDLE _dir_handle;
-	HANDLE _watcher_completion_port;
 	static System* _instance;
 
   string2 _my_documents;
