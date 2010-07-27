@@ -41,16 +41,20 @@ bool IMGui::init()
   RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/imgui_states.lua", System::kDirRelative), MakeDelegate(this, &IMGui::load_states), true));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/imgui.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &IMGui::load_effect)));
 
+	RETURN_ON_FAIL_BOOL_E(_writer.init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, 1000, 1000));
+
   return true;
 }
 
 bool IMGui::close()
 {
+	_writer.close();
   return true;
 }
 
 bool IMGui::init_frame()
 {
+	_writer.reset_frame();
 	_ui_state.hot_item = 0;
 	_vtx = _verts.map();
   return true;
@@ -83,10 +87,12 @@ bool IMGui::render()
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->Draw(num_verts, 0);
 
+	_writer.render();
+
   return true;
 }
 
-void IMGui::add_rect(int x, int y, int width, int height, const D3DXCOLOR& color)
+void IMGui::add_rect(int x, int y, int width, int height, const D3DXCOLOR& color, const char *text)
 {
 
 	const D3D11_VIEWPORT& viewport = Graphics::instance().viewport();
@@ -111,6 +117,9 @@ void IMGui::add_rect(int x, int y, int width, int height, const D3DXCOLOR& color
 	*_vtx++ = v2;
 	*_vtx++ = v1;
 	*_vtx++ = v3;
+
+	if (text)
+		_writer.write(x, y, 16, text);
 }
 
 bool IMGui::load_states(const string2& filename)
@@ -131,7 +140,7 @@ void IMGui::load_effect(EffectWrapper *effect)
     create(_layout, _effect.get());
 }
 
-int IMGui::button(int id, int x, int y, int width, int height)
+int IMGui::button(int id, int x, int y, int width, int height, const char *text)
 {
 	UIState& u = IMGui::instance().ui_state();
 
@@ -141,17 +150,17 @@ int IMGui::button(int id, int x, int y, int width, int height)
 			u.active_item = id;
 	}
 	
-	IMGui::instance().add_rect(x, y, width, height, D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f));
+	IMGui::instance().add_rect(x, y, width, height, D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f), text);
 
 	const bool is_hot = u.hot_item == id;
 	const bool is_active = u.active_item == id;
 	if (is_hot) {
 		if (is_active) {
 			// hot && active
-			IMGui::instance().add_rect(x, y, width, height, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f));
+			IMGui::instance().add_rect(x, y, width, height, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f), text);
 		} else {
 			// hot
-			IMGui::instance().add_rect(x, y, width, height, D3DXCOLOR(0.8f, 0.8f, 0.8f, 1.0f));
+			IMGui::instance().add_rect(x, y, width, height, D3DXCOLOR(0.8f, 0.8f, 0.8f, 1.0f), text);
 		}
 	}
 

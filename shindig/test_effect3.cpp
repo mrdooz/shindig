@@ -19,6 +19,7 @@
 #include "geometry.hpp"
 #include "camera.hpp"
 
+// wavefront obj viewer
 TestEffect3::TestEffect3()
 	: _cam_radius(150)
   , _alpha(0)

@@ -17,6 +17,7 @@ DebugRenderer& DebugRenderer::instance()
 
 DebugRenderer::DebugRenderer()
 	: _vector_font(createVectorFont())
+	, _enabled(false)
 {
 /*
   D3DX10CreateFont( _device, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
@@ -230,6 +231,8 @@ void DebugRenderer::add_verts(const uint32_t vertex_format, const D3D11_PRIMITIV
 
 void DebugRenderer::render()
 {
+	if (!_enabled)
+		return;
 
   ID3D11Device* device = Graphics::instance().device();
   ID3D11DeviceContext* context = Graphics::instance().context();

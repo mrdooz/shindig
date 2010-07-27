@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dynamic_vb.hpp"
+#include "font_writer.hpp"
 #include <celsus/vertex_types.hpp>
 
 #ifdef IMGUI_SRC_ID
@@ -39,13 +40,13 @@ public:
   bool init_frame();
   bool render();
 
-	// in screen space
-	void add_rect(int x, int y, int width, int height, const D3DXCOLOR& color);
-
-	static int button(int id, int x, int y, int width, int height);
+	static int button(int id, int x, int y, int width, int height, const char *text = NULL);
 
 private:
   IMGui();
+
+	// in screen space
+	void add_rect(int x, int y, int width, int height, const D3DXCOLOR& color, const char *text);
 
   void load_effect(EffectWrapper *effect);
   bool load_states(const string2& filename);
@@ -60,6 +61,7 @@ private:
   CComPtr<ID3D11BlendState> _blend_state;
 	std::auto_ptr<EffectWrapper> _effect;
 	PosCol *_vtx;
+	FontWriter _writer;
 
   static IMGui *_instance;
 };

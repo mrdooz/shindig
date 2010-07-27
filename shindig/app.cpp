@@ -166,8 +166,11 @@ void App::run()
       graphics.tick();
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
-			if (IMGui::instance().button(GEN_ID, 50, 50, 100, 40))
+			if (IMGui::instance().button(GEN_ID, 50, 50, 100, 40, "quit"))
 				on_quit();
+
+			if (IMGui::instance().button(GEN_ID, 50, 120, 100, 40, "toggle debug"))
+				DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
 
 			_debug_writer->render();
 			DebugMenu::instance().render();

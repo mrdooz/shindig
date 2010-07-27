@@ -71,6 +71,9 @@ public:
   void add_debug_string(const char* format, ...);
 	void end_debug_draw();
 
+	bool enabled() const { return _enabled; }
+	void set_enabled(bool value) { _enabled = value; }
+
 private:
   struct DrawCall
   {
@@ -142,6 +145,8 @@ private:
 
 	DebugRenderDelegates _debug_render_delegates;
 	DebugCameraDelegates _debug_camera_delegates;
+
+	bool _enabled;
 
 	FontWriter *_font_writer;
 	static DebugRenderer *_instance;
