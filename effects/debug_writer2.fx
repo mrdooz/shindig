@@ -25,7 +25,7 @@ psInput vsMain(in vsInput v)
 
 float4 psMain(in psInput v) : SV_Target
 {
-	float4 col = g_texture.Sample(g_sampler, v.tex);
-	//clip(col.a == 0 ? -1 : 1);
+	// texture is 8 bit
+	float col = g_texture.Sample(g_sampler, v.tex);
 	return col;
 }

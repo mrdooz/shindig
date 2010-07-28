@@ -17,7 +17,7 @@ struct FontInfo
   // 2, 3
   D3DXVECTOR2 _uv[4];
   int _w, _h;
-  int _ofsx, _ofsy;
+  float _ofsx, _ofsy, _advance;
 };
 
 // wrapper around stb-truetype
@@ -162,7 +162,7 @@ bool Font::init(const char *filename, float font_height)
 bool Font::pack_font()
 {
   ID3D11Device* device = Graphics::instance().device();
-  CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_R8G8B8A8_UNORM, _texture_width, _texture_height, 1, 1, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
+  CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_R8_UNORM, _texture_width, _texture_height, 1, 1, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
   RETURN_ON_FAIL_BOOL_E(device->CreateTexture2D(&desc, NULL, &_texture));
   RETURN_ON_FAIL_BOOL_E(device->CreateShaderResourceView(_texture, NULL, &_view));
 
@@ -181,14 +181,62 @@ bool Font::pack_font()
   char_map[255] = 0;
   char *cur = char_map;
 
-  // we offset the far side tex coords with 1 texel so the point correctly
   float ww = (float)_texture_width;
   float hh = (float)_texture_height;
-  float tx_ofs = 1.0f / ww;
-  float ty_ofs = 1.0f / hh;
 
   while (*cur) {
     char ch = *cur;
+
+    int advance, lsb, x0, y0, x1, y1;
+    int g = stbtt_FindGlyphIndex(&_font, ch);
+    stbtt_GetGlyphHMetrics(&_font, g, &advance, &lsb);
+    stbtt_GetGlyphBitmapBox(&_font, g, _scale, _scale, &x0, &y0, &x1, &y1);
+    int gw = x1-x0;
+    int gh = y1-y0;
+
+    Image *img = new Image();
+    img->_rc = PixelRect(0, 0, gh, gw);
+    if (Node *n = root->insert(img)) {
+      // create texture coords
+
+      // 0, 1
+      // 2, 3
+      D3DXVECTOR2 _uv[4];
+      FontInfo info;
+      info._uv[0] = D3DXVECTOR2(n->_rc._left / ww, n->_rc._top / hh);
+      info._uv[1] = D3DXVECTOR2((n->_rc._left + img->_rc.width()) / ww, n->_rc._top / hh);
+      info._uv[2] = D3DXVECTOR2(n->_rc._left / ww, (n->_rc._top + img->_rc.height()) / hh);
+      info._uv[3] = D3DXVECTOR2((n->_rc._left + img->_rc.width()) / ww, (n->_rc._top + img->_rc.height()) / hh);
+      info._w = img->_rc.width();
+      info._h = img->_rc.height();
+      info._ofsx = x0;
+      info._ofsy = y0;
+
+      _font_map.insert(std::make_pair(ch, info));
+      n->_image = img;
+
+      int x = n->_rc._left, y = n->_rc._top;
+      int pw = _texture_width;
+      stbtt_MakeGlyphBitmap(&_font, buf+x+y*pw, gw,gh,pw, _scale, _scale, g);
+    }
+
+/*
+    if (x + gw + 1 >= pw)
+      y = bottom_y, x = 1; // advance to next row
+    if (y + gh + 1 >= ph) // check if it fits vertically AFTER potentially moving to next row
+      return -i;
+    STBTT_assert(x+gw < pw);
+    STBTT_assert(y+gh < ph);
+    stbtt_MakeGlyphBitmap(&f, pixels+x+y*pw, gw,gh,pw, scale,scale, g);
+    chardata[i].x0 = (stbtt_int16) x;
+    chardata[i].y0 = (stbtt_int16) y;
+    chardata[i].x1 = (stbtt_int16) (x + gw);
+    chardata[i].y1 = (stbtt_int16) (y + gh);
+    chardata[i].xadvance = scale * advance;
+    chardata[i].xoff     = (float) x0;
+    chardata[i].yoff     = (float) y0;
+*/
+/*
     int w, h, ofsx, ofsy;
     uint8_t *bitmap = stbtt_GetCodepointBitmap(&_font, _scale, _scale, ch, &w, &h, &ofsx, &ofsy);
     Image *img = new Image();
@@ -226,6 +274,7 @@ bool Font::pack_font()
       SAFE_DELETE(img);
     }
     stbtt_FreeBitmap(bitmap, NULL);
+*/
     ++cur;
   }
 
