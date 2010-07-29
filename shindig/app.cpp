@@ -28,7 +28,9 @@ App::App()
   , _hwnd(NULL)
 	, _test_effect(NULL)
 	, _debug_writer(nullptr)
+  , _state_wireframe("wireframe", false)
 {
+
 }
 
 App::~App()
@@ -169,8 +171,11 @@ void App::run()
 			if (IMGui::instance().button(GEN_ID, 50, 50, 100, 40, "quit"))
 				on_quit();
 
-			if (IMGui::instance().button(GEN_ID, 50, 120, 100, 40, "toggle debug"))
+			if (IMGui::instance().button(GEN_ID, 50, 100, 100, 40, "toggle debug"))
 				DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
+
+      if (IMGui::instance().button(GEN_ID, 50, 150, 100, 40, "wireframe"))
+        DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
 
 			_debug_writer->render();
 			DebugMenu::instance().render();

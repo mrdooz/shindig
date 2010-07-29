@@ -20,6 +20,8 @@ public:
 private:
 	friend class ObjLoader;
 
+  void bool_state_changed(const string2& name, const bool& value);
+
   CComPtr<ID3D11Buffer> _vb;
   CComPtr<ID3D11Buffer> _ib;
 
@@ -35,4 +37,5 @@ private:
   int _index_count;
 
 	string2 _material_name;
+  bool _wireframe;
 };

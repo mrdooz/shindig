@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <MMSystem.h>
+#include <celsus/string_utils.hpp>
 
 class EffectBase;
 class FontWriter;
@@ -27,6 +28,49 @@ typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseUp;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseDown;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseWheel;
 
+template<class T>
+struct AppState
+{
+  typedef fastdelegate::FastDelegate2<const string2&, const T&, void> fnCallback;
+  typedef std::vector<fnCallback> Callbacks;
+
+  AppState(const string2& name, const T& value) : _name(name), _value(value) {}
+
+  void add_callback(const fnCallback& fn)
+  {
+    _callbacks.push_back(fn);
+    // call the newly added callback with the default value
+    fn(_name, _value);
+  }
+
+  void remove_callback(const fnCallback& fn)
+  {
+    auto it = std::find(_callbacks.begin(), _callbacks.end(), fn);
+    if (it != _callbacks.end())
+      _callbacks.erase(it);
+  }
+
+  void value_changed(const T& new_value)
+  {
+    _value = new_value;
+    for (auto i = _callbacks.begin(), e = _callbacks.end(); i != e; ++i) {
+      (*i)(_name, _value);
+    }
+  }
+
+  string2 _name;
+  T _value;
+  Callbacks _callbacks;
+};
+
+#define ADD_APP_STATE(type, name) \
+  public: \
+  void add_appstate_callback(const AppState<type>::fnCallback& fn) { _state_ ## name.add_callback(fn); }  \
+  void remove_appstate_callback(const AppState<type>::fnCallback& fn) { _state_ ## name.remove_callback(fn); }  \
+  private:  \
+    AppState<type> _state_ ## name; \
+  public:\
+
 class App
 {
 public:
@@ -47,6 +91,7 @@ public:
 	void add_mouse_down(const fnMouseDown& fn);
 	void add_mouse_wheel(const fnMouseWheel& fn);
 
+  ADD_APP_STATE(bool, wireframe);
 private:
 	DISALLOW_COPY_AND_ASSIGN(App);
 	App();
