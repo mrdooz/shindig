@@ -41,7 +41,7 @@ bool IMGui::init()
   RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/imgui_states.lua", System::kDirRelative), MakeDelegate(this, &IMGui::load_states), true));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/imgui.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &IMGui::load_effect)));
 
-	RETURN_ON_FAIL_BOOL_E(_writer.init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, 1000, 1000));
+	RETURN_ON_FAIL_BOOL_E(_writer.init(System::instance().convert_path("data/fonts/arialbd.ttf", System::kDirRelative), 0, 0, 1000, 1000));
 
   return true;
 }

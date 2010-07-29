@@ -209,8 +209,9 @@ bool Font::pack_font()
       info._uv[3] = D3DXVECTOR2((n->_rc._left + img->_rc.width()) / ww, (n->_rc._top + img->_rc.height()) / hh);
       info._w = img->_rc.width();
       info._h = img->_rc.height();
-      info._ofsx = x0;
-      info._ofsy = y0;
+      info._ofsx = (float)x0;
+      info._ofsy = (float)y0;
+			info._advance = _scale * advance;
 
       _font_map.insert(std::make_pair(ch, info));
       n->_image = img;
@@ -278,7 +279,7 @@ bool Font::pack_font()
     ++cur;
   }
 
-  save_bmp32("c:/temp/tjong.bmp", buf, _texture_width, _texture_height);
+  //save_bmp32("c:/temp/tjong.bmp", buf, _texture_width, _texture_height);
 
   context->Unmap(_texture, 0);
   return true;
@@ -306,7 +307,7 @@ void Font::calc_extents(const char *text, int width, int height, int *req_width,
 
     const FontInfo& info = it->second;
 
-    if (pos.x + info._w > width)
+    if (pos.x + info._advance > width)
       new_lines = 1;
     if (new_lines) {
       // check if it's possible..
@@ -317,7 +318,7 @@ void Font::calc_extents(const char *text, int width, int height, int *req_width,
       max_height = 0;
     }
 
-    pos.x += info._w;
+    pos.x += info._advance;
     max_height = std::max<int>(max_height, (int)_font_height);
     ++text;
   }
@@ -371,7 +372,7 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, const
     *vtx++ = v1;
     *vtx++ = v3;
 
-    if (pos.x + info._w > width)
+    if (pos.x + info._advance > width)
       new_lines = 1;
     if (new_lines) {
       // check if it's possible..
@@ -382,7 +383,7 @@ PosTex *Font::render(const char *text, PosTex *vtx, int width, int height, const
       max_height = 0;
     }
 
-    pos.x += info._w;
+    pos.x += info._advance;
     max_height = std::max<int>(max_height, (int)_font_height);
     ++text;
   }
