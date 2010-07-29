@@ -23,31 +23,44 @@ struct MouseInfo
 	DWORD	time;
 };
 
+struct KeyInfo
+{
+	KeyInfo() : key(0), flags(0), time(timeGetTime()) {}
+	KeyInfo(uint32_t key, uint32_t flags) : key(key), flags(flags), time(timeGetTime()) {}
+	uint32_t key;			// copied verbatim from WM_KEY[DOWN|UP]
+	uint32_t flags;
+	DWORD	time;
+};
+
+
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseMove;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseUp;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseDown;
 typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseWheel;
 
+typedef fastdelegate::FastDelegate1<const KeyInfo&> fnKeyDown;
+typedef fastdelegate::FastDelegate1<const KeyInfo&> fnKeyUp;
+
 template<class T>
-struct AppState
+class AppState
 {
+public:
   typedef fastdelegate::FastDelegate2<const string2&, const T&, void> fnCallback;
   typedef std::vector<fnCallback> Callbacks;
 
   AppState(const string2& name, const T& value) : _name(name), _value(value) {}
 
-  void add_callback(const fnCallback& fn)
+  void add_callback(const fnCallback& fn, bool add)
   {
-    _callbacks.push_back(fn);
-    // call the newly added callback with the default value
-    fn(_name, _value);
-  }
-
-  void remove_callback(const fnCallback& fn)
-  {
-    auto it = std::find(_callbacks.begin(), _callbacks.end(), fn);
-    if (it != _callbacks.end())
-      _callbacks.erase(it);
+		if (add) {
+			_callbacks.push_back(fn);
+			// call the newly added callback with the default value
+			fn(_name, _value);
+		} else {
+			auto it = std::find(_callbacks.begin(), _callbacks.end(), fn);
+			if (it != _callbacks.end())
+				_callbacks.erase(it);
+		}
   }
 
   void value_changed(const T& new_value)
@@ -58,6 +71,8 @@ struct AppState
     }
   }
 
+	T value() const { return _value; }
+private:
   string2 _name;
   T _value;
   Callbacks _callbacks;
@@ -65,8 +80,7 @@ struct AppState
 
 #define ADD_APP_STATE(type, name) \
   public: \
-  void add_appstate_callback(const AppState<type>::fnCallback& fn) { _state_ ## name.add_callback(fn); }  \
-  void remove_appstate_callback(const AppState<type>::fnCallback& fn) { _state_ ## name.remove_callback(fn); }  \
+  void add_appstate_callback(const AppState<type>::fnCallback& fn, bool add) { _state_ ## name.add_callback(fn, add); }  \
   private:  \
     AppState<type> _state_ ## name; \
   public:\
@@ -86,10 +100,13 @@ public:
 
   void run();
 
-	void add_mouse_move(const fnMouseMove& fn);
-	void add_mouse_up(const fnMouseUp& fn);
-	void add_mouse_down(const fnMouseDown& fn);
-	void add_mouse_wheel(const fnMouseWheel& fn);
+	void add_mouse_move(const fnMouseMove& fn, bool add);
+	void add_mouse_up(const fnMouseUp& fn, bool add);
+	void add_mouse_down(const fnMouseDown& fn, bool add);
+	void add_mouse_wheel(const fnMouseWheel& fn, bool add);
+
+	void add_key_down(const fnKeyDown& fn, bool add);
+	void add_key_up(const fnKeyUp& fn, bool add);
 
   ADD_APP_STATE(bool, wireframe);
 private:
@@ -114,13 +131,15 @@ private:
 
 	CRITICAL_SECTION _cs_queue;
 
-  std::vector< std::function<void (const MouseInfo&)> > _mouse_move_signal;
-	std::vector< std::function<void (const MouseInfo&)> > _mouse_up_signal;
-	std::vector< std::function<void (const MouseInfo&)> > _mouse_down_signal;
-	std::vector< std::function<void (const MouseInfo&)> > _mouse_wheel_signal;
+  std::vector< fnMouseMove > _mouse_move_callbacks;
+	std::vector< fnMouseUp > _mouse_up_callbacks;
+	std::vector< fnMouseDown > _mouse_down_callbacks;
+	std::vector< fnMouseWheel > _mouse_wheel_callbacks;
+
+	std::vector< fnKeyDown > _keydown_callbacks;
+	std::vector< fnKeyUp > _keyup_callbacks;
 
 	FontWriter *_debug_writer;
-
 };
 
 #endif

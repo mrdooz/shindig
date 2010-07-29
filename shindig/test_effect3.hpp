@@ -6,6 +6,7 @@
 #include "effect_base.hpp"
 #include "dynamic_vb.hpp"
 #include "app.hpp"
+#include "camera.hpp"
 
 class Mesh2;
 class Geometry;
@@ -54,7 +55,5 @@ private:
 	Geometries _geometries;
 	std::auto_ptr<EffectWrapper> _effect;
 	std::auto_ptr<Camera> _camera;
-
 	D3DXVECTOR3 _test;
 };
-

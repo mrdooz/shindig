@@ -26,11 +26,18 @@ TestEffect3::TestEffect3()
   , _theta(0)
   , _first_update(true)
 	, _test(1.2f, 2.3f, 4.5f)
+	, _camera(new Camera())
 {
 }
 
 TestEffect3::~TestEffect3()
 {
+	using namespace fastdelegate;
+	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move), false);
+	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up), false);
+	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down), false);
+	App::instance().add_mouse_wheel(MakeDelegate(this, &TestEffect3::on_mouse_wheel), false);
+
 	container_delete(_geometries);
 }
 
@@ -44,27 +51,27 @@ bool TestEffect3::init()
   auto& g = Graphics::instance();
   auto* d = Graphics::instance().device();
 
-	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move));
-	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up));
-	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down));
-	App::instance().add_mouse_wheel(MakeDelegate(this, &TestEffect3::on_mouse_wheel));
+	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move), true);
+	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up), true);
+	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down), true);
+	App::instance().add_mouse_wheel(MakeDelegate(this, &TestEffect3::on_mouse_wheel), true);
   
   float v = 0; //0.5f;
   g.set_clear_color(D3DXCOLOR(v, v, v, 1));
 
-  //RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true));
-
-  RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), 
-    MakeDelegate(this, &TestEffect3::load_mesh), true));
+#if 0
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_material), true));
+	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sponza.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect3::effect_loaded)));
+#else
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("sculptris/blob1.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true));
+	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sculptris_1.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect3::effect_loaded)));
+#endif
 
 	//RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("C:/Users/dooz/Downloads/PC-03_ON_OFF_Redux (1)/PC-03_Redux/Assets/Models/Scene1_Intro_Cube.obj", System::kDirAbsolute), 
 		//MakeDelegate(this, &TestEffect3::load_mesh), true));
 
-	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), 
-		MakeDelegate(this, &TestEffect3::load_material), true));
-
-  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sponza.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
-    MakeDelegate(this, &TestEffect3::effect_loaded)));
+	
 
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/1.lua", System::kDirRelative), MakeDelegate(this, &TestEffect3::load_states), true));
 
@@ -99,9 +106,10 @@ bool TestEffect3::render()
 	float blend_factor[] = { 1, 1, 1, 1 };
 	context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
 
-  D3DXMATRIX view, proj;
-	D3DXMatrixLookAtLH(&view, &(_geometries[0]->bounding_sphere().center + calc_cam_pos()), &_geometries[0]->bounding_sphere().center, &D3DXVECTOR3(0,1,0));
-	D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 5000 /*_meshes[0]->_bounding_radius*/);
+  D3DXMATRIX view = _camera->view(), proj = _camera->proj();
+
+	//D3DXMatrixLookAtLH(&view, &(_geometries[0]->bounding_sphere().center + calc_cam_pos()), &_geometries[0]->bounding_sphere().center, &D3DXVECTOR3(0,1,0));
+	//D3DXMatrixPerspectiveFovLH(&proj, deg_to_rad(45), 4 / 3.0f, 1, 5000 /*_meshes[0]->_bounding_radius*/);
 	D3DXMATRIX mtx;
 	D3DXMatrixTranspose(&mtx, &(view * proj));
 	_effect->set_vs_variable("mtx", mtx);

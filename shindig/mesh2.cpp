@@ -10,12 +10,12 @@ Mesh2::Mesh2()
   , _ib_format(DXGI_FORMAT_UNKNOWN)
   , _wireframe(false)
 {
-  App::instance().add_appstate_callback(fastdelegate::MakeDelegate(this, &Mesh2::bool_state_changed));
+  App::instance().add_appstate_callback(fastdelegate::MakeDelegate(this, &Mesh2::bool_state_changed), true);
 }
 
 Mesh2::~Mesh2()
 {
-
+	App::instance().add_appstate_callback(fastdelegate::MakeDelegate(this, &Mesh2::bool_state_changed), false);
 }
 
 void Mesh2::render(ID3D11DeviceContext *context)

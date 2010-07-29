@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "camera.hpp"
 #include "debug_renderer.hpp"
+#include "app.hpp"
 
 Camera::Camera()
 	: _pos(0,0,-100)
@@ -12,10 +13,14 @@ Camera::Camera()
 	, _far_plane(1000)
 {
 	DebugRenderer::instance().add_debug_camera_delegate(fastdelegate::MakeDelegate(this, &Camera::debug_camera), true);
+	App::instance().add_key_up(fastdelegate::MakeDelegate(this, &Camera::keyup), true);
+	App::instance().add_key_down(fastdelegate::MakeDelegate(this, &Camera::keydown), true);
 }
 
 Camera::~Camera()
 {
+	App::instance().add_key_up(fastdelegate::MakeDelegate(this, &Camera::keyup), false);
+	App::instance().add_key_down(fastdelegate::MakeDelegate(this, &Camera::keydown), false);
 	DebugRenderer::instance().add_debug_camera_delegate(fastdelegate::MakeDelegate(this, &Camera::debug_camera), false);
 }
 
@@ -42,6 +47,25 @@ void Camera::debug_camera(DebugCamera *d)
 	d->fov;
 	d->near_plane = _near_plane;
 	d->far_plane = _far_plane;
+}
+
+void Camera::keydown(const KeyInfo& k)
+{
+	D3DXVECTOR3 dir = vec3_normalize(_lookat - _pos);
+	switch (k.key) {
+	case VK_UP:
+		_pos += dir;
+		break;
+	case VK_DOWN:
+		_pos -= dir;
+		break;
+	}
+
+}
+
+void Camera::keyup(const KeyInfo& k)
+{
+
 }
 
 ObjectCamera::ObjectCamera()

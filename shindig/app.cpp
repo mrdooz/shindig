@@ -175,7 +175,7 @@ void App::run()
 				DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
 
       if (IMGui::instance().button(GEN_ID, 50, 150, 100, 40, "wireframe"))
-        DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
+				_state_wireframe.value_changed(!_state_wireframe.value());
 
 			_debug_writer->render();
 			DebugMenu::instance().render();
@@ -219,32 +219,48 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
     ui_state.mouse_down = 1;
-    for (auto i = _mouse_down_signal.begin(), e = _mouse_down_signal.end(); i != e; ++i)
-		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		{
+			MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam));
+			for (auto i = _mouse_down_callbacks.begin(), e = _mouse_down_callbacks.end(); i != e; ++i)
+				(*i)(m);
+		}
 		break;
 
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
     ui_state.mouse_down = 0;
-    for (auto i = _mouse_up_signal.begin(), e = _mouse_up_signal.end(); i != e; ++i)
-		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		{
+			MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam));
+			for (auto i = _mouse_up_callbacks.begin(), e = _mouse_up_callbacks.end(); i != e; ++i)
+				(*i)(m);
+		}
 		break;
 
 	case WM_MOUSEMOVE:
     ui_state.mouse_x = GET_X_LPARAM(lParam);
     ui_state.mouse_y = GET_Y_LPARAM(lParam);
-    for (auto i = _mouse_move_signal.begin(), e = _mouse_move_signal.end(); i != e; ++i)
-		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam)));
+		{
+			MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam));
+			for (auto i = _mouse_move_callbacks.begin(), e = _mouse_move_callbacks.end(); i != e; ++i)
+				(*i)(m);
+		}
     break;
 
 	case WM_MOUSEWHEEL:
-    for (auto i = _mouse_wheel_signal.begin(), e = _mouse_wheel_signal.end(); i != e; ++i)
-		  (*i)(MouseInfo(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam), GET_WHEEL_DELTA_WPARAM(wParam)));
+		{
+			MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam), GET_WHEEL_DELTA_WPARAM(wParam));
+			for (auto i = _mouse_wheel_callbacks.begin(), e = _mouse_wheel_callbacks.end(); i != e; ++i)
+				(*i)(m);
+		}
 		break;
 
   case WM_KEYDOWN:
-		//App::instance()._key_signal(IoKey(wParam, lParam));
+		{
+			KeyInfo k(wParam, lParam);
+			for (auto i = _keydown_callbacks.begin(), e = _keydown_callbacks.end(); i != e; ++i)
+				(*i)(k);
+		}
 		break;
 
   case WM_CHAR:
@@ -258,7 +274,11 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
       PostQuitMessage( 0 );
       break;
 		default:
-			//App::instance()._key_signal(IoKey(wParam, lParam));
+			{
+				KeyInfo k(wParam, lParam);
+				for (auto i = _keyup_callbacks.begin(), e = _keyup_callbacks.end(); i != e; ++i)
+					(*i)(k);
+			}
 			break;
     }
     break;
@@ -269,24 +289,59 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	return res;
 }
 
-void App::add_mouse_move(const fnMouseMove& fn)
+
+void App::add_mouse_move(const fnMouseMove& fn, bool add)
 {
-  _mouse_move_signal.push_back(fn);
+	if (add) {
+		_mouse_move_callbacks.push_back(fn);
+	} else {
+		safe_erase(_mouse_move_callbacks, fn);
+	}
 }
 
-void App::add_mouse_up(const fnMouseUp& fn)
+void App::add_mouse_up(const fnMouseUp& fn, bool add)
 {
-  _mouse_up_signal.push_back(fn);
+	if (add) {
+		_mouse_up_callbacks.push_back(fn);
+	} else {
+		safe_erase(_mouse_up_callbacks, fn);
+	}
 }
 
-void App::add_mouse_down(const fnMouseDown& fn)
+void App::add_mouse_down(const fnMouseDown& fn, bool add)
 {
-	_mouse_down_signal.push_back(fn);
+	if (add) {
+		_mouse_down_callbacks.push_back(fn);
+	} else {
+		safe_erase(_mouse_down_callbacks, fn);
+	}
 }
 
-void App::add_mouse_wheel(const fnMouseWheel& fn)
+void App::add_mouse_wheel(const fnMouseWheel& fn, bool add)
 {
-	_mouse_wheel_signal.push_back(fn);
+	if (add) {
+		_mouse_wheel_callbacks.push_back(fn);
+	} else {
+		safe_erase(_mouse_wheel_callbacks, fn);
+	}
+}
+
+void App::add_key_down(const fnKeyDown& fn, bool add)
+{
+	if (add) {
+		_keydown_callbacks.push_back(fn);
+	} else {
+		safe_erase(_keydown_callbacks, fn);
+	}
+}
+
+void App::add_key_up(const fnKeyUp& fn, bool add)
+{
+	if (add) {
+		_keyup_callbacks.push_back(fn);
+	} else {
+		safe_erase(_keyup_callbacks, fn);
+	}
 }
 
 void App::add_dbg_message(const char* fmt, ...)

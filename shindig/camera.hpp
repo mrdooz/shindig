@@ -1,6 +1,7 @@
 #pragma once
 
 struct DebugCamera;
+struct KeyInfo;
 
 class Camera
 {
@@ -17,6 +18,10 @@ protected:
 	float _near_plane, _far_plane;
 
 private:
+
+	void keydown(const KeyInfo& k);
+	void keyup(const KeyInfo& k);
+
 	void debug_camera(DebugCamera *d);
 };
 
