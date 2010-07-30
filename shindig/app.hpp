@@ -13,10 +13,8 @@ struct MouseInfo
   MouseInfo() : left_down(false), middle_down(false), right_down(false), x(0), y(0), x_delta(0), y_delta(0), wheel_delta(0), time(timeGetTime()) {}
 	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y) 
 		: left_down(l), middle_down(m), right_down(r), x(x), y(y), x_delta(0), y_delta(0), wheel_delta(0), time(timeGetTime()) {}
-	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y, const int wheel_delta = 0) 
-		: left_down(l), middle_down(m), right_down(r), x(x), y(y), x_delta(0), y_delta(0), wheel_delta(wheel_delta), time(timeGetTime()) {}
-	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y, const int x_delta = 0, const int y_delta = 0) 
-		: left_down(l), middle_down(m), right_down(r), x(x), y(y), x_delta(x_delta), y_delta(y_delta), wheel_delta(0), time(timeGetTime()) {}
+	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y, const int x_delta, const int y_delta, const int wheel_delta) 
+		: left_down(l), middle_down(m), right_down(r), x(x), y(y), x_delta(x_delta), y_delta(y_delta), wheel_delta(wheel_delta), time(timeGetTime()) {}
 	bool	left_down;
 	bool	middle_down;
 	bool	right_down;
