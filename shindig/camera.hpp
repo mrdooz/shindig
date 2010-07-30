@@ -1,7 +1,9 @@
 #pragma once
+#include <celsus/math_utils.hpp>
 
 struct DebugCamera;
 struct KeyInfo;
+struct MouseInfo;
 
 class Camera
 {
@@ -13,14 +15,16 @@ public:
 	virtual D3DXMATRIX proj() const;
 
 protected:
-	D3DXVECTOR3 _pos, _lookat, _up;
+	Frame _frame;
+	//D3DXVECTOR3 _pos, _lookat, _up;
 	float _aspect, _fov;
 	float _near_plane, _far_plane;
 
 private:
 
-	void keydown(const KeyInfo& k);
-	void keyup(const KeyInfo& k);
+	void mouse_move(const MouseInfo& m);
+	void key_down(const KeyInfo& k);
+	void key_up(const KeyInfo& k);
 
 	void debug_camera(DebugCamera *d);
 };

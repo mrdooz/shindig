@@ -1,6 +1,8 @@
 #ifndef DEBUG_RENDERER_HPP
 #define DEBUG_RENDERER_HPP
 
+#include <celsus/math_utils.hpp>
+
 #include "vector_font.hpp"
 #include "bounding.hpp"
 #include "dynamic_vb.hpp"
@@ -24,9 +26,7 @@ struct DebugDraw
 
 struct DebugCamera
 {
-	D3DXVECTOR3 pos;
-	D3DXVECTOR3 lookat;
-	D3DXVECTOR3 up;
+	Frame frame;
 	float fov;
 	float near_plane, far_plane;
 };

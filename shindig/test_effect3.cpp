@@ -59,7 +59,7 @@ bool TestEffect3::init()
   float v = 0; //0.5f;
   g.set_clear_color(D3DXCOLOR(v, v, v, 1));
 
-#if 0
+#if 1
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.obj", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_mesh), true));
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scenes/sponza_obj/sponza.mtl", System::kDirDropBox), MakeDelegate(this, &TestEffect3::load_material), true));
 	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/sponza.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect3::effect_loaded)));

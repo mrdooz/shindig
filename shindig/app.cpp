@@ -241,9 +241,18 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
     ui_state.mouse_x = GET_X_LPARAM(lParam);
     ui_state.mouse_y = GET_Y_LPARAM(lParam);
 		{
-			MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam));
-			for (auto i = _mouse_move_callbacks.begin(), e = _mouse_move_callbacks.end(); i != e; ++i)
-				(*i)(m);
+			// only call the callbacks if we've actually moved
+			static int last_wparam = 0;
+			static int last_lparam = 0;
+			if (last_lparam != lParam || last_wparam != wParam) {
+				int x = LOWORD(lParam);
+				int y = HIWORD(lParam);
+				MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), x, y, x - LOWORD(last_lparam), y - HIWORD(last_lparam));
+				for (auto i = _mouse_move_callbacks.begin(), e = _mouse_move_callbacks.end(); i != e; ++i)
+					(*i)(m);
+				last_lparam = lParam;
+				last_wparam = wParam;
+			}
 		}
     break;
 
