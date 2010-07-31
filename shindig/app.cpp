@@ -29,6 +29,7 @@ App::App()
 	, _test_effect(NULL)
 	, _debug_writer(nullptr)
   , _state_wireframe("wireframe", false)
+  , _dbg_message_count(0)
 {
 
 }
@@ -166,15 +167,17 @@ void App::run()
 			}
 
       graphics.tick();
+      _dbg_message_count = 0;
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
-			if (IMGui::instance().button(GEN_ID, 50, 50, 100, 40, "quit"))
+      int y_ofs = 100;
+			if (IMGui::instance().button(GEN_ID, 50, y_ofs + 50, 100, 40, "quit"))
 				on_quit();
 
-			if (IMGui::instance().button(GEN_ID, 50, 100, 100, 40, "toggle debug"))
+			if (IMGui::instance().button(GEN_ID, 50, y_ofs + 100, 100, 40, "toggle debug"))
 				DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
 
-      if (IMGui::instance().button(GEN_ID, 50, 150, 100, 40, "wireframe"))
+      if (IMGui::instance().button(GEN_ID, 50, y_ofs + 150, 100, 40, "wireframe"))
 				_state_wireframe.value_changed(!_state_wireframe.value());
 
 			_debug_writer->render();
@@ -363,5 +366,5 @@ void App::add_dbg_message(const char* fmt, ...)
   char* buf = (char*)_alloca(len);
   vsprintf_s(buf, len, fmt, arg);
   va_end(arg);
-  _debug_writer->write(0, 0, 16, buf);
+  _debug_writer->write(0, _dbg_message_count++ * 16, 16, buf);
 }

@@ -26,7 +26,7 @@ TestEffect3::TestEffect3()
   , _theta(0)
   , _first_update(true)
 	, _test(1.2f, 2.3f, 4.5f)
-	, _camera(new Camera())
+	, _camera(new FreeFlyCamera())
 {
 }
 
@@ -134,6 +134,8 @@ bool TestEffect3::render()
 			LOG_WARNING_LN_ONESHOT("Unable to find material: %s", mesh->material_name().c_str());
 		}
 	}
+
+  _camera->tick();
 
   return true;
 }

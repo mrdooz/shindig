@@ -131,6 +131,7 @@ private:
   int32_t _width;
   int32_t _height;
   HWND _hwnd;
+  int _dbg_message_count;
 
 	CRITICAL_SECTION _cs_queue;
 
