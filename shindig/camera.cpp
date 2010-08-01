@@ -72,18 +72,13 @@ FreeFlyCamera::~FreeFlyCamera()
 
 void FreeFlyCamera::update()
 {
-  D3DXVECTOR3 tmp;
-  spherical_to_cart(0, 0, 1, &tmp);
-  spherical_to_cart(D3DX_PI/2, 0, 1, &tmp);
-  spherical_to_cart(0, D3DX_PI/2, 1, &tmp);
-  spherical_to_cart(D3DX_PI/2, D3DX_PI/2, 1, &tmp);
-
   Frame f;
   f.e = _frame.e;
   // calc the dir from the spherical coordinates
   spherical_to_cart(_phi, _theta, 1, &f.z);
-  f.x = vec3_cross(_frame.y, f.z);
-  f.y = vec3_cross(f.z, f.x);
+  vec3_normalize(f.z);
+  f.x = vec3_normalize(vec3_cross(_frame.y, f.z));
+  f.y = vec3_normalize(vec3_cross(f.z, f.x));
   _frame = f;
 }
 
@@ -101,16 +96,29 @@ void FreeFlyCamera::key_down(const KeyInfo& k)
 //	D3DXVECTOR3 dir = vec3_normalize(_lookat - _pos);
 	switch (k.key) {
 	case VK_UP:
+    _phi -= D3DX_PI/10;
+    break;
+  case VK_DOWN:
+    _phi += D3DX_PI/10;
+    break;
+  case VK_LEFT:
+    _theta += D3DX_PI/10;
+    break;
+  case VK_RIGHT:
+    _theta -= D3DX_PI/10;
+    break;
+
+
   case 'A':
 		_frame.e += _frame.z;
 	//	_pos += dir;
 		break;
-	case VK_DOWN:
   case 'Z':
 		_frame.e -= _frame.z;
 		//_pos -= dir;
 		break;
 	}
+  update();
 
 }
 
