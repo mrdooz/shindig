@@ -32,7 +32,10 @@ Camera::~Camera()
 D3DXMATRIX Camera::view() const
 {
 	// returns a matrix that transforms x into camera space
-	return mtx(_frame.x, _frame.y, _frame.z, -_frame.e);
+	D3DXMATRIX mtx;
+	D3DXMatrixLookAtLH(&mtx, &_frame.e, &(_frame.e + _frame.z), &_frame.y);
+	return mtx;
+	//return mtx(_frame.x, _frame.y, _frame.z, -_frame.e);
 }
 
 D3DXMATRIX Camera::proj() const
@@ -120,8 +123,8 @@ void FreeFlyCamera::mouse_move(const MouseInfo& m)
 {
   float speed = 0.01f;
   if (m.left_down) {
-    _theta += speed * m.x_delta;
-    _phi -= speed * m.y_delta;
+    _theta -= speed * m.x_delta;
+    _phi += speed * m.y_delta;
     update();
   }
 }

@@ -33,10 +33,6 @@ TestEffect3::TestEffect3()
 TestEffect3::~TestEffect3()
 {
 	using namespace fastdelegate;
-	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move), false);
-	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up), false);
-	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down), false);
-	App::instance().add_mouse_wheel(MakeDelegate(this, &TestEffect3::on_mouse_wheel), false);
 
 	container_delete(_geometries);
 }
@@ -50,11 +46,6 @@ bool TestEffect3::init()
   auto& r = ResourceManager::instance();
   auto& g = Graphics::instance();
   auto* d = Graphics::instance().device();
-
-	App::instance().add_mouse_move(MakeDelegate(this, &TestEffect3::on_mouse_move), true);
-	App::instance().add_mouse_up(MakeDelegate(this, &TestEffect3::on_mouse_up), true);
-	App::instance().add_mouse_down(MakeDelegate(this, &TestEffect3::on_mouse_down), true);
-	App::instance().add_mouse_wheel(MakeDelegate(this, &TestEffect3::on_mouse_wheel), true);
   
   float v = 0; //0.5f;
   g.set_clear_color(D3DXCOLOR(v, v, v, 1));
@@ -94,6 +85,8 @@ D3DXVECTOR3 TestEffect3::calc_cam_pos() const
 
 bool TestEffect3::render()
 {
+	_camera->tick();
+
   if (_geometries.empty())
     return true;
 
@@ -135,8 +128,6 @@ bool TestEffect3::render()
 		}
 	}
 
-  _camera->tick();
-
   return true;
 }
 
@@ -175,58 +166,6 @@ void TestEffect3::effect_loaded(EffectWrapper *effect)
 	_effect.reset(effect);
 	for (int i = 0; i < (int)_geometries.size(); ++i)
 		_geometries[i]->mesh()->set_layout(_effect.get()->create_input_layout(_geometries[i]->mesh()->input_desc()));
-}
-
-void TestEffect3::on_mouse_move(const MouseInfo& info)
-{
-  if (_first_update) {
-    _first_update = false;
-    _prev_mouse = info;
-    return;
-  }
-
-  // do stuff
-  if (info.left_down) {
-    const float delta = (float)(info.time - _prev_mouse.time);
-    if (delta > 0) {
-      _alpha += (info.x - _prev_mouse.x) / delta;
-      _theta -= (info.y - _prev_mouse.y) / delta;
-    }
-  }
-
-  _prev_mouse = info;
-}
-
-void TestEffect3::on_mouse_up(const MouseInfo& info)
-{
-  if (_first_update) {
-    _first_update = false;
-    _prev_mouse = info;
-    return;
-  }
-
-  // do stuff
-
-  _prev_mouse = info;
-}
-
-void TestEffect3::on_mouse_down(const MouseInfo& info)
-{
-  if (_first_update) {
-    _first_update = false;
-    _prev_mouse = info;
-    return;
-  }
-
-  // do stuff
-
-  _prev_mouse = info;
-
-}
-
-void TestEffect3::on_mouse_wheel(const MouseInfo& info)
-{
-	_cam_radius -= info.wheel_delta;		
 }
 
 bool TestEffect3::load_material(const string2& material_name)

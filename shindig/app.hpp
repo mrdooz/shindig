@@ -10,7 +10,6 @@ class FontWriter;
 
 struct MouseInfo
 {
-  MouseInfo() : left_down(false), middle_down(false), right_down(false), x(0), y(0), x_delta(0), y_delta(0), wheel_delta(0), time(timeGetTime()) {}
 	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y) 
 		: left_down(l), middle_down(m), right_down(r), x(x), y(y), x_delta(0), y_delta(0), wheel_delta(0), time(timeGetTime()) {}
 	MouseInfo(const bool l, const bool m, const bool r, const int x, const int y, const int x_delta, const int y_delta, const int wheel_delta) 
