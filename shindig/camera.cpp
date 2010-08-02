@@ -18,7 +18,7 @@ Camera::Camera()
 //	, _up(0,1,0)
 	: _aspect(4/3.0f)
 	, _fov(deg_to_rad(45))
-	, _near_plane(1)
+	, _near_plane(0.1f)
 	, _far_plane(1000)
 {
 	DebugRenderer::instance().add_debug_camera_delegate(fastdelegate::MakeDelegate(this, &Camera::debug_camera), true);
@@ -54,8 +54,8 @@ void Camera::debug_camera(DebugCamera *d)
 }
 
 FreeFlyCamera::FreeFlyCamera()
-  : _phi((float)D3DX_PI/2)
-  , _theta((float)D3DX_PI/2)
+  : _phi(0)
+  , _theta()
 {
   App::instance().add_key_up(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_up), true);
   App::instance().add_key_down(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_down), true);
@@ -72,6 +72,7 @@ FreeFlyCamera::~FreeFlyCamera()
 
 void FreeFlyCamera::update()
 {
+/*
   Frame f;
   f.e = _frame.e;
   // calc the dir from the spherical coordinates
@@ -80,6 +81,14 @@ void FreeFlyCamera::update()
   f.x = vec3_normalize(vec3_cross(_frame.y, f.z));
   f.y = vec3_normalize(vec3_cross(f.z, f.x));
   _frame = f;
+*/
+	D3DXMATRIX mtx, mtx2;
+	D3DXMatrixRotationX(&mtx, _phi);
+	D3DXMatrixRotationY(&mtx2, _theta);
+	mtx = mtx * mtx2;
+	D3DXVec3TransformCoord(&_frame.x, &D3DXVECTOR3(1,0,0), &mtx);
+	D3DXVec3TransformCoord(&_frame.y, &D3DXVECTOR3(0,1,0), &mtx);
+	D3DXVec3TransformCoord(&_frame.z, &D3DXVECTOR3(0,0,1), &mtx);
 }
 
 void FreeFlyCamera::tick()
@@ -102,10 +111,10 @@ void FreeFlyCamera::key_down(const KeyInfo& k)
     _phi += D3DX_PI/10;
     break;
   case VK_LEFT:
-    _theta += D3DX_PI/10;
+    _theta -= D3DX_PI/10;
     break;
   case VK_RIGHT:
-    _theta -= D3DX_PI/10;
+    _theta += D3DX_PI/10;
     break;
 
 
