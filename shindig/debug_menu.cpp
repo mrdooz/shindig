@@ -22,7 +22,6 @@ DebugMenu::DebugMenu()
 
 DebugMenu::~DebugMenu()
 {
-	close();
 }
 
 bool DebugMenu::init()
@@ -56,6 +55,8 @@ bool DebugMenu::init()
 bool DebugMenu::close()
 {
 	SAFE_DELETE(_effect);
+  delete this;
+  _instance = nullptr;
 	return true;
 }
 

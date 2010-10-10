@@ -125,6 +125,8 @@
     <ClCompile Include="test_effect2.cpp" />
     <ClCompile Include="test_effect3.cpp" />
     <ClCompile Include="test_effect4.cpp" />
+    <ClCompile Include="test_effect5.cpp" />
+    <ClCompile Include="test_effect6.cpp" />
     <ClCompile Include="vector_font.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +160,8 @@
     <ClInclude Include="test_effect2.hpp" />
     <ClInclude Include="test_effect3.hpp" />
     <ClInclude Include="test_effect4.hpp" />
+    <ClInclude Include="test_effect5.hpp" />
+    <ClInclude Include="test_effect6.hpp" />
     <ClInclude Include="vector_font.hpp" />
   </ItemGroup>
   <ItemGroup>

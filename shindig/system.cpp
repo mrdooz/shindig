@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "system.hpp"
 
-System* System::_instance = NULL;
+System* System::_instance = nullptr;
 
 System::System()
 	: _fmod_system(NULL)
@@ -19,13 +19,14 @@ System::~System()
   SAFE_ADELETE(_spectrum_left);
   SAFE_ADELETE(_spectrum_right);
   SAFE_ADELETE(_spectrum_combined);
+  delete this;
+  _instance = nullptr;
 }
 
 System& System::instance()
 {
-	if (_instance == NULL) {
+	if (_instance == NULL)
 		_instance = new System();
-	}
 	return *_instance;
 }
 

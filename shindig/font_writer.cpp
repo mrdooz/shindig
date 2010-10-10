@@ -401,6 +401,7 @@ FontWriter::FontWriter()
 
 FontWriter::~FontWriter()
 {
+  close();
   container_delete(_fonts);
 }
 

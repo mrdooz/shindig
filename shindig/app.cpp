@@ -5,6 +5,8 @@
 #include "test_effect2.hpp"
 #include "test_effect3.hpp"
 #include "test_effect4.hpp"
+#include "test_effect5.hpp"
+#include "test_effect6.hpp"
 #include "imgui.hpp"
 #include "font_writer.hpp"
 #include "debug_menu.hpp"
@@ -54,13 +56,15 @@ bool App::init(HINSTANCE hinstance)
 
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
+
   _debug_writer = new FontWriter();
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, _width, _height));
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
+
   RETURN_ON_FAIL_BOOL_E(IMGui::instance().init());
   RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().init());
 
-	_test_effect = new TestEffect3();
+	_test_effect = new TestEffect6();
 	_test_effect->init();
 
   init_menu();
@@ -81,18 +85,19 @@ void App::init_menu()
 
 bool App::close()
 {
-  IMGui::instance().close();
 
   if (_test_effect) {
     _test_effect->close();
     delete _test_effect;
   }
 
-	_debug_writer->close();
-	SAFE_DELETE(_debug_writer);
   RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().close());
   RETURN_ON_FAIL_BOOL_E(IMGui::instance().close());
+
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().close());
+
+  SAFE_DELETE(_debug_writer);
+
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
   RETURN_ON_FAIL_BOOL_E(System::instance().close());
 	return true;
@@ -115,7 +120,7 @@ void App::set_client_size()
 
 bool App::create_window()
 {
-  const char* kClassName = "AppClass";
+  const char* kClassName = "ShindigClass";
 
   WNDCLASSEXA wcex;
   ZeroMemory(&wcex, sizeof(wcex));
@@ -152,6 +157,17 @@ void App::run()
   auto& graphics = Graphics::instance();
 
   MSG msg = {0};
+
+  float running_time = 0;
+  const float dt = 1 / 100.0f;
+
+  LARGE_INTEGER freq;
+  QueryPerformanceFrequency(&freq);
+  LARGE_INTEGER cur;
+  QueryPerformanceCounter(&cur);
+  float cur_time = (float)(cur.QuadPart / freq.QuadPart);
+  float accumulator = 0;
+
   while (WM_QUIT != msg.message) {
     if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
       TranslateMessage(&msg);
@@ -162,7 +178,23 @@ void App::run()
 			_debug_writer->reset_frame();
 			IMGui::instance().init_frame();
 
+      DebugRenderer::instance().start_frame();
+
 			if (_test_effect) {
+
+        QueryPerformanceCounter(&cur);
+        float new_time = (float)(cur.QuadPart / freq.QuadPart);
+        float delta_time = new_time - cur_time;
+        cur_time = new_time;
+        accumulator += delta_time;
+
+        // calc the number of ticks to step
+        int num_ticks = (int)(accumulator / dt);
+        const float a = (accumulator - num_ticks * dt) / delta_time;
+        _test_effect->update(running_time, dt, num_ticks, a);
+        running_time += num_ticks * dt;
+        accumulator -= num_ticks * dt;
+
 				_test_effect->render();
 			}
 
@@ -182,6 +214,7 @@ void App::run()
 
 			_debug_writer->render();
 			DebugMenu::instance().render();
+      DebugRenderer::instance().end_frame();
 			DebugRenderer::instance().render();
 			IMGui::instance().render();
 

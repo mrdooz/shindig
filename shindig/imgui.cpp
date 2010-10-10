@@ -49,6 +49,8 @@ bool IMGui::init()
 bool IMGui::close()
 {
 	_writer.close();
+  delete this;
+  _instance = nullptr;
   return true;
 }
 

@@ -17,7 +17,8 @@ DebugRenderer& DebugRenderer::instance()
 
 DebugRenderer::DebugRenderer()
 	: _vector_font(createVectorFont())
-	, _enabled(false)
+	, _enabled(true)
+  , _font_writer(nullptr)
 {
 /*
   D3DX10CreateFont( _device, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
@@ -111,14 +112,18 @@ bool DebugRenderer::init()
 
   create_unit_sphere(&_sphere_verts);
 
+  if (!init_vertex_buffers())
+    return false;
+
   return true;
 }
 
 bool DebugRenderer::init_vertex_buffers()
 {
+  const uint32_t num_verts = 200 * 1000;
+
   // pos
 /*
-  const uint32_t num_verts = 200 * 1000;
   D3D11_PASS_DESC pass_desc;
   {
     VertexFormatData& data = vertex_formats_[Pos];
@@ -136,16 +141,19 @@ bool DebugRenderer::init_vertex_buffers()
       return false;
     }
   }
-
+*/
   // pos color
   {
     VertexFormatData& data = vertex_formats_[Pos + Color];
     data.vertex_size_ = sizeof(D3DXVECTOR3) + sizeof(D3DXCOLOR);
     data.num_verts = num_verts;
     data.buffer_size_ = data.vertex_size_ * data.num_verts;
-    data._vertex_buffer = create_dynamic_vertex_buffer(data.num_verts, data.vertex_size_);
-    data.technique_name_ = "render_pos_color";
 
+    ID3D11Device* device = Graphics::instance().device();
+    create_dynamic_vertex_buffer(device, num_verts, data.vertex_size_, &data._vertex_buffer);
+
+    //data.technique_name_ = "render_pos_color";
+/*
     if (!effect_->get_pass_desc(pass_desc, data.technique_name_)) {
       return false;
     }
@@ -153,40 +161,47 @@ bool DebugRenderer::init_vertex_buffers()
     if (!create_input_layout<mpl::vector<D3DXVECTOR3, D3DXCOLOR> >(data.input_layout_, pass_desc, _device)) {
       return false;
     }
-  }
 */
+  }
+
   return true;
 }
 
 bool DebugRenderer::close()
 {
+  delete this;
+  _instance = nullptr;
   return true;
 }
 
 void DebugRenderer::start_frame()
 {
-/*
-  for (VertexFormats::iterator i = vertex_formats_.begin(), e = vertex_formats_.end(); i != e; ++i) {
+  ID3D11DeviceContext* context = Graphics::instance().context();
+
+  for (auto i = vertex_formats_.begin(), e = vertex_formats_.end(); i != e; ++i) {
     VertexFormatData& cur = i->second;
-    if (FAILED(cur._vertex_buffer->Map(D3D11_MAP_WRITE_DISCARD, 0, (void**)&cur.data_))) {
+    D3D11_MAPPED_SUBRESOURCE r;
+    if (FAILED(context->Map(cur._vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &r))) {
       LOG_WARNING_LN("Error mapping vertex buffer");
+      return;
     }
     cur.draw_calls_by_topology_.clear();
-    cur.data_ofs_ = 0;
+    cur._data_ofs = 0;
     cur.vertex_count_ = 0;
+    cur._data = (uint8_t *)r.pData;
   }
-*/
+
   debug_text_.clear();
 }
 
 void DebugRenderer::end_frame()
 {
-/*
-  for (VertexFormats::iterator i = vertex_formats_.begin(), e = vertex_formats_.end(); i != e; ++i) {
+  ID3D11DeviceContext* context = Graphics::instance().context();
+  for (auto i = vertex_formats_.begin(), e = vertex_formats_.end(); i != e; ++i) {
     VertexFormatData& cur = i->second;
-    cur._vertex_buffer->Unmap();
+    context->Unmap(cur._vertex_buffer, 0);
   }
-*/
+
 }
 
 void DebugRenderer::add_verts(const uint32_t vertex_format, const D3D11_PRIMITIVE_TOPOLOGY topology, 
@@ -195,17 +210,17 @@ void DebugRenderer::add_verts(const uint32_t vertex_format, const D3D11_PRIMITIV
   VertexFormatData& cur = vertex_formats_[vertex_format];
 
   const uint32_t data_size = cur.vertex_size_ * vertex_count;
-  if (cur.data_ofs_ + data_size > cur.buffer_size_) {
+  if (cur._data_ofs + data_size > cur.buffer_size_) {
     LOG_WARNING_LN("Too much data passed to add_verts");
     return;
   }
 #if _DEBUG
-  assert(!IsBadWritePtr(&cur.data_[cur.data_ofs_], data_size));
+  assert(!IsBadWritePtr(&cur._data[cur._data_ofs], data_size));
   assert(!IsBadReadPtr(verts, data_size));
 #endif
-  memcpy(&cur.data_[cur.data_ofs_], (void*)verts, data_size);
+  memcpy(&cur._data[cur._data_ofs], (void*)verts, data_size);
   D3DXVec3TransformCoordArray(
-    (D3DXVECTOR3*)&cur.data_[cur.data_ofs_], cur.vertex_size_, (D3DXVECTOR3*)verts, cur.vertex_size_, &world, vertex_count);
+    (D3DXVECTOR3*)&cur._data[cur._data_ofs], cur.vertex_size_, (D3DXVECTOR3*)verts, cur.vertex_size_, &world, vertex_count);
 
   // if this is a list format, we might be able to stitch it together with the previous call
   const bool list_format = topology == D3D11_PRIMITIVE_TOPOLOGY_LINELIST || topology == D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -223,9 +238,9 @@ void DebugRenderer::add_verts(const uint32_t vertex_format, const D3D11_PRIMITIV
   }
 
   if (!stitched) {
-    cur.draw_calls_by_topology_[topology].push_back(DrawCall(vertex_count, cur.data_ofs_ / cur.vertex_size_, view_proj));
+    cur.draw_calls_by_topology_[topology].push_back(DrawCall(vertex_count, cur._data_ofs / cur.vertex_size_, view_proj));
   }
-  cur.data_ofs_ += data_size;
+  cur._data_ofs += data_size;
   cur.vertex_count_ += vertex_count;
 }
 
@@ -272,10 +287,10 @@ void DebugRenderer::render()
   set_vb(context, _verts.vb(), _verts.stride);
   context->Draw(vertex_count, 0);
 
-/*
-  float blend_factor[] = {0, 0, 0, 0};
-  _device->OMSetBlendState(blend_state_, blend_factor, 0xffffffff);
-  _device->OMSetDepthStencilState(depth_stencil_state_, 0xffffffff);
+
+  //float blend_factor[] = {0, 0, 0, 0};
+  //device->OMSetBlendState(blend_state_, blend_factor, 0xffffffff);
+  //device->OMSetDepthStencilState(depth_stencil_state_, 0xffffffff);
 
   D3DXMATRIX prev_mtx;
   ZeroMemory(&prev_mtx, sizeof(prev_mtx));
@@ -286,31 +301,32 @@ void DebugRenderer::render()
 
     if (cur.vertex_count_ > 0) {
       const UINT offset = 0;
-      effect_->set_technique(cur.technique_name_);
-      _device->IASetInputLayout(cur.input_layout_);
+      //effect_->set_technique(cur.technique_name_);
+      //_device->IASetInputLayout(cur.input_layout_);
       ID3D11Buffer* bufs[] = { cur._vertex_buffer };
       uint32_t strides[] = { cur.vertex_size_ };
-      _device->IASetVertexBuffers(0, 1, bufs, strides, &offset);
+      set_vb(context, cur._vertex_buffer, cur.vertex_size_);
+      //_device->IASetVertexBuffers(0, 1, bufs, strides, &offset);
 
       typedef DrawCallsByTopology::iterator It;
       for (It i_top = cur.draw_calls_by_topology_.begin(), e_top = cur.draw_calls_by_topology_.end(); i_top != e_top; ++i_top) {
 
-        _device->IASetPrimitiveTopology(i_top->first);
+        //_device->IASetPrimitiveTopology(i_top->first);
 
         typedef DrawCalls::iterator CallsIt;
         for (CallsIt i_call = i_top->second.begin(), e_call = i_top->second.end(); i_call != e_call; ++i_call) {
           const D3DXMATRIX& view_proj = i_call->view_proj;
           if (prev_mtx != view_proj) {
-            effect_->set_variable("view_proj", view_proj);
-            effect_->set_technique(cur.technique_name_);
+            //effect_->set_variable("view_proj", view_proj);
+            //effect_->set_technique(cur.technique_name_);
             prev_mtx = view_proj;
           }
-          _device->Draw(i_call->vertex_count, i_call->start_vertex_location);
+          context->Draw(i_call->vertex_count, i_call->start_vertex_location);
         }
       }
     }
   }
-
+/*
   // Write the debug text
   std::string all_text;
   for (size_t i = 0, e = debug_text_.size(); i < e; ++i) {

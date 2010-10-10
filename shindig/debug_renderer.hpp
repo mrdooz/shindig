@@ -90,27 +90,26 @@ private:
 	struct VertexFormatData
 	{
 		VertexFormatData()
-			: data_(NULL)
+			: _data(NULL)
 			, vertex_size_(0)
 			, num_verts(0)
 			, buffer_size_(0)
-			, data_ofs_(0)
-			, input_layout_(NULL)
+			, _data_ofs(0)
+			//, input_layout_(NULL)
 			, vertex_count_(0)
 		{
 		}
 		uint32_t vertex_size_;
 		uint32_t num_verts;
 		uint32_t buffer_size_;
-		uint32_t data_ofs_;
-		uint8_t* data_;
+		uint32_t _data_ofs;
+		uint8_t* _data;
 		uint32_t vertex_count_;
-		std::string technique_name_;
 
 		DrawCallsByTopology draw_calls_by_topology_;
 
-		ID3D11BufferPtr _vertex_buffer;
-		ID3D11InputLayoutPtr input_layout_;
+		CComPtr<ID3D11Buffer> _vertex_buffer;
+		//CComPtr<ID3D11InputLayoutPtr> input_layout_;
 	};
 
 
