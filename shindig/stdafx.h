@@ -60,6 +60,8 @@
 #include <celsus/UnicodeUtils.hpp>
 #include <celsus/fast_delegate.hpp>
 #include <celsus/fast_delegate_bind.hpp>
+#include <celsus/dynamic_vb.hpp>
+#include <celsus/vertex_types.hpp>
 
 #include <libs/json_spirit/json_spirit.h>
 

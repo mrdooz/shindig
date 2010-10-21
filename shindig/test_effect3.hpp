@@ -4,7 +4,6 @@
 #include "scene.hpp"
 #include "render_target.hpp"
 #include "effect_base.hpp"
-#include "dynamic_vb.hpp"
 #include "app.hpp"
 #include "camera.hpp"
 

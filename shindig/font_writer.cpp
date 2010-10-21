@@ -5,8 +5,6 @@
 #include "resource_manager.hpp"
 #include "system.hpp"
 #include "lua_utils.hpp"
-#include "dynamic_vb.hpp"
-#include <celsus/vertex_types.hpp>
 #include <celsus/file_utils.hpp>
 #include <celsus/refptr.hpp>
 #include <celsus/effect_wrapper.hpp>

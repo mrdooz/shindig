@@ -4,7 +4,6 @@
 #include "system.hpp"
 #include "scene.hpp"
 #include "mesh.hpp"
-#include "dynamic_vb.hpp"
 #include <celsus/text_scanner.hpp>
 #include <celsus/file_utils.hpp>
 #include <celsus/D3D11Descriptions.hpp>

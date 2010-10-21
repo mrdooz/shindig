@@ -5,7 +5,6 @@
 
 #include "vector_font.hpp"
 #include "bounding.hpp"
-#include "dynamic_vb.hpp"
 
 class EffectWrapper;
 

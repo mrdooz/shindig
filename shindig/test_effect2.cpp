@@ -4,7 +4,6 @@
 #include "system.hpp"
 #include "scene.hpp"
 #include "mesh.hpp"
-#include "dynamic_vb.hpp"
 
 // Something like http://vimeo.com/1593564
 

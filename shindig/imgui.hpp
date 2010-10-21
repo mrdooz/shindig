@@ -1,8 +1,6 @@
 #pragma once
 
-#include "dynamic_vb.hpp"
 #include "font_writer.hpp"
-#include <celsus/vertex_types.hpp>
 
 #ifdef IMGUI_SRC_ID
 #define GEN_ID ((IMGUI_SRC_ID) + (__LINE__))
