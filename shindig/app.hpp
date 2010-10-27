@@ -87,6 +87,8 @@ private:
     AppState<type> _state_ ## name; \
   public:\
 
+class Camera;
+
 class App
 {
 public:
@@ -109,6 +111,8 @@ public:
 
 	void add_key_down(const fnKeyDown& fn, bool add);
 	void add_key_up(const fnKeyUp& fn, bool add);
+
+  Camera *trackball();
 
   ADD_APP_STATE(bool, wireframe);
 private:
@@ -143,6 +147,7 @@ private:
 	std::vector< fnKeyUp > _keyup_callbacks;
 
 	FontWriter *_debug_writer;
+  Camera *_trackball;
 };
 
 #endif

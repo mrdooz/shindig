@@ -284,7 +284,7 @@ void DebugRenderer::render()
   context->IASetInputLayout(_layout);
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-  set_vb(context, _verts.vb(), _verts.stride);
+  set_vb(context, _verts.get(), _verts.stride);
   context->Draw(vertex_count, 0);
 
 

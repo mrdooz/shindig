@@ -32,6 +32,7 @@ App::App()
 	, _debug_writer(nullptr)
   , _state_wireframe("wireframe", false)
   , _dbg_message_count(0)
+  , _trackball(nullptr)
 {
 
 }
@@ -67,6 +68,8 @@ bool App::init(HINSTANCE hinstance)
 	_test_effect = new TestEffect6();
 	_test_effect->init();
 
+  _trackball = new Trackball();
+
   init_menu();
 
 	return true;
@@ -85,7 +88,6 @@ void App::init_menu()
 
 bool App::close()
 {
-
   if (_test_effect) {
     _test_effect->close();
     delete _test_effect;
@@ -97,9 +99,14 @@ bool App::close()
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().close());
 
   SAFE_DELETE(_debug_writer);
+  SAFE_DELETE(_trackball);
 
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
   RETURN_ON_FAIL_BOOL_E(System::instance().close());
+
+  delete this;
+  _instance = nullptr;
+
 	return true;
 }
 
@@ -400,4 +407,10 @@ void App::add_dbg_message(const char* fmt, ...)
   vsprintf_s(buf, len, fmt, arg);
   va_end(arg);
   _debug_writer->write(0, _dbg_message_count++ * 16, 16, buf);
+}
+
+
+Camera *App::trackball()
+{
+  return _trackball;
 }

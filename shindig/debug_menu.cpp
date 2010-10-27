@@ -197,7 +197,7 @@ void DebugMenu::render()
 
 	auto context = Graphics::instance().context();
 	_effect->set_shaders(context);
-	set_vb(context, _vb.vb(), Verts::stride);
+	set_vb(context, _vb.get(), Verts::stride);
 	context->IASetInputLayout(_layout);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->OMSetDepthStencilState(_dss, 0xffffffff);

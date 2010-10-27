@@ -473,7 +473,7 @@ void FontWriter::render()
     ID3D11ShaderResourceView* t[] = { f->view()};
     context->PSSetShaderResources(0, 1, t);
 
-    set_vb(context, verts->vb(), FontInstance::Verts::stride);
+    set_vb(context, verts->get(), FontInstance::Verts::stride);
     context->Draw(6 * chars, 0);
   }
 }

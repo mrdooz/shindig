@@ -8,6 +8,7 @@
 
 class Mesh2;
 struct Material;
+struct Bezier;
 
 class TestEffect6 : public EffectBase
 {
@@ -22,7 +23,16 @@ public:
 	virtual bool render();
 
 private:
+
+  void extrude(const Bezier& b);
+
   void effect_loaded(EffectWrapper *effect);
 	bool load_states(const string2& filename);
+
+  DynamicVb<D3DXVECTOR3> _verts;
+  CComPtr<ID3D11InputLayout> _layout;
+  std::auto_ptr<EffectWrapper> _effect;
+  int _vertex_count;
+
 };
 

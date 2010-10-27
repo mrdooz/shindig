@@ -2,6 +2,9 @@
 #include "camera.hpp"
 #include "debug_renderer.hpp"
 #include "app.hpp"
+#include <celsus/graphics.hpp>
+
+using namespace fastdelegate;
 
 D3DXMATRIX mtx(const D3DXVECTOR3& m0, const D3DXVECTOR3& m1, const D3DXVECTOR3& m2, const D3DXVECTOR3& m3)
 {
@@ -21,12 +24,12 @@ Camera::Camera()
 	, _near_plane(0.1f)
 	, _far_plane(1000)
 {
-	DebugRenderer::instance().add_debug_camera_delegate(fastdelegate::MakeDelegate(this, &Camera::debug_camera), true);
+	DebugRenderer::instance().add_debug_camera_delegate(MakeDelegate(this, &Camera::debug_camera), true);
 }
 
 Camera::~Camera()
 {
-	DebugRenderer::instance().add_debug_camera_delegate(fastdelegate::MakeDelegate(this, &Camera::debug_camera), false);
+	DebugRenderer::instance().add_debug_camera_delegate(MakeDelegate(this, &Camera::debug_camera), false);
 }
 
 D3DXMATRIX Camera::view() const
@@ -105,16 +108,16 @@ void FreeFlyCamera::key_down(const KeyInfo& k)
 //	D3DXVECTOR3 dir = vec3_normalize(_lookat - _pos);
 	switch (k.key) {
 	case VK_UP:
-    _phi -= D3DX_PI/10;
+    _phi -= (float)D3DX_PI/10;
     break;
   case VK_DOWN:
-    _phi += D3DX_PI/10;
+    _phi += (float)D3DX_PI/10;
     break;
   case VK_LEFT:
-    _theta -= D3DX_PI/10;
+    _theta -= (float)D3DX_PI/10;
     break;
   case VK_RIGHT:
-    _theta += D3DX_PI/10;
+    _theta += (float)D3DX_PI/10;
     break;
 
 
@@ -151,4 +154,72 @@ ObjectCamera::ObjectCamera()
 	, _theta(0)
 {
 
+}
+
+Trackball::Trackball()
+  : _prev_pos(kVec3Zero)
+  , _rot(kQuatId)
+  , _cam_pos(kVec3Zero)
+{
+  App& app = App::instance();
+  app.add_mouse_move(MakeDelegate(this, &Trackball::on_mouse_move), true);
+  app.add_mouse_wheel(MakeDelegate(this, &Trackball::on_mouse_wheel), true);
+
+}
+
+Trackball::~Trackball()
+{
+  App& app = App::instance();
+  app.add_mouse_move(MakeDelegate(this, &Trackball::on_mouse_move), false);
+  app.add_mouse_wheel(MakeDelegate(this, &Trackball::on_mouse_wheel), false);
+}
+
+void Trackball::on_mouse_wheel(const MouseInfo& m)
+{
+  _cam_pos += _cam_pos + m.wheel_delta / 100.0f * matrix_get_row(_view, 2);
+  matrix_set_row(_view, 2, _cam_pos);
+}
+
+void Trackball::on_mouse_move(const MouseInfo& m)
+{
+
+  // convert from screen coord to -1..1
+  float x, y, z;
+  screen_to_clip((float)m.x, (float)m.y, (float)Graphics::instance().width(), (float)Graphics::instance().height(), &x, &y);
+
+  // find the point under mouse
+  float z2 = 1 - x*x - y*y;
+  z = z2 > 0 ? sqrtf(z2) : 0;
+  D3DXVECTOR3 v(x, y, z);
+
+  if (m.left_down) {
+    // calc axis & angle between prev and current pos
+    const D3DXVECTOR3 axis = vec3_cross(v, _prev_pos);
+    const float angle = acosf(vec3_dot(vec3_normalize(v), vec3_normalize(_prev_pos)));
+
+    D3DXQUATERNION q;
+    D3DXQuaternionRotationAxis(&q, &axis, -angle);
+    D3DXQuaternionMultiply(&_rot, &_rot, &q);
+    D3DXMATRIX mtx;
+    D3DXMatrixRotationQuaternion(&mtx, &_rot);
+
+    D3DXVECTOR3 rotated_axis[3];
+    D3DXVECTOR3 default_axis[] = { D3DXVECTOR3(1,0,0), D3DXVECTOR3(0,1,0), D3DXVECTOR3(0,0,1) };
+    D3DXVec3TransformCoordArray(rotated_axis, sizeof(D3DXVECTOR3), default_axis, sizeof(D3DXVECTOR3), &mtx, ELEMS_IN_ARRAY(default_axis));
+    _view = matrix_from_vectors(rotated_axis[0], rotated_axis[1], rotated_axis[2], _cam_pos);
+  }
+
+  _prev_pos = v;
+}
+
+D3DXMATRIX Trackball::view() const
+{
+  return _view;
+}
+
+D3DXMATRIX Trackball::proj() const
+{
+  D3DXMATRIX proj;
+  D3DXMatrixPerspectiveFovLH(&proj, D3DX_PI/4, 16/9.0f, 1, 1000);
+  return proj;
 }

@@ -38,7 +38,6 @@ public:
 private:
   void update();
   float _phi, _theta;
-
 };
 
 class ObjectCamera : public Camera
@@ -47,4 +46,22 @@ public:
 	ObjectCamera();
 private:
 	float _alpha, _theta;
+};
+
+// Trackball, from http://viewport3d.com/trackball.htm
+class Trackball : public Camera
+{
+public:
+  Trackball();
+  ~Trackball();
+  void on_mouse_move(const MouseInfo& m);
+  void on_mouse_wheel(const MouseInfo& m);
+  virtual D3DXMATRIX view() const;
+  virtual D3DXMATRIX proj() const;
+private:
+  D3DXMATRIX _view;
+  D3DXVECTOR3 _prev_pos;
+  D3DXVECTOR3 _cam_pos;
+  D3DXQUATERNION _rot;
+
 };

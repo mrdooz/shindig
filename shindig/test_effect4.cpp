@@ -123,7 +123,7 @@ bool TestEffect4::render()
   context->PSSetShaderResources(0, 1, t);
   
   context->IASetInputLayout(_layout);
-  set_vb(context, _verts.vb(), Verts::stride);
+  set_vb(context, _verts.get(), Verts::stride);
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   context->Draw(num_verts, 0);
 

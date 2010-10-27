@@ -85,7 +85,7 @@ bool IMGui::render()
 	_effect->set_shaders(context);
 
 	context->IASetInputLayout(_layout);
-	set_vb(context, _verts.vb(), Verts::stride);
+	set_vb(context, _verts.get(), Verts::stride);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->Draw(num_verts, 0);
 

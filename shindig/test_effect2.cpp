@@ -31,15 +31,6 @@ namespace
     }
   }
 
-  D3DXMATRIX matrix_from_vectors(const D3DXVECTOR3& v1, const D3DXVECTOR3& v2, const D3DXVECTOR3& v3, const D3DXVECTOR3& v4)
-  {
-    return D3DXMATRIX(
-      v1.x, v1.y, v1.z, 0,
-      v2.x, v2.y, v2.z, 0,
-      v3.x, v3.y, v3.z, 0,
-      v4.x, v4.y, v4.z, 1);
-  }
-
   void calc_catmull_coeffs(D3DXVECTOR3& a, D3DXVECTOR3& b, D3DXVECTOR3& c, D3DXVECTOR3& d,
     const D3DXVECTOR3& p0, const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, const D3DXVECTOR3& p3)
   {
@@ -582,7 +573,7 @@ void TestEffect2::render_lines()
     context->IASetInputLayout(_particle_layout);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-    set_vb(context, _particle_vb.vb(), sizeof(ParticleVb));
+    set_vb(context, _particle_vb.get(), sizeof(ParticleVb));
 
 		ID3D11ShaderResourceView* t[] = { _texture };
 		ID3D11SamplerState *samplers[] = { _sampler_state };
