@@ -12,6 +12,9 @@
 #include "debug_menu.hpp"
 #include "debug_renderer.hpp"
 
+#define ANT_TW_SUPPORT_DX11
+#include <libs/AntTweakBar/include/AntTweakBar.h>
+
 App* App::_instance = NULL;
 
 #ifndef GET_X_LPARAM
@@ -55,8 +58,10 @@ bool App::init(HINSTANCE hinstance)
   _height = 600;
   create_window();
 
+	Graphics& graphics = Graphics::instance();
+
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
-  RETURN_ON_FAIL_BOOL_E(Graphics::instance().init_directx(_hwnd, _width, _height));
+  RETURN_ON_FAIL_BOOL_E(graphics.init_directx(_hwnd, _width, _height));
 
   _debug_writer = new FontWriter();
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, _width, _height));
@@ -69,6 +74,13 @@ bool App::init(HINSTANCE hinstance)
 	_test_effect->init();
 
   _trackball = new Trackball();
+
+	TwInit(TW_DIRECT3D11, graphics.device(), graphics.context());
+	TwWindowSize(_width, _height);
+
+	TwBar *myBar = TwNewBar("NameOfMyTweakBar");
+	static int apa = 10;
+	TwAddVarRW(myBar, "NameOfMyVariable", TW_TYPE_INT32, &apa, "");
 
   init_menu();
 
@@ -88,6 +100,8 @@ void App::init_menu()
 
 bool App::close()
 {
+	TwTerminate();
+
   if (_test_effect) {
     _test_effect->close();
     delete _test_effect;
@@ -225,6 +239,8 @@ void App::run()
 			DebugRenderer::instance().render();
 			IMGui::instance().render();
 
+			TwDraw();
+
 			graphics.present();
 
     }
@@ -234,6 +250,9 @@ void App::run()
 
 LRESULT App::tramp_wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	if( TwEventWin(hWnd, message, wParam, lParam) ) // send event message to AntTweakBar
+		return 0;
+
 	return App::instance().wnd_proc(hWnd, message, wParam, lParam);
 }
 
