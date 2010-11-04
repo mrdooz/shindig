@@ -4,7 +4,7 @@ matrix mtx;
 
 struct vsInput
 {
-	float4 position : POSITION;
+	float3 position : POSITION;
 };
 
 struct vsOutput
@@ -15,7 +15,7 @@ struct vsOutput
 vsOutput vsMain( in vsInput v )
 {
 	vsOutput o;
-	o.position = mul(v.position, mtx);
+	o.position = mul(float4(v.position,1), mtx);
 	return o;
 }
 

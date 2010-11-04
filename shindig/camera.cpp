@@ -159,12 +159,17 @@ ObjectCamera::ObjectCamera()
 Trackball::Trackball()
   : _prev_pos(kVec3Zero)
   , _rot(kQuatId)
-  , _cam_pos(kVec3Zero)
+  , _cam_pos(0,0,-100)
 {
+	reset((void *)this);
+
   App& app = App::instance();
   app.add_mouse_move(MakeDelegate(this, &Trackball::on_mouse_move), true);
   app.add_mouse_wheel(MakeDelegate(this, &Trackball::on_mouse_wheel), true);
 
+	TwAddVarCB(app.tweakbar(), "trackball rot", TW_TYPE_QUAT4F, &Trackball::cb_rot_set, &Trackball::cb_rot_get, (void *)this, "label='trackball rotate' axisx=x axisy=y axisz=-z");
+	TwAddButton(app.tweakbar(), "trackball.reset", &Trackball::reset, (void *)this, "label='reset trackball'");
+	recalc();
 }
 
 Trackball::~Trackball()
@@ -172,6 +177,7 @@ Trackball::~Trackball()
   App& app = App::instance();
   app.add_mouse_move(MakeDelegate(this, &Trackball::on_mouse_move), false);
   app.add_mouse_wheel(MakeDelegate(this, &Trackball::on_mouse_wheel), false);
+	TwRemoveVar(app.tweakbar(), "trackball rot");
 }
 
 void Trackball::on_mouse_wheel(const MouseInfo& m)
@@ -180,12 +186,23 @@ void Trackball::on_mouse_wheel(const MouseInfo& m)
   matrix_set_row(_view, 2, _cam_pos);
 }
 
+void Trackball::cb_rot_set(const void *value, void *self)
+{
+		((Trackball*)self)->_rot = *(D3DXQUATERNION*)value;
+		((Trackball*)self)->recalc();
+}
+
+void Trackball::cb_rot_get(void *value, void *self)
+{
+	*(D3DXQUATERNION *)value = ((Trackball *)self)->_rot;
+}
+
 void Trackball::on_mouse_move(const MouseInfo& m)
 {
-
+	Graphics& graphics = Graphics::instance();
   // convert from screen coord to -1..1
   float x, y, z;
-  screen_to_clip((float)m.x, (float)m.y, (float)Graphics::instance().width(), (float)Graphics::instance().height(), &x, &y);
+  screen_to_clip((float)m.x, (float)m.y, (float)graphics.width(), (float)graphics.height(), &x, &y);
 
   // find the point under mouse
   float z2 = 1 - x*x - y*y;
@@ -194,22 +211,26 @@ void Trackball::on_mouse_move(const MouseInfo& m)
 
   if (m.left_down) {
     // calc axis & angle between prev and current pos
-    const D3DXVECTOR3 axis = vec3_cross(v, _prev_pos);
+    const D3DXVECTOR3 axis = vec3_normalize(vec3_cross(v, _prev_pos));
     const float angle = acosf(vec3_dot(vec3_normalize(v), vec3_normalize(_prev_pos)));
 
     D3DXQUATERNION q;
     D3DXQuaternionRotationAxis(&q, &axis, -angle);
     D3DXQuaternionMultiply(&_rot, &_rot, &q);
-    D3DXMATRIX mtx;
-    D3DXMatrixRotationQuaternion(&mtx, &_rot);
-
-    D3DXVECTOR3 rotated_axis[3];
-    D3DXVECTOR3 default_axis[] = { D3DXVECTOR3(1,0,0), D3DXVECTOR3(0,1,0), D3DXVECTOR3(0,0,1) };
-    D3DXVec3TransformCoordArray(rotated_axis, sizeof(D3DXVECTOR3), default_axis, sizeof(D3DXVECTOR3), &mtx, ELEMS_IN_ARRAY(default_axis));
-    _view = matrix_from_vectors(rotated_axis[0], rotated_axis[1], rotated_axis[2], _cam_pos);
+		recalc();
   }
 
   _prev_pos = v;
+}
+
+void Trackball::recalc()
+{
+	D3DXMATRIX mtx;
+	D3DXMatrixRotationQuaternion(&mtx, &_rot);
+	D3DXVECTOR3 rotated_axis[4];
+	D3DXVECTOR3 default_axis[] = { D3DXVECTOR3(1,0,0), D3DXVECTOR3(0,1,0), D3DXVECTOR3(0,0,1), -_cam_pos };
+	D3DXVec3TransformCoordArray(rotated_axis, sizeof(D3DXVECTOR3), default_axis, sizeof(D3DXVECTOR3), &mtx, ELEMS_IN_ARRAY(default_axis));
+	_view = matrix_from_vectors(rotated_axis[0], rotated_axis[1], rotated_axis[2], rotated_axis[3]);
 }
 
 D3DXMATRIX Trackball::view() const
@@ -220,6 +241,15 @@ D3DXMATRIX Trackball::view() const
 D3DXMATRIX Trackball::proj() const
 {
   D3DXMATRIX proj;
-  D3DXMatrixPerspectiveFovLH(&proj, D3DX_PI/4, 16/9.0f, 1, 1000);
+  D3DXMatrixPerspectiveFovLH(&proj, (float)D3DX_PI/4, 16/9.0f, 1, 1000);
   return proj;
+}
+
+void Trackball::reset(void *self)
+{
+	Trackball *t = (Trackball *)self;
+	t->_prev_pos = kVec3Zero;
+	t->_rot = kQuatId;
+	t->_cam_pos = D3DXVECTOR3(0,0,-100);
+	t->recalc();
 }

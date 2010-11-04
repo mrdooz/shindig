@@ -12,8 +12,6 @@
 #include "debug_menu.hpp"
 #include "debug_renderer.hpp"
 
-#define ANT_TW_SUPPORT_DX11
-#include <libs/AntTweakBar/include/AntTweakBar.h>
 
 App* App::_instance = NULL;
 
@@ -63,6 +61,15 @@ bool App::init(HINSTANCE hinstance)
   RETURN_ON_FAIL_BOOL_E(System::instance().init());
   RETURN_ON_FAIL_BOOL_E(graphics.init_directx(_hwnd, _width, _height));
 
+	TwInit(TW_DIRECT3D11, graphics.device(), graphics.context());
+	TwWindowSize(_width, _height);
+	_tweakbar = TwNewBar("Shindig");
+	TwAddButton(_tweakbar, "quit", &App::tramp_menu, (void *)kMenuQuit, "label='quit'");
+	TwAddButton(_tweakbar, "debug", &App::tramp_menu, (void *)kMenuToggleDebug, "label='toggle debug'");
+	TwAddButton(_tweakbar, "wireframe", &App::tramp_menu, (void *)kMenuToggleWireframe, "label='toggle wireframe'");
+	TwAddSeparator(_tweakbar, NULL, NULL);
+
+
   _debug_writer = new FontWriter();
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, _width, _height));
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
@@ -74,11 +81,6 @@ bool App::init(HINSTANCE hinstance)
 	_test_effect->init();
 
   _trackball = new Trackball();
-
-	TwInit(TW_DIRECT3D11, graphics.device(), graphics.context());
-	TwWindowSize(_width, _height);
-
-  _tweakbar = TwNewBar("Shindig");
 
   init_menu();
 
@@ -98,6 +100,9 @@ void App::init_menu()
 
 bool App::close()
 {
+	TwRemoveAllVars(tweakbar());
+	TwDeleteAllBars();
+
 	TwTerminate();
 
   if (_test_effect) {
@@ -171,9 +176,29 @@ void App::tick()
 {
 }
 
-void __stdcall onquit(void *clientData)
+void App::tramp_menu(void *menu_item)
 {
+	switch ((MenuItem)(int)menu_item) {
+	case kMenuQuit:
+		App::instance().on_quit();
+		break;
+	case kMenuToggleDebug:
+		App::instance().toggle_debug();
+		break;
+	case kMenuToggleWireframe:
+		App::instance().toggle_wireframe();
+		break;
+	}
+}
 
+void App::toggle_debug()
+{
+	DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
+}
+
+void App::toggle_wireframe()
+{
+	_state_wireframe.value_changed(!_state_wireframe.value());
 }
 
 void App::run()
@@ -192,7 +217,6 @@ void App::run()
   float cur_time = (float)(cur.QuadPart / freq.QuadPart);
   float accumulator = 0;
 
-  TwAddButton(_tweakbar, "quit", onquit, NULL, "label='Run Forest'");
 
   while (WM_QUIT != msg.message) {
     if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
@@ -229,15 +253,6 @@ void App::run()
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
       int y_ofs = 100;
-
-			if (IMGui::instance().button(GEN_ID, 50, y_ofs + 50, 100, 40, "quit"))
-				on_quit();
-
-			if (IMGui::instance().button(GEN_ID, 50, y_ofs + 100, 100, 40, "toggle debug"))
-				DebugRenderer::instance().set_enabled(!DebugRenderer::instance().enabled());
-
-      if (IMGui::instance().button(GEN_ID, 50, y_ofs + 150, 100, 40, "wireframe"))
-				_state_wireframe.value_changed(!_state_wireframe.value());
 
 			_debug_writer->render();
 			DebugMenu::instance().render();

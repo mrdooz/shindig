@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <MMSystem.h>
 #include <celsus/string_utils.hpp>
+#define ANT_TW_SUPPORT_DX11
+#include <libs/AntTweakBar/include/AntTweakBar.h>
+
+/*
+	repeat after me: directx is left-handed. z goes into the screen.
+*/
 
 struct CTwBar;
 typedef struct CTwBar TwBar;
@@ -115,6 +121,7 @@ public:
 	void add_key_up(const fnKeyUp& fn, bool add);
 
   Camera *trackball();
+	TwBar *tweakbar() { return _tweakbar; }
 
   ADD_APP_STATE(bool, wireframe);
 private:
@@ -122,7 +129,17 @@ private:
 	App();
 	~App();
 
+	enum MenuItem {
+		kMenuQuit,
+		kMenuToggleDebug,
+		kMenuToggleWireframe,
+	};
+
+	static void __stdcall tramp_menu(void *menu_item);
+
 	void on_quit();
+	void toggle_debug();
+	void toggle_wireframe();
 	void init_menu();
   bool create_window();
   void set_client_size();

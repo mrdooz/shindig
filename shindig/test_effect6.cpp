@@ -500,9 +500,9 @@ TestEffect6::TestEffect6()
 {
   D3DXVECTOR3 pts[] = {
     D3DXVECTOR3(0,0,0),
-    D3DXVECTOR3(20,40,0),
-    D3DXVECTOR3(-20,80,0),
-    D3DXVECTOR3(0,120,100),
+    D3DXVECTOR3(0,20,0),
+    D3DXVECTOR3(0,40,0),
+    D3DXVECTOR3(0,60,0),
   };
 
   bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(pts, ELEMS_IN_ARRAY(pts)));

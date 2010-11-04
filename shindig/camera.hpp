@@ -59,6 +59,10 @@ public:
   virtual D3DXMATRIX view() const;
   virtual D3DXMATRIX proj() const;
 private:
+	static void __stdcall cb_rot_set(const void *value, void *self);
+	static void __stdcall cb_rot_get(void *value, void *self);
+	static void __stdcall reset(void *self);
+	void recalc();
   D3DXMATRIX _view;
   D3DXVECTOR3 _prev_pos;
   D3DXVECTOR3 _cam_pos;
