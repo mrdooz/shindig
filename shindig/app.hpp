@@ -5,6 +5,8 @@
 #include <MMSystem.h>
 #include <celsus/string_utils.hpp>
 
+struct CTwBar;
+typedef struct CTwBar TwBar;
 class EffectBase;
 class FontWriter;
 
@@ -148,6 +150,7 @@ private:
 
 	FontWriter *_debug_writer;
   Camera *_trackball;
+  TwBar *_tweakbar;
 };
 
 #endif

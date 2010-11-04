@@ -78,9 +78,7 @@ bool App::init(HINSTANCE hinstance)
 	TwInit(TW_DIRECT3D11, graphics.device(), graphics.context());
 	TwWindowSize(_width, _height);
 
-	TwBar *myBar = TwNewBar("NameOfMyTweakBar");
-	static int apa = 10;
-	TwAddVarRW(myBar, "NameOfMyVariable", TW_TYPE_INT32, &apa, "");
+  _tweakbar = TwNewBar("Shindig");
 
   init_menu();
 
@@ -173,6 +171,11 @@ void App::tick()
 {
 }
 
+void __stdcall onquit(void *clientData)
+{
+
+}
+
 void App::run()
 {
   auto& graphics = Graphics::instance();
@@ -188,6 +191,8 @@ void App::run()
   QueryPerformanceCounter(&cur);
   float cur_time = (float)(cur.QuadPart / freq.QuadPart);
   float accumulator = 0;
+
+  TwAddButton(_tweakbar, "quit", onquit, NULL, "label='Run Forest'");
 
   while (WM_QUIT != msg.message) {
     if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
@@ -224,6 +229,7 @@ void App::run()
       add_dbg_message(".fps: %.1f\n", graphics.fps());
 
       int y_ofs = 100;
+
 			if (IMGui::instance().button(GEN_ID, 50, y_ofs + 50, 100, 40, "quit"))
 				on_quit();
 
