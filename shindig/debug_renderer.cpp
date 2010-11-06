@@ -5,6 +5,7 @@
 #include "resource_manager.hpp"
 #include "system.hpp"
 #include "lua_utils.hpp"
+#include "camera.hpp"
 
 DebugRenderer *DebugRenderer::_instance = nullptr;
 
@@ -18,20 +19,12 @@ DebugRenderer& DebugRenderer::instance()
 DebugRenderer::DebugRenderer()
 	: _vector_font(createVectorFont())
 	, _enabled(true)
-  , _font_writer(nullptr)
 {
-/*
-  D3DX10CreateFont( _device, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
-    OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, 
-    _T("Arial"), &font_);
-*/
 }
 
 DebugRenderer::~DebugRenderer()
 {
   SAFE_DELETE(_vector_font);
-	SAFE_DELETE(_font_writer);
-//  SAFE_DELETE(effect_);
 }
 
 void create_unit_sphere(std::vector<PosCol> *sphere_verts)
@@ -104,7 +97,7 @@ bool DebugRenderer::init()
 	auto& s = System::instance();
 	auto& r = ResourceManager::instance();
 
-	_font_writer = new FontWriter();
+	_font_writer.reset(new FontWriter());
 	RETURN_ON_FAIL_BOOL_E(_font_writer->init(s.convert_path("data/fonts/arial.ttf", System::kDirRelative), 0, 0, 600, 600));
 	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/debug_renderer_states.lua", System::kDirRelative), MakeDelegate(this, &DebugRenderer::load_states), true));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_renderer.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &DebugRenderer::load_effect)));
@@ -317,6 +310,12 @@ void DebugRenderer::render()
         for (CallsIt i_call = i_top->second.begin(), e_call = i_top->second.end(); i_call != e_call; ++i_call) {
           const D3DXMATRIX& view_proj = i_call->view_proj;
           if (prev_mtx != view_proj) {
+            D3DXMATRIX mtx;
+            D3DXMatrixTranspose(&mtx, &view_proj);
+            _effect->set_vs_variable("mtx", mtx);
+            _effect->set_cbuffer();
+            _effect->unmap_buffers();
+
             //effect_->set_variable("view_proj", view_proj);
             //effect_->set_technique(cur.technique_name_);
             prev_mtx = view_proj;
@@ -438,4 +437,46 @@ void DebugRenderer::load_effect(EffectWrapper *effect)
 		add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
 		add("COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0).
 		create(_layout, _effect.get());
+}
+
+void DebugRenderer::draw_plane(const Camera *cam)
+{
+  // find 4 corners of the plane clipped to the camera frustum
+  // 0--1
+  // 2--3
+
+  D3DXVECTOR3 v0, v1, v2, v3;
+
+  const float a = tanf(cam->fov());
+  v0.x = -cam->far_plane() * a * cam->aspect_ratio();
+  v1.x = +cam->far_plane() * a * cam->aspect_ratio();
+  v2.x = -cam->near_plane() * a * cam->aspect_ratio();
+  v3.x = +cam->near_plane() * a * cam->aspect_ratio();
+
+  v0.z = cam->far_plane();
+  v1.z = cam->far_plane();
+  v2.z = cam->near_plane();
+  v3.z = cam->near_plane();
+
+  const float y = -50;
+  v0.y = v1.y = v2.y = v3.y = -50;
+
+  // transform to world space
+  D3DXMATRIX to_world;
+  D3DXMatrixInverse(&to_world, NULL, &cam->view());
+
+  D3DXMATRIX view_proj = cam->view() * cam->proj();
+
+  const int steps = 10;
+  const float z_inc = (v0.z - v2.z) / steps;
+  float z_cur = v3.z;
+  for (int i = 0; i <= steps; ++i) {
+    const float x_inc = (v1.x - v3.x) / steps;
+    float x_cur = v3.x;
+    for (int j = 0; j <= steps; ++j) {
+      add_line(D3DXVECTOR3(-x_cur, v0.y, z_cur), D3DXVECTOR3(+x_cur, v0.y, z_cur), D3DXCOLOR(1,1,1,1), view_proj);
+      x_cur += x_inc;
+    }
+    z_cur += z_inc;
+  }
 }

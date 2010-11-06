@@ -15,7 +15,20 @@ public:
 	virtual D3DXMATRIX proj() const;
   virtual void tick() {}
 
+  void set_aspect_ratio(float aspect);
+  void set_fov(float fov);
+  void set_near_plane(float near_plane);
+  void set_far_plane(float far_plane);
+
+  float aspect_ratio() const { return _aspect; }
+  float fov() const { return _fov; }
+  float near_plane() const { return _near_plane; }
+  float far_plane() const { return _far_plane; }
+
 protected:
+  
+  virtual void recalc() {}
+
 	Frame _frame;
 	float _aspect, _fov;
 	float _near_plane, _far_plane;
@@ -61,9 +74,12 @@ public:
 private:
 	static void __stdcall cb_rot_set(const void *value, void *self);
 	static void __stdcall cb_rot_get(void *value, void *self);
+  static void __stdcall cb_fov_set(const void *value, void *self);
+  static void __stdcall cb_fov_get(void *value, void *self);
 	static void __stdcall reset(void *self);
-	void recalc();
+	virtual void recalc();
   D3DXMATRIX _view;
+  D3DXMATRIX _proj;
   D3DXVECTOR3 _prev_pos;
   D3DXVECTOR3 _cam_pos;
   D3DXQUATERNION _rot;

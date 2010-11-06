@@ -34,6 +34,7 @@ App::App()
   , _state_wireframe("wireframe", false)
   , _dbg_message_count(0)
   , _trackball(nullptr)
+  , _draw_plane(true)
 {
 
 }
@@ -188,6 +189,8 @@ void App::tramp_menu(void *menu_item)
 	case kMenuToggleWireframe:
 		App::instance().toggle_wireframe();
 		break;
+  case kMenuDrawXZPlane:
+    App::instance().toggle_plane();
 	}
 }
 
@@ -200,6 +203,12 @@ void App::toggle_wireframe()
 {
 	_state_wireframe.value_changed(!_state_wireframe.value());
 }
+
+void App::toggle_plane()
+{
+  _draw_plane = !_draw_plane;
+}
+
 
 void App::run()
 {
@@ -247,6 +256,10 @@ void App::run()
 
 				_test_effect->render();
 			}
+
+      if (_draw_plane)
+        DebugRenderer::instance().draw_plane(_trackball);
+
 
       graphics.tick();
       _dbg_message_count = 0;

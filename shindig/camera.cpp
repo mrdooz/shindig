@@ -56,6 +56,30 @@ void Camera::debug_camera(DebugCamera *d)
 	d->far_plane = _far_plane;
 }
 
+void Camera::set_aspect_ratio(float aspect) 
+{ 
+  _aspect = aspect; 
+  recalc();
+}
+
+void Camera::set_fov(float fov) 
+{ 
+  _fov = fov; 
+  recalc();
+}
+
+void Camera::set_near_plane(float near_plane) 
+{ 
+  _near_plane = near_plane; 
+  recalc();
+}
+
+void Camera::set_far_plane(float far_plane) 
+{ 
+  _far_plane = far_plane; 
+  recalc();
+}
+
 FreeFlyCamera::FreeFlyCamera()
   : _phi(0)
   , _theta()
@@ -167,7 +191,8 @@ Trackball::Trackball()
   app.add_mouse_move(MakeDelegate(this, &Trackball::on_mouse_move), true);
   app.add_mouse_wheel(MakeDelegate(this, &Trackball::on_mouse_wheel), true);
 
-	TwAddVarCB(app.tweakbar(), "trackball rot", TW_TYPE_QUAT4F, &Trackball::cb_rot_set, &Trackball::cb_rot_get, (void *)this, "label='trackball rotate' axisx=x axisy=y axisz=-z");
+  TwAddVarCB(app.tweakbar(), "trackball.rot", TW_TYPE_QUAT4F, &Trackball::cb_rot_set, &Trackball::cb_rot_get, (void *)this, "label='trackball rotate' axisx=x axisy=y axisz=-z");
+  TwAddVarCB(app.tweakbar(), "trackball.fov", TW_TYPE_FLOAT, &Trackball::cb_fov_set, &Trackball::cb_fov_get, (void *)this, "label='FOV' min=0.2 max=1 step=0.1");
 	TwAddButton(app.tweakbar(), "trackball.reset", &Trackball::reset, (void *)this, "label='reset trackball'");
 	recalc();
 }
@@ -190,6 +215,16 @@ void Trackball::cb_rot_set(const void *value, void *self)
 {
 		((Trackball*)self)->_rot = *(D3DXQUATERNION*)value;
 		((Trackball*)self)->recalc();
+}
+
+void Trackball::cb_fov_set(const void *value, void *self)
+{
+  ((Trackball *)self)->set_fov(*(float *)value);
+}
+
+void Trackball::cb_fov_get(void *value, void *self)
+{
+  *(float *)value = ((Trackball *)self)->fov();
 }
 
 void Trackball::cb_rot_get(void *value, void *self)
@@ -231,6 +266,9 @@ void Trackball::recalc()
 	D3DXVECTOR3 default_axis[] = { D3DXVECTOR3(1,0,0), D3DXVECTOR3(0,1,0), D3DXVECTOR3(0,0,1), -_cam_pos };
 	D3DXVec3TransformCoordArray(rotated_axis, sizeof(D3DXVECTOR3), default_axis, sizeof(D3DXVECTOR3), &mtx, ELEMS_IN_ARRAY(default_axis));
 	_view = matrix_from_vectors(rotated_axis[0], rotated_axis[1], rotated_axis[2], rotated_axis[3]);
+
+  D3DXMatrixPerspectiveFovLH(&_proj, _fov, _aspect, _near_plane, _far_plane);
+
 }
 
 D3DXMATRIX Trackball::view() const
@@ -240,9 +278,7 @@ D3DXMATRIX Trackball::view() const
 
 D3DXMATRIX Trackball::proj() const
 {
-  D3DXMATRIX proj;
-  D3DXMatrixPerspectiveFovLH(&proj, (float)D3DX_PI/4, 16/9.0f, 1, 1000);
-  return proj;
+  return _proj;
 }
 
 void Trackball::reset(void *self)

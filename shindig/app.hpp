@@ -133,6 +133,7 @@ private:
 		kMenuQuit,
 		kMenuToggleDebug,
 		kMenuToggleWireframe,
+    kMenuDrawXZPlane,
 	};
 
 	static void __stdcall tramp_menu(void *menu_item);
@@ -140,6 +141,7 @@ private:
 	void on_quit();
 	void toggle_debug();
 	void toggle_wireframe();
+  void toggle_plane();
 	void init_menu();
   bool create_window();
   void set_client_size();
@@ -168,6 +170,7 @@ private:
 	FontWriter *_debug_writer;
   Camera *_trackball;
   TwBar *_tweakbar;
+  bool _draw_plane;
 };
 
 #endif

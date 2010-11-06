@@ -34,6 +34,7 @@ typedef fastdelegate::FastDelegate1<DebugDraw *> DebugRenderDelegate;
 typedef fastdelegate::FastDelegate1<DebugCamera *> DebugCameraDelegate;
 
 class FontWriter;
+class Camera;
 
 class DebugRenderer
 {
@@ -72,6 +73,9 @@ public:
 
 	bool enabled() const { return _enabled; }
 	void set_enabled(bool value) { _enabled = value; }
+
+  void draw_plane(const Camera *cam);
+
 
 private:
   struct DrawCall
@@ -146,7 +150,7 @@ private:
 
 	bool _enabled;
 
-	FontWriter *_font_writer;
+	std::auto_ptr<FontWriter> _font_writer;
 	static DebugRenderer *_instance;
 };
 
