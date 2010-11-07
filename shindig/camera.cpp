@@ -205,11 +205,6 @@ Trackball::~Trackball()
 	TwRemoveVar(app.tweakbar(), "trackball rot");
 }
 
-void Trackball::on_mouse_wheel(const MouseInfo& m)
-{
-  _cam_pos += _cam_pos + m.wheel_delta / 100.0f * matrix_get_row(_view, 2);
-  matrix_set_row(_view, 2, _cam_pos);
-}
 
 void Trackball::cb_rot_set(const void *value, void *self)
 {
@@ -230,6 +225,12 @@ void Trackball::cb_fov_get(void *value, void *self)
 void Trackball::cb_rot_get(void *value, void *self)
 {
 	*(D3DXQUATERNION *)value = ((Trackball *)self)->_rot;
+}
+
+void Trackball::on_mouse_wheel(const MouseInfo& m)
+{
+	_cam_pos += m.wheel_delta / 100.0f * _dir;
+	recalc();
 }
 
 void Trackball::on_mouse_move(const MouseInfo& m)
@@ -266,9 +267,11 @@ void Trackball::recalc()
 	D3DXVECTOR3 default_axis[] = { D3DXVECTOR3(1,0,0), D3DXVECTOR3(0,1,0), D3DXVECTOR3(0,0,1), -_cam_pos };
 	D3DXVec3TransformCoordArray(rotated_axis, sizeof(D3DXVECTOR3), default_axis, sizeof(D3DXVECTOR3), &mtx, ELEMS_IN_ARRAY(default_axis));
 	_view = matrix_from_vectors(rotated_axis[0], rotated_axis[1], rotated_axis[2], rotated_axis[3]);
+	_right = matrix_get_row(_view, 0);
+	_up = matrix_get_row(_view, 1);
+	_dir = matrix_get_row(_view, 2);
 
   D3DXMatrixPerspectiveFovLH(&_proj, _fov, _aspect, _near_plane, _far_plane);
-
 }
 
 D3DXMATRIX Trackball::view() const

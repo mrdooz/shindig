@@ -78,6 +78,7 @@ private:
   static void __stdcall cb_fov_get(void *value, void *self);
 	static void __stdcall reset(void *self);
 	virtual void recalc();
+	D3DXVECTOR3 _dir, _up, _right;
   D3DXMATRIX _view;
   D3DXMATRIX _proj;
   D3DXVECTOR3 _prev_pos;
