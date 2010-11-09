@@ -441,6 +441,71 @@ void DebugRenderer::load_effect(EffectWrapper *effect)
 
 void DebugRenderer::draw_plane(const Camera *cam)
 {
+  D3DXPLANE plane;
+  D3DXPlaneFromPointNormal(&plane, &D3DXVECTOR3(0,-50,0), &D3DXVECTOR3(0,1,0));
+
+  D3DXPLANE frustum[6];
+  D3DXMATRIX view_proj = cam->view() * cam->proj();
+  // calc world space planes
+  calc_planes(view_proj, &frustum[0]);
+
+  struct
+  {
+    D3DXVECTOR3 p, d;
+  } lines[6];
+
+  D3DXVECTOR3 pts[10];
+  int point_count = 0;
+
+  const float kEps = 0.00001f;
+
+  int count = 0;
+  for (int i = 0; i < 6; ++i) {
+    if (intersect(frustum[i], plane, &lines[count].p, &lines[count].d)) {
+
+      for (int j = 0; j < 6; ++j) {
+        if (i == j)
+          continue;
+
+        // determinte where the line intersects the plane
+        const float d = -frustum[j].d;
+        const D3DXVECTOR3 n(frustum[j].a, frustum[j].b, frustum[j].c);
+        float a = (d - vec3_dot(n, lines[count].p));
+        float b = vec3_dot(n, lines[count].d);
+        // check if the line lies in the plane
+        if (fabs(b) < kEps)
+          continue;
+        const float t = (d - vec3_dot(n, lines[count].p)) / vec3_dot(n, lines[count].d);
+        const D3DXVECTOR3 pt = lines[count].p + t * lines[count].d;
+
+        for (int k = 0; k < 6; ++k) {
+          if (k == j)
+            continue;
+          float dist = D3DXPlaneDotCoord(&frustum[k], &pt);
+          if (dist < kEps)
+            goto clipped;
+        }
+        pts[point_count++] = pt;
+        clipped:;
+      }
+      count++;
+    }
+  }
+
+  // barret enumeration!
+  for (int j = point_count-1, i = 0; i < point_count; j = i++)
+    add_line(pts[j], pts[i], D3DXCOLOR(1,1,1,1), view_proj);
+
+
+
+
+  //int a = 10;
+
+}
+
+/*
+void DebugRenderer::draw_plane(const Camera *cam)
+{
   // find 4 corners of the plane clipped to the camera frustum
   // 0--1
   // 2--3
@@ -480,3 +545,4 @@ void DebugRenderer::draw_plane(const Camera *cam)
     z_cur += z_inc;
   }
 }
+*/

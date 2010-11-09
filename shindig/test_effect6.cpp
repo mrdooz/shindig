@@ -9,25 +9,6 @@
 
 using namespace std;
 
-// Find a vector orthogonal to r, according to rtr (eq. 4.24, pg 71)
-D3DXVECTOR3 find_orthogonal(const D3DXVECTOR3& r)
-{
-  const float abs_x = fabs(r.x);
-  const float abs_y = fabs(r.y);
-  const float abs_z = fabs(r.z);
-
-  D3DXVECTOR3 res;
-
-  if (abs_x < abs_y && abs_x < abs_z) {
-    res = D3DXVECTOR3(0, -r.z, r.y);
-  } else if (abs_y < abs_x && abs_y < abs_z) {
-    res = D3DXVECTOR3(-r.z, 0, r.x);
-  } else {
-    res = D3DXVECTOR3(-r.y, r.x, 0);
-  }
-  return res;
-}
-
 
 template<typename T>
 struct Matrix2d
