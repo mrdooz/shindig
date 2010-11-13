@@ -74,7 +74,7 @@ public:
 	bool enabled() const { return _enabled; }
 	void set_enabled(bool value) { _enabled = value; }
 
-  void draw_plane(const Camera *cam);
+  void draw_plane(const Camera *cam, const D3DXPLANE& plane);
 
 
 private:

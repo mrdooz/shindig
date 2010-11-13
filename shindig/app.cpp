@@ -257,8 +257,11 @@ void App::run()
 				_test_effect->render();
 			}
 
-      if (_draw_plane)
-        DebugRenderer::instance().draw_plane(_trackball);
+      if (_draw_plane) {
+        D3DXPLANE plane;
+        D3DXPlaneFromPointNormal(&plane, &D3DXVECTOR3(0,100,0), &D3DXVECTOR3(0,0,-1));
+        DebugRenderer::instance().draw_plane(_trackball, plane);
+      }
 
 
       graphics.tick();

@@ -114,47 +114,25 @@ bool DebugRenderer::init()
 bool DebugRenderer::init_vertex_buffers()
 {
   const uint32_t num_verts = 200 * 1000;
+  ID3D11Device* device = Graphics::instance().device();
 
   // pos
-/*
-  D3D11_PASS_DESC pass_desc;
+
   {
     VertexFormatData& data = vertex_formats_[Pos];
     data.vertex_size_ = sizeof(D3DXVECTOR3);
     data.num_verts = num_verts;
     data.buffer_size_ = data.vertex_size_ * data.num_verts;
-    data._vertex_buffer = create_dynamic_vertex_buffer(data.num_verts, data.vertex_size_);
-    data.technique_name_ = "render_pos";
-
-    if (!effect_->get_pass_desc(pass_desc, data.technique_name_)) {
-      return false;
-    }
-
-    if (!create_input_layout<mpl::vector<D3DXVECTOR3> >(data.input_layout_, pass_desc, _device)) {
-      return false;
-    }
+    RETURN_ON_FAIL_BOOL_E(create_dynamic_vertex_buffer(device, num_verts, data.vertex_size_, &data._vertex_buffer));
   }
-*/
+
   // pos color
   {
     VertexFormatData& data = vertex_formats_[Pos + Color];
     data.vertex_size_ = sizeof(D3DXVECTOR3) + sizeof(D3DXCOLOR);
     data.num_verts = num_verts;
     data.buffer_size_ = data.vertex_size_ * data.num_verts;
-
-    ID3D11Device* device = Graphics::instance().device();
-    create_dynamic_vertex_buffer(device, num_verts, data.vertex_size_, &data._vertex_buffer);
-
-    //data.technique_name_ = "render_pos_color";
-/*
-    if (!effect_->get_pass_desc(pass_desc, data.technique_name_)) {
-      return false;
-    }
-
-    if (!create_input_layout<mpl::vector<D3DXVECTOR3, D3DXCOLOR> >(data.input_layout_, pass_desc, _device)) {
-      return false;
-    }
-*/
+    RETURN_ON_FAIL_BOOL_E(create_dynamic_vertex_buffer(device, num_verts, data.vertex_size_, &data._vertex_buffer));
   }
 
   return true;
@@ -275,10 +253,9 @@ void DebugRenderer::render()
   context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
 
   context->IASetInputLayout(_layout);
-  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-  set_vb(context, _verts.get(), _verts.stride);
-  context->Draw(vertex_count, 0);
+  //set_vb(context, _verts.get(), _verts.stride);
+  //context->Draw(vertex_count, 0);
 
 
   //float blend_factor[] = {0, 0, 0, 0};
@@ -304,7 +281,7 @@ void DebugRenderer::render()
       typedef DrawCallsByTopology::iterator It;
       for (It i_top = cur.draw_calls_by_topology_.begin(), e_top = cur.draw_calls_by_topology_.end(); i_top != e_top; ++i_top) {
 
-        //_device->IASetPrimitiveTopology(i_top->first);
+        context->IASetPrimitiveTopology(i_top->first);
 
         typedef DrawCalls::iterator CallsIt;
         for (CallsIt i_call = i_top->second.begin(), e_call = i_top->second.end(); i_call != e_call; ++i_call) {
@@ -315,9 +292,6 @@ void DebugRenderer::render()
             _effect->set_vs_variable("mtx", mtx);
             _effect->set_cbuffer();
             _effect->unmap_buffers();
-
-            //effect_->set_variable("view_proj", view_proj);
-            //effect_->set_technique(cur.technique_name_);
             prev_mtx = view_proj;
           }
           context->Draw(i_call->vertex_count, i_call->start_vertex_location);
@@ -439,110 +413,43 @@ void DebugRenderer::load_effect(EffectWrapper *effect)
 		create(_layout, _effect.get());
 }
 
-void DebugRenderer::draw_plane(const Camera *cam)
+void DebugRenderer::draw_plane(const Camera *cam, const D3DXPLANE& plane)
 {
-  D3DXPLANE plane;
-  D3DXPlaneFromPointNormal(&plane, &D3DXVECTOR3(0,-50,0), &D3DXVECTOR3(0,1,0));
-
   D3DXPLANE frustum[6];
   D3DXMATRIX view_proj = cam->view() * cam->proj();
-  // calc world space planes
+  enum { l, r, b, t, n, f };
+  // calc world space planes (l, r, b, t, n, f)
   calc_planes(view_proj, &frustum[0]);
-
-  struct
-  {
-    D3DXVECTOR3 p, d;
-  } lines[6];
 
   D3DXVECTOR3 pts[10];
   int point_count = 0;
 
-  const float kEps = 0.00001f;
-
-  int count = 0;
-  for (int i = 0; i < 6; ++i) {
-    if (intersect(frustum[i], plane, &lines[count].p, &lines[count].d)) {
-
-      for (int j = 0; j < 6; ++j) {
-        if (i == j)
-          continue;
-
-        // determinte where the line intersects the plane
-        const float d = -frustum[j].d;
-        const D3DXVECTOR3 n(frustum[j].a, frustum[j].b, frustum[j].c);
-        float a = (d - vec3_dot(n, lines[count].p));
-        float b = vec3_dot(n, lines[count].d);
-        // check if the line lies in the plane
-        if (fabs(b) < kEps)
-          continue;
-        const float t = (d - vec3_dot(n, lines[count].p)) / vec3_dot(n, lines[count].d);
-        const D3DXVECTOR3 pt = lines[count].p + t * lines[count].d;
-
-        for (int k = 0; k < 6; ++k) {
-          if (k == j)
-            continue;
-          float dist = D3DXPlaneDotCoord(&frustum[k], &pt);
-          if (dist < kEps)
-            goto clipped;
-        }
-        pts[point_count++] = pt;
-        clipped:;
-      }
-      count++;
-    }
+  if (intersect(frustum[l], frustum[n], plane, &pts[0])) {
+    intersect(frustum[f], frustum[l], plane, &pts[1]);
+    intersect(frustum[f], frustum[r], plane, &pts[2]);
+    intersect(frustum[n], frustum[r], plane, &pts[3]);
+    // the plane intersects the left plane
+  } else if (intersect(frustum[b], frustum[l], plane, &pts[0])) {
+    intersect(frustum[t], frustum[l], plane, &pts[1]);
+    intersect(frustum[t], frustum[r], plane, &pts[2]);
+    intersect(frustum[b], frustum[r], plane, &pts[3]);
+  } else {
+    // ok, this is strange..
   }
 
-  // barret enumeration!
-  for (int j = point_count-1, i = 0; i < point_count; j = i++)
-    add_line(pts[j], pts[i], D3DXCOLOR(1,1,1,1), view_proj);
 
-
-
-
-  //int a = 10;
-
+  D3DXCOLOR col(0.1f, 0.1f, 0.1f, 1);
+  struct {
+    D3DXVECTOR3 pos; D3DXCOLOR col;
+  } verts[6] = {
+    // 0, 1, 2
+    { pts[0], col },
+    { pts[1], col },
+    { pts[2], col },
+    // 0, 2, 3
+    { pts[0], col },
+    { pts[2], col },
+    { pts[3], col },
+  };
+  add_verts(Pos | Color, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, (const float *)&verts[0], 6, kMtxId, view_proj);
 }
-
-/*
-void DebugRenderer::draw_plane(const Camera *cam)
-{
-  // find 4 corners of the plane clipped to the camera frustum
-  // 0--1
-  // 2--3
-
-  D3DXVECTOR3 v0, v1, v2, v3;
-
-  const float a = tanf(cam->fov());
-  v0.x = -cam->far_plane() * a * cam->aspect_ratio();
-  v1.x = +cam->far_plane() * a * cam->aspect_ratio();
-  v2.x = -cam->near_plane() * a * cam->aspect_ratio();
-  v3.x = +cam->near_plane() * a * cam->aspect_ratio();
-
-  v0.z = cam->far_plane();
-  v1.z = cam->far_plane();
-  v2.z = cam->near_plane();
-  v3.z = cam->near_plane();
-
-  const float y = -50;
-  v0.y = v1.y = v2.y = v3.y = -50;
-
-  // transform to world space
-  D3DXMATRIX to_world;
-  D3DXMatrixInverse(&to_world, NULL, &cam->view());
-
-  D3DXMATRIX view_proj = cam->view() * cam->proj();
-
-  const int steps = 10;
-  const float z_inc = (v0.z - v2.z) / steps;
-  float z_cur = v3.z;
-  for (int i = 0; i <= steps; ++i) {
-    const float x_inc = (v1.x - v3.x) / steps;
-    float x_cur = v3.x;
-    for (int j = 0; j <= steps; ++j) {
-      add_line(D3DXVECTOR3(-x_cur, v0.y, z_cur), D3DXVECTOR3(+x_cur, v0.y, z_cur), D3DXCOLOR(1,1,1,1), view_proj);
-      x_cur += x_inc;
-    }
-    z_cur += z_inc;
-  }
-}
-*/
