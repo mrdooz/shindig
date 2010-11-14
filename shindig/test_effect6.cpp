@@ -226,6 +226,7 @@ class AsArray
 {
 public:
   AsArray(T* data, int n) : _data(data), _n(n) {}
+  AsArray(std::vector<T>& v) : _data(&v[0]), _n((int)v.size()) {}
   int size() const { return _n; }
   T *data() { return _data; }
 private:
@@ -478,6 +479,10 @@ void TestEffect6::extrude(const Bezier& bezier)
 Bezier bezier;
 
 TestEffect6::TestEffect6()
+  : _up(0,1,0)
+  , _last_update(0)
+  , _cur_top(0,0,0)
+  , _angle(0)
 {
   D3DXVECTOR3 pts[] = {
     D3DXVECTOR3(0,0,0),
@@ -486,7 +491,7 @@ TestEffect6::TestEffect6()
     D3DXVECTOR3(0,60,0),
   };
 
-  bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(pts, ELEMS_IN_ARRAY(pts)));
+  //bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(pts, ELEMS_IN_ARRAY(pts)));
 }
 
 TestEffect6::~TestEffect6()
@@ -556,5 +561,27 @@ void TestEffect6::effect_loaded(EffectWrapper *effect)
 
 void TestEffect6::update(float t, float dt, int num_ticks, float a)
 {
+  // every second, add a new curve
+  if (t - _last_update > 1.0f) {
+    _last_update = t;
 
+    float len = 2;
+
+    D3DXMATRIX mtx;
+    for (int i = 0; i < 4; ++i) {
+      // each point is selected as a random point on the circle around
+      // the current normal
+
+      D3DXVECTOR3 pt = _cur_top + /*len * _up + */D3DXVECTOR3(0.1f, 0, 0);
+      _angle += randf(-(float)D3DX_PI/10, (float)D3DX_PI/10);
+      D3DXMatrixRotationAxis(&mtx, &_up, _angle);
+      D3DXVec3TransformCoord(&pt, &pt, &mtx);
+      pt += len * _up;
+      _points.push_back(pt);
+      _up = vec3_normalize(pt - _cur_top);
+      _cur_top = pt;
+    }
+    bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(_points));
+
+  }
 }

@@ -34,5 +34,10 @@ private:
   std::auto_ptr<EffectWrapper> _effect;
   int _vertex_count;
 
+  D3DXVECTOR3 _up;
+  D3DXVECTOR3 _cur_top;
+  std::vector<D3DXVECTOR3> _points;
+  float _last_update;
+  float _angle;
 };
 
