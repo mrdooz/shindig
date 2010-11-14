@@ -18,11 +18,11 @@ public:
 
 	virtual bool init();
 	virtual bool close();
-  virtual bool update(float t, float dt, int num_ticks, float a);
-  virtual bool post_update(float t, float dt, float a);
 	virtual bool render();
 
 private:
+
+  void update(float t, float dt, int num_ticks, float a);
 
   void extrude(const Bezier& b);
 

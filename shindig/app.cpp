@@ -13,7 +13,7 @@
 #include "debug_renderer.hpp"
 
 
-App* App::_instance = NULL;
+App* App::_instance = nullptr;
 
 #ifndef GET_X_LPARAM
 #define GET_X_LPARAM(lParam)	((int)(short)LOWORD(lParam))
@@ -248,15 +248,18 @@ void App::run()
 			if (_test_effect) {
 
         QueryPerformanceCounter(&cur);
-        float new_time = (float)(cur.QuadPart / freq.QuadPart);
+        float new_time = (float)cur.QuadPart / freq.QuadPart;
         float delta_time = new_time - cur_time;
         cur_time = new_time;
         accumulator += delta_time;
 
         // calc the number of ticks to step
         int num_ticks = (int)(accumulator / dt);
-        const float a = (accumulator - num_ticks * dt) / delta_time;
-        _test_effect->update(running_time, dt, num_ticks, a);
+        const float a = delta_time > 0 ? (accumulator - num_ticks * dt) / delta_time : 0;
+
+        for (int i = 0; i < (int)_update_callbacks.size(); ++i)
+          _update_callbacks[i](running_time, dt, num_ticks, a);
+
         running_time += num_ticks * dt;
         accumulator -= num_ticks * dt;
 
@@ -456,6 +459,14 @@ void App::add_key_up(const fnKeyUp& fn, bool add)
 	} else {
 		safe_erase(_keyup_callbacks, fn);
 	}
+}
+
+void App::add_update_callback(const fnUpdate& fn, bool add)
+{
+  if (add)
+    _update_callbacks.push_back(fn);
+  else
+    safe_erase(_update_callbacks, fn);
 }
 
 void App::add_dbg_message(const char* fmt, ...)

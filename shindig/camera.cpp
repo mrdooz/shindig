@@ -154,10 +154,10 @@ void FreeFlyCamera::key_down(const KeyInfo& k)
     _theta += (float)D3DX_PI/10;
     break;
 
-  case 'A':
+  case 'W':
 		_frame.e += _frame.z;
 		break;
-  case 'Z':
+  case 'S':
 		_frame.e -= _frame.z;
 		break;
 	}

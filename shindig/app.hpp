@@ -7,6 +7,8 @@
 #define ANT_TW_SUPPORT_DX11
 #include <libs/AntTweakBar/include/AntTweakBar.h>
 
+using namespace fastdelegate;
+
 /*
 	repeat after me: directx is left-handed. z goes into the screen.
 */
@@ -42,20 +44,21 @@ struct KeyInfo
 	DWORD	time;
 };
 
+typedef FastDelegate1<const MouseInfo&> fnMouseMove;
+typedef FastDelegate1<const MouseInfo&> fnMouseUp;
+typedef FastDelegate1<const MouseInfo&> fnMouseDown;
+typedef FastDelegate1<const MouseInfo&> fnMouseWheel;
 
-typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseMove;
-typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseUp;
-typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseDown;
-typedef fastdelegate::FastDelegate1<const MouseInfo&> fnMouseWheel;
+typedef FastDelegate1<const KeyInfo&> fnKeyDown;
+typedef FastDelegate1<const KeyInfo&> fnKeyUp;
 
-typedef fastdelegate::FastDelegate1<const KeyInfo&> fnKeyDown;
-typedef fastdelegate::FastDelegate1<const KeyInfo&> fnKeyUp;
+typedef FastDelegate4<float, float, int, float> fnUpdate;
 
 template<class T>
 class AppState
 {
 public:
-  typedef fastdelegate::FastDelegate2<const string2&, const T&, void> fnCallback;
+  typedef FastDelegate2<const string2&, const T&, void> fnCallback;
   typedef std::vector<fnCallback> Callbacks;
 
   AppState(const string2& name, const T& value) : _name(name), _value(value) {}
@@ -120,6 +123,8 @@ public:
 	void add_key_down(const fnKeyDown& fn, bool add);
 	void add_key_up(const fnKeyUp& fn, bool add);
 
+  void add_update_callback(const fnUpdate& fn, bool add);
+
   Camera *camera();
 	TwBar *tweakbar() { return _tweakbar; }
 
@@ -166,6 +171,8 @@ private:
 
 	std::vector< fnKeyDown > _keydown_callbacks;
 	std::vector< fnKeyUp > _keyup_callbacks;
+
+  std::vector< fnUpdate > _update_callbacks;
 
 	FontWriter *_debug_writer;
   int _cur_camera;

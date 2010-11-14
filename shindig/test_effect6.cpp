@@ -495,20 +495,19 @@ TestEffect6::~TestEffect6()
 
 bool TestEffect6::init()
 {
-  using namespace fastdelegate;
-
   auto& s = System::instance();
   auto& r = ResourceManager::instance();
-  auto& g = Graphics::instance();
-  auto* d = Graphics::instance().device();
 
   RETURN_ON_FAIL_BOOL_E(_verts.create(20*1024));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/simple.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect6::effect_loaded)));
+  App::instance().add_update_callback(MakeDelegate(this, &TestEffect6::update), true);
   return true;
 }
 
 bool TestEffect6::close()
 {
+  App::instance().add_update_callback(MakeDelegate(this, &TestEffect6::update), false);
+
   return true;
 }
 
@@ -555,12 +554,7 @@ void TestEffect6::effect_loaded(EffectWrapper *effect)
     create(_layout, _effect.get());
 }
 
-bool TestEffect6::update(float t, float dt, int num_ticks, float a)
+void TestEffect6::update(float t, float dt, int num_ticks, float a)
 {
-  return true;   
-}
 
-bool TestEffect6::post_update(float t, float dt, float a)
-{
-  return true;
 }
