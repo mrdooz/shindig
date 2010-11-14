@@ -1,7 +1,16 @@
 #include "stdafx.h"
-
-
 #include "lua_utils.hpp"
+extern "C"
+{
+  #include <lstate.h>
+  #include <ldo.h>
+}
+
+bool blend_state_from_lua(lua_State *l, const char *state_name, CComPtr<ID3D11BlendState>& blend_state);
+bool depth_stencil_state_from_lua(lua_State *l, const char *state_name, CComPtr<ID3D11DepthStencilState>& dss);
+bool sampler_from_lua(lua_State *l, const char *sampler_name, CComPtr<ID3D11SamplerState>& sampler);
+bool rasterizer_state_from_lua(lua_State *l, const char *state_name, CComPtr<ID3D11RasterizerState>& state);
+
 
 int get_int_field(lua_State *l, const char *key)
 {
@@ -47,21 +56,10 @@ bool lua_init(lua_State **ll, const char *filename)
 	return true;
 }
 
-bool blend_state_from_lua(const char *filename, const char *state_name, CComPtr<ID3D11BlendState>& blend_state)
+bool blend_state_from_lua(lua_State *l, const char *state_name, CComPtr<ID3D11BlendState>& blend_state)
 {
-	lua_State *l = NULL;
-	if (!lua_init(&l, filename))
-		return false;
-
-	if (lua_pcall(l, 0, 0, 0)) {
-		LOG_WARNING_LN(lua_tostring(l, -1));
-		return false;
-	}
-
 	// push state table on stack
 	lua_getglobal(l, state_name);
-
-	auto* d = Graphics::instance().device();
 
 #define CREATE_DESC(x) \
 	lua_pushinteger(l, x);  \
@@ -86,126 +84,137 @@ bool blend_state_from_lua(const char *filename, const char *state_name, CComPtr<
 	CREATE_DESC(6);
 	CREATE_DESC(7);
 
-	try {
-		blend_state.Attach(rt::D3D11::BlendDescription().
-			AlphaToCoverageEnable_(get_int_field(l, "AlphaToCoverageEnable")).
-			IndependentBlendEnable_(get_int_field(l, "IndependentBlendEnable")).
-			RenderTarget_(0, b0).
-			RenderTarget_(1, b1).
-			RenderTarget_(2, b2).
-			RenderTarget_(3, b3).
-			RenderTarget_(4, b4).
-			RenderTarget_(5, b5).
-			RenderTarget_(6, b6).
-			RenderTarget_(7, b7).
-			Create(d));
-	} catch (const rt::Exception&) {
-		return false;
-	}
+  blend_state.Attach(rt::D3D11::BlendDescription().
+    AlphaToCoverageEnable_(get_int_field(l, "AlphaToCoverageEnable")).
+    IndependentBlendEnable_(get_int_field(l, "IndependentBlendEnable")).
+    RenderTarget_(0, b0).
+    RenderTarget_(1, b1).
+    RenderTarget_(2, b2).
+    RenderTarget_(3, b3).
+    RenderTarget_(4, b4).
+    RenderTarget_(5, b5).
+    RenderTarget_(6, b6).
+    RenderTarget_(7, b7).
+    Create(Graphics::instance().device()));
 
-	lua_close(l);
-
-	return true;
+  return !!blend_state.p;
 }
 
-bool depth_stencil_state_from_lua(const char *filename, const char *state_name, CComPtr<ID3D11DepthStencilState>& dss)
+bool depth_stencil_state_from_lua(lua_State *l, const char *state_name, CComPtr<ID3D11DepthStencilState>& dss)
 {
-	lua_State *l = NULL;
-	if (!lua_init(&l, filename))
-		return false;
-
-	if (lua_pcall(l, 0, 0, 0)) {
-		LOG_WARNING_LN(lua_tostring(l, -1));
-		return false;
-	}
-
 	// push sampler table on stack
 	lua_getglobal(l, state_name);
 
-	auto* d = Graphics::instance().device();
+  dss.Attach(rt::D3D11::DepthStencilDescription().
+    DepthEnable_(get_int_field(l, "DepthEnable")).
+    DepthWriteMask_((D3D11_DEPTH_WRITE_MASK)get_int_field(l, "DepthWriteMask")).
+    DepthFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "DepthFunc")).
+    StencilEnable_(get_int_field(l, "StencilEnable")).
+    StencilReadMask_(get_int_field(l, "StencilReadMask")).
+    StencilWriteMask_(get_int_field(l, "StencilWriteMask")).
+    FrontStencilFailOp_((D3D11_STENCIL_OP)get_int_field(l, "FrontStencilFailOp")).
+    FrontStencilDepthFailOp_((D3D11_STENCIL_OP)get_int_field(l, "FrontStencilDepthFailOp")).
+    FrontStencilPassOp_((D3D11_STENCIL_OP)get_int_field(l, "FrontStencilPassOp")).
+    FrontStencilFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "FrontStencilFunc")).
+    BackStencilFailOp_((D3D11_STENCIL_OP)get_int_field(l, "BackStencilFailOp")).
+    BackStencilDepthFailOp_((D3D11_STENCIL_OP)get_int_field(l, "BackStencilDepthFailOp")).
+    BackStencilPassOp_((D3D11_STENCIL_OP)get_int_field(l, "BackStencilPassOp")).
+    BackStencilFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "BackStencilFunc")).
+    Create(Graphics::instance().device()));
 
-	try {
-		dss.Attach(rt::D3D11::DepthStencilDescription().
-			DepthEnable_(get_int_field(l, "DepthEnable")).
-			DepthWriteMask_((D3D11_DEPTH_WRITE_MASK)get_int_field(l, "DepthWriteMask")).
-			DepthFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "DepthFunc")).
-			StencilEnable_(get_int_field(l, "StencilEnable")).
-			StencilReadMask_(get_int_field(l, "StencilReadMask")).
-			StencilWriteMask_(get_int_field(l, "StencilWriteMask")).
-			FrontStencilFailOp_((D3D11_STENCIL_OP)get_int_field(l, "FrontStencilFailOp")).
-			FrontStencilDepthFailOp_((D3D11_STENCIL_OP)get_int_field(l, "FrontStencilDepthFailOp")).
-			FrontStencilPassOp_((D3D11_STENCIL_OP)get_int_field(l, "FrontStencilPassOp")).
-			FrontStencilFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "FrontStencilFunc")).
-			BackStencilFailOp_((D3D11_STENCIL_OP)get_int_field(l, "BackStencilFailOp")).
-			BackStencilDepthFailOp_((D3D11_STENCIL_OP)get_int_field(l, "BackStencilDepthFailOp")).
-			BackStencilPassOp_((D3D11_STENCIL_OP)get_int_field(l, "BackStencilPassOp")).
-			BackStencilFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "BackStencilFunc")).
-			Create(d));
-	} catch (const rt::Exception&) {
-		return false;
-	}
-
-	lua_close(l);
-
-	return true;
+  return !!dss.p;
 }
 
 // helper function to set a D3D11_SAMPLER_DESC
-bool sampler_from_lua(const char *filename, const char *sampler_name, CComPtr<ID3D11SamplerState>& sampler)
+bool sampler_from_lua(lua_State *l, const char *sampler_name, CComPtr<ID3D11SamplerState>& sampler)
 {
 	// TODO: add support for border
-	lua_State *l = NULL;
-	if (!lua_init(&l, filename))
-		return false;
 
-	if (lua_pcall(l, 0, 0, 0)) {
-		LOG_WARNING_LN(lua_tostring(l, -1));
-		return false;
-	}
- 
 	// push sampler table on stack
 	lua_getglobal(l, sampler_name);
+  sampler.Attach(rt::D3D11::SamplerDescription().
+    AddressU_((D3D11_TEXTURE_ADDRESS_MODE)get_int_field(l, "AddressU")).
+    AddressV_((D3D11_TEXTURE_ADDRESS_MODE)get_int_field(l, "AddressV")).
+    Filter_((D3D11_FILTER)get_int_field(l, "Filter")).
+    MipLODBias_(get_float_field(l, "MipLODBias")).
+    MaxAnisotropy_(get_int_field(l, "MaxAnisotropy")).
+    ComparisonFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "ComparisonFunc")).
+    //BorderColor_(0, )
+    MinLOD_(get_float_field(l, "MinLOD")).
+    MaxLOD_(get_float_field(l, "MaxLOD")).
+    Create(Graphics::instance().device()));
 
-	auto* d = Graphics::instance().device();
-
-	try {
-		sampler.Attach(rt::D3D11::SamplerDescription().
-			AddressU_((D3D11_TEXTURE_ADDRESS_MODE)get_int_field(l, "AddressU")).
-			AddressV_((D3D11_TEXTURE_ADDRESS_MODE)get_int_field(l, "AddressV")).
-			Filter_((D3D11_FILTER)get_int_field(l, "Filter")).
-			MipLODBias_(get_float_field(l, "MipLODBias")).
-			MaxAnisotropy_(get_int_field(l, "MaxAnisotropy")).
-			ComparisonFunc_((D3D11_COMPARISON_FUNC)get_int_field(l, "ComparisonFunc")).
-			//BorderColor_(0, )
-			MinLOD_(get_float_field(l, "MinLOD")).
-			MaxLOD_(get_float_field(l, "MaxLOD")).
-			Create(d));
-	} catch (const rt::Exception&) {
-		return false;
-	}
-
-	lua_close(l);
-	return true;
+  return !!sampler.p;
 }
 
-bool lua_load_states(const char *filename, const char *blend, const char *depth, const char *sampler, ID3D11BlendState **b, ID3D11DepthStencilState **d, ID3D11SamplerState **s)
+bool rasterizer_state_from_lua(lua_State *l, const char *state_name, CComPtr<ID3D11RasterizerState>& state)
 {
-	CComPtr<ID3D11BlendState> tmp_blend;
-	CComPtr<ID3D11SamplerState> tmp_sampler;
-	CComPtr<ID3D11DepthStencilState> tmp_dss;
+  lua_getglobal(l, state_name);
+  state.Attach(rt::D3D11::RasterizerDescription().
+    FillMode_((D3D11_FILL_MODE)get_int_field(l, "FillMode")).
+    CullMode_((D3D11_CULL_MODE)get_int_field(l, "CullMode")).
+    FrontCounterClockwise_(get_int_field(l, "FrontCounterClockwise")).
+    DepthBias_(get_int_field(l, "DepthBias")).
+    DepthBiasClamp_(get_float_field(l, "DepthBiasClamp")).
+    SlopeScaledDepthBias_(get_float_field(l, "SlopeScaledDepthBias")).
+    DepthClipEnable_(get_int_field(l, "DepthClipEnable")).
+    ScissorEnable_(get_int_field(l, "ScissorEnable")).
+    MultisampleEnable_(get_int_field(l, "MultisampleEnable")).
+    AntialiasedLineEnable_(get_int_field(l, "AntialiasedLineEnable")).
+    Create(Graphics::instance().device()));
 
-	if (blend && !blend_state_from_lua(filename, blend, tmp_blend))
-			return false;
+  return !!state.p;
+}
 
-	if (depth && !depth_stencil_state_from_lua(filename, depth, tmp_dss))
-		return false;
+bool lua_load_states(const char *filename, 
+  const char *blend, const char *depth, const char *sampler, const char *rasterizer, 
+  ID3D11BlendState **b, ID3D11DepthStencilState **d, ID3D11SamplerState **s, ID3D11RasterizerState **r)
+{
+  lua_State *l = NULL;
+  if (!lua_init(&l, filename))
+    return false;
 
-	if (sampler && !sampler_from_lua(filename, sampler, tmp_sampler))
-		return false;
+  SCOPED_OBJ([l](){lua_close(l); } );
 
-	if (b) *b = tmp_blend.Detach();
-	if (d) *d = tmp_dss.Detach();
-	if (s) *s = tmp_sampler.Detach();
+  if (lua_pcall(l, 0, 0, 0)) {
+    LOG_WARNING_LN(lua_tostring(l, -1));
+    return false;
+  }
+
+  lua_longjmp jmp;
+  jmp.previous = l->errorJmp;
+  jmp.status = 0;
+  l->errorJmp = &jmp;
+
+  int err;
+  if (!(err = setjmp(jmp.b))) {
+
+    CComPtr<ID3D11BlendState> tmp_blend;
+    CComPtr<ID3D11SamplerState> tmp_sampler;
+    CComPtr<ID3D11DepthStencilState> tmp_dss;
+    CComPtr<ID3D11RasterizerState> tmp_rast;
+
+    if (blend && !blend_state_from_lua(l, blend, tmp_blend))
+      return false;
+
+    if (depth && !depth_stencil_state_from_lua(l, depth, tmp_dss))
+      return false;
+
+    if (sampler && !sampler_from_lua(l, sampler, tmp_sampler))
+      return false;
+
+    if (rasterizer && !rasterizer_state_from_lua(l, rasterizer, tmp_rast))
+      return false;
+
+    if (b) *b = tmp_blend.Detach();
+    if (d) *d = tmp_dss.Detach();
+    if (s) *s = tmp_sampler.Detach();
+    if (r) *r = tmp_rast.Detach();
+
+  } else {
+    LOG_ERROR_LN("Error loading lua state: %s", filename);
+    return false;
+  }
 
 	return true;
 }

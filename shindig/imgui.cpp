@@ -38,7 +38,7 @@ bool IMGui::init()
   ID3D11Device *d = g.device();
 
 	RETURN_ON_FAIL_BOOL_E(_verts.create(10000));
-  RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/imgui_states.lua", System::kDirRelative), MakeDelegate(this, &IMGui::load_states), true));
+  RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("effects/imgui_states.lua", System::kDirRelative), MakeDelegate(this, &IMGui::load_states), true));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/imgui.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &IMGui::load_effect)));
 
 	RETURN_ON_FAIL_BOOL_E(_writer.init(System::instance().convert_path("data/fonts/arialbd.ttf", System::kDirRelative), 0, 0, 1000, 1000));
@@ -130,7 +130,7 @@ void IMGui::add_rect(int x, int y, int width, int height, const D3DXCOLOR& color
 bool IMGui::load_states(const string2& filename)
 {
   auto& s = System::instance();
-  if (!lua_load_states(filename, "default_blend", "default_dss", NULL, &_blend_state.p, &_dss.p, NULL))
+  if (!lua_load_states(filename, "default_blend", "default_dss", NULL, NULL, &_blend_state.p, &_dss.p, NULL, NULL))
     return false;
 
   return true;

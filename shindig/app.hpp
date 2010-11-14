@@ -120,7 +120,7 @@ public:
 	void add_key_down(const fnKeyDown& fn, bool add);
 	void add_key_up(const fnKeyUp& fn, bool add);
 
-  Camera *trackball();
+  Camera *camera();
 	TwBar *tweakbar() { return _tweakbar; }
 
   ADD_APP_STATE(bool, wireframe);
@@ -168,7 +168,9 @@ private:
 	std::vector< fnKeyUp > _keyup_callbacks;
 
 	FontWriter *_debug_writer;
+  int _cur_camera;
   Camera *_trackball;
+  Camera *_freefly;
   TwBar *_tweakbar;
   bool _draw_plane;
 };

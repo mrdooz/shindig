@@ -524,8 +524,8 @@ bool TestEffect6::render()
   context->OMSetBlendState(g.default_blend_state(), g.default_blend_factors(), g.default_sample_mask());
 
   D3DXMATRIX mtx;
-  const D3DXMATRIX view = App::instance().trackball()->view();
-  const D3DXMATRIX proj = App::instance().trackball()->proj();
+  const D3DXMATRIX view = App::instance().camera()->view();
+  const D3DXMATRIX proj = App::instance().camera()->proj();
   D3DXMatrixTranspose(&mtx, &(view * proj));
   _effect->set_vs_variable("mtx", mtx);
   _effect->set_cbuffer();

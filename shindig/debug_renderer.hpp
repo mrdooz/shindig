@@ -131,8 +131,9 @@ private:
   VertexFormats vertex_formats_;
 
 	CComPtr<ID3D11InputLayout> _layout;
-	CComPtr<ID3D11DepthStencilState> _dss;
+	CComPtr<ID3D11DepthStencilState> _depth_stencil_state;
 	CComPtr<ID3D11BlendState> _blend_state;
+  CComPtr<ID3D11RasterizerState> _rasterizer_state;
 	std::auto_ptr<EffectWrapper> _effect;
 
   std::vector<PosCol> _sphere_verts;

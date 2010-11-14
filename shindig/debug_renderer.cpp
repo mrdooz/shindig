@@ -99,7 +99,7 @@ bool DebugRenderer::init()
 
 	_font_writer.reset(new FontWriter());
 	RETURN_ON_FAIL_BOOL_E(_font_writer->init(s.convert_path("data/fonts/arial.ttf", System::kDirRelative), 0, 0, 600, 600));
-	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/debug_renderer_states.lua", System::kDirRelative), MakeDelegate(this, &DebugRenderer::load_states), true));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("effects/debug_renderer_states.lua", System::kDirRelative), MakeDelegate(this, &DebugRenderer::load_states), true));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_renderer.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &DebugRenderer::load_effect)));
   RETURN_ON_FAIL_BOOL_E(_verts.create(1000000));
 
@@ -247,7 +247,8 @@ void DebugRenderer::render()
   _effect->set_shaders(context);
 
   float blend_factors[] = {1, 1, 1, 1};
-  context->OMSetDepthStencilState(_dss, 0);
+  context->OMSetDepthStencilState(_depth_stencil_state, 0);
+  context->RSSetState(_rasterizer_state);
 
   float blend_factor[] = { 1, 1, 1, 1 };
   context->OMSetBlendState(_blend_state, blend_factor, 0xffffffff);
@@ -271,12 +272,9 @@ void DebugRenderer::render()
 
     if (cur.vertex_count_ > 0) {
       const UINT offset = 0;
-      //effect_->set_technique(cur.technique_name_);
-      //_device->IASetInputLayout(cur.input_layout_);
       ID3D11Buffer* bufs[] = { cur._vertex_buffer };
       uint32_t strides[] = { cur.vertex_size_ };
       set_vb(context, cur._vertex_buffer, cur.vertex_size_);
-      //_device->IASetVertexBuffers(0, 1, bufs, strides, &offset);
 
       typedef DrawCallsByTopology::iterator It;
       for (It i_top = cur.draw_calls_by_topology_.begin(), e_top = cur.draw_calls_by_topology_.end(); i_top != e_top; ++i_top) {
@@ -397,7 +395,7 @@ void DebugRenderer::end_debug_draw()
 bool DebugRenderer::load_states(const string2& filename)
 {
 	auto& s = System::instance();
-	if (!lua_load_states(filename, "default_blend", "default_dss", NULL, &_blend_state.p, &_dss.p, NULL))
+	if (!lua_load_states(filename, "bs", "dss", NULL, "rs", &_blend_state.p, &_depth_stencil_state.p, NULL, &_rasterizer_state.p))
 		return false;
 
 	return true;
@@ -437,8 +435,7 @@ void DebugRenderer::draw_plane(const Camera *cam, const D3DXPLANE& plane)
     // ok, this is strange..
   }
 
-
-  D3DXCOLOR col(0.1f, 0.1f, 0.1f, 1);
+  D3DXCOLOR col(plane.a * 0.1f, plane.b * 0.1f, plane.c * 0.1f, 1);
   struct {
     D3DXVECTOR3 pos; D3DXCOLOR col;
   } verts[6] = {

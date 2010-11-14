@@ -16,9 +16,6 @@ D3DXMATRIX mtx(const D3DXVECTOR3& m0, const D3DXVECTOR3& m1, const D3DXVECTOR3& 
 }
 
 Camera::Camera()
-//	: _pos(0,0,-100)
-//	, _lookat(0,0,0)
-//	, _up(0,1,0)
 	: _aspect(4/3.0f)
 	, _fov(deg_to_rad(45))
 	, _near_plane(0.1f)
@@ -38,7 +35,6 @@ D3DXMATRIX Camera::view() const
 	D3DXMATRIX mtx;
 	D3DXMatrixLookAtLH(&mtx, &_frame.e, &(_frame.e + _frame.z), &_frame.y);
 	return mtx;
-	//return mtx(_frame.x, _frame.y, _frame.z, -_frame.e);
 }
 
 D3DXMATRIX Camera::proj() const
@@ -81,34 +77,48 @@ void Camera::set_far_plane(float far_plane)
 }
 
 FreeFlyCamera::FreeFlyCamera()
-  : _phi(0)
-  , _theta()
 {
-  App::instance().add_key_up(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_up), true);
-  App::instance().add_key_down(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_down), true);
-  App::instance().add_mouse_move(fastdelegate::MakeDelegate(this, &FreeFlyCamera::mouse_move), true);
+  init();
+
+  App& app = App::instance();
+  app.add_key_up(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_up), true);
+  app.add_key_down(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_down), true);
+  app.add_mouse_move(fastdelegate::MakeDelegate(this, &FreeFlyCamera::mouse_move), true);
+
+  TwAddVarRO(app.tweakbar(), "freefly.x", TW_TYPE_DIR3F, &_frame.x, "label='x: ' axisx=x axisy=y axisz=-z");
+  TwAddVarRO(app.tweakbar(), "freefly.y", TW_TYPE_DIR3F, &_frame.y, "label='y: ' axisx=x axisy=y axisz=-z");
+  TwAddVarRO(app.tweakbar(), "freefly.z", TW_TYPE_DIR3F, &_frame.z, "label='z: ' axisx=x axisy=y axisz=-z");
+  TwAddVarRW(app.tweakbar(), "freefly.phi", TW_TYPE_FLOAT, &_phi, "label='phi:'");
+  TwAddVarRW(app.tweakbar(), "freefly.theta", TW_TYPE_FLOAT, &_theta, "label='theta:'");
+  TwAddButton(app.tweakbar(), "freefly.reset", &FreeFlyCamera::reset, (void *)this, "label='reset'");
+
   update();
 }
 
 FreeFlyCamera::~FreeFlyCamera()
 {
-  App::instance().add_mouse_move(fastdelegate::MakeDelegate(this, &FreeFlyCamera::mouse_move), false);
-  App::instance().add_key_down(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_down), false);
-  App::instance().add_key_up(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_up), false);
+  App& app = App::instance();
+  app.add_mouse_move(fastdelegate::MakeDelegate(this, &FreeFlyCamera::mouse_move), false);
+  app.add_key_down(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_down), false);
+  app.add_key_up(fastdelegate::MakeDelegate(this, &FreeFlyCamera::key_up), false);
+
+  TwRemoveVar(app.tweakbar(), "freefly.x");
+  TwRemoveVar(app.tweakbar(), "freefly.y");
+  TwRemoveVar(app.tweakbar(), "freefly.z");
+  TwRemoveVar(app.tweakbar(), "freefly.phi");
+  TwRemoveVar(app.tweakbar(), "freefly.theta");
+  TwRemoveVar(app.tweakbar(), "freefly.reset");
+}
+
+void FreeFlyCamera::init()
+{
+  _phi = 0;
+  _theta = 0;
+  _frame.e = D3DXVECTOR3(0,0,-100);
 }
 
 void FreeFlyCamera::update()
 {
-/*
-  Frame f;
-  f.e = _frame.e;
-  // calc the dir from the spherical coordinates
-  spherical_to_cart(_phi, _theta, 1, &f.z);
-  vec3_normalize(f.z);
-  f.x = vec3_normalize(vec3_cross(_frame.y, f.z));
-  f.y = vec3_normalize(vec3_cross(f.z, f.x));
-  _frame = f;
-*/
 	D3DXMATRIX mtx, mtx2;
 	D3DXMatrixRotationX(&mtx, _phi);
 	D3DXMatrixRotationY(&mtx2, _theta);
@@ -144,16 +154,17 @@ void FreeFlyCamera::key_down(const KeyInfo& k)
     _theta += (float)D3DX_PI/10;
     break;
 
-
   case 'A':
 		_frame.e += _frame.z;
-	//	_pos += dir;
 		break;
   case 'Z':
 		_frame.e -= _frame.z;
-		//_pos -= dir;
 		break;
 	}
+
+  _theta = fmodf(_theta, (float)D3DX_PI*2);
+  _phi = fmodf(_phi, (float)D3DX_PI*2);
+
   update();
 
 }
@@ -167,10 +178,16 @@ void FreeFlyCamera::mouse_move(const MouseInfo& m)
 {
   float speed = 0.01f;
   if (m.left_down) {
-    _theta -= speed * m.x_delta;
+    _theta += speed * m.x_delta;
     _phi += speed * m.y_delta;
     update();
   }
+}
+
+void FreeFlyCamera::reset(void *self)
+{
+  ((FreeFlyCamera *)self)->init();
+  ((FreeFlyCamera *)self)->update();
 }
 
 ObjectCamera::ObjectCamera()
@@ -251,6 +268,7 @@ void Trackball::on_mouse_move(const MouseInfo& m)
     const float angle = acosf(vec3_dot(vec3_normalize(v), vec3_normalize(_prev_pos)));
 
     D3DXQUATERNION q;
+    // we negate here because we want to rotate _into_ camera space
     D3DXQuaternionRotationAxis(&q, &axis, -angle);
     D3DXQuaternionMultiply(&_rot, &_rot, &q);
 		recalc();

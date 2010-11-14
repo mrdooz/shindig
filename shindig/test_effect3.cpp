@@ -63,7 +63,7 @@ bool TestEffect3::init()
 
 	
 
-	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/1.lua", System::kDirRelative), MakeDelegate(this, &TestEffect3::load_states), true));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("effects/test_effect3_states.lua", System::kDirRelative), MakeDelegate(this, &TestEffect3::load_states), true));
 
   return true;
 }
@@ -151,7 +151,7 @@ bool TestEffect3::load_mesh(const string2& filename)
 bool TestEffect3::load_states(const string2& filename)
 {
 	auto& s = System::instance();
-	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", NULL, &_blend_state.p, &_dss.p, &_sampler_state.p, NULL))
 		return false;
 
 	return true;

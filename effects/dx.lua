@@ -103,6 +103,16 @@ dx.D3D11_COLOR_WRITE_ENABLE_ALL	=
 	dx.D3D11_COLOR_WRITE_ENABLE_BLUE +
 	dx.D3D11_COLOR_WRITE_ENABLE_ALPHA
 
+-- enum D3D11_FILL_MODE
+dx.D3D11_FILL_WIREFRAME	= 2
+dx.D3D11_FILL_SOLID = 3
+
+-- enum D3D11_CULL_MODE
+dx.D3D11_CULL_NONE	= 1
+dx.D3D11_CULL_FRONT	= 2
+dx.D3D11_CULL_BACK	= 3
+
+
 local FLT_MAX = 3.402823466e+38
 local D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT = 8
 
@@ -126,7 +136,7 @@ local function default_blend_state()
 end
 
 -- create default depth stencil state
-local function default_dss()
+local function default_depth_stencil_state()
 	d = {}
 	d["DepthEnable"] = 0
 	d["DepthWriteMask"] = dx.D3D11_DEPTH_WRITE_MASK_ALL
@@ -149,7 +159,7 @@ local function default_dss()
 end
 
 -- create a default sampler
-local function default_sampler()
+local function default_sampler_state()
 	s = {}
 	s["Filter"] = dx.D3D11_FILTER_MIN_MAG_MIP_POINT
 	s["AddressU"] = dx.D3D11_TEXTURE_ADDRESS_CLAMP
@@ -164,8 +174,25 @@ local function default_sampler()
 	return s
 end
 
+local function default_rasterizer_state()
+	r = {}
+	r["FillMode"] = dx.D3D11_FILL_SOLID
+	r["CullMode"] = dx.D3D11_CULL_BACK
+	r["FrontCounterClockwise"] = 0
+	r["DepthBias"] = 0 -- D3D11_DEFAULT_DEPTH_BIAS_CLAMP
+	r["DepthBiasClamp"] = 0 -- D3D11_DEFAULT_DEPTH_BIAS_CLAMP
+	r["SlopeScaledDepthBias"] = 0 -- D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS
+	r["DepthClipEnable"] = 1
+	r["ScissorEnable"] = 0
+	r["MultisampleEnable"] = 0
+	r["AntialiasedLineEnable"] = 0
+	return r
+end
 
-dx.default_sampler = default_sampler
-dx.default_blend = default_blend_state
-dx.default_dss = default_dss
+
+
+dx.sampler_state = default_sampler_state()
+dx.blend_state = default_blend_state()
+dx.depth_stencil_state = default_depth_stencil_state()
+dx.rasterizer_state = default_rasterizer_state()
 

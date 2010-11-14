@@ -418,7 +418,7 @@ bool FontWriter::init(const string2& font_name, int top, int left, int width, in
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/debug_writer2.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
 		MakeDelegate(this, &FontWriter::load_effect)));
 
-	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/debug_writer.lua", System::kDirRelative), MakeDelegate(this, &FontWriter::load_states), true));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("effects/debug_writer2_states.lua", System::kDirRelative), MakeDelegate(this, &FontWriter::load_states), true));
 
 	return true;
 }
@@ -533,7 +533,7 @@ void FontWriter::load_effect(EffectWrapper *effect)
 bool FontWriter::load_states(const string2& filename)
 {
 	auto& s = System::instance();
-	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", NULL, &_blend_state.p, &_dss.p, &_sampler_state.p, NULL))
 		return false;
 
 	return true;

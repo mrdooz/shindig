@@ -34,6 +34,8 @@ App::App()
   , _state_wireframe("wireframe", false)
   , _dbg_message_count(0)
   , _trackball(nullptr)
+  , _freefly(nullptr)
+  , _cur_camera(1)
   , _draw_plane(true)
 {
 
@@ -52,9 +54,10 @@ App& App::instance()
 
 bool App::init(HINSTANCE hinstance)
 {
+  
 	_hinstance = hinstance;
-  _width = 800;
-  _height = 600;
+  _width = GetSystemMetrics(SM_CXSCREEN);
+  _height = GetSystemMetrics(SM_CYSCREEN);
   create_window();
 
 	Graphics& graphics = Graphics::instance();
@@ -82,6 +85,7 @@ bool App::init(HINSTANCE hinstance)
 	_test_effect->init();
 
   _trackball = new Trackball();
+  _freefly = new FreeFlyCamera();
 
   init_menu();
 
@@ -118,6 +122,7 @@ bool App::close()
 
   SAFE_DELETE(_debug_writer);
   SAFE_DELETE(_trackball);
+  SAFE_DELETE(_freefly);
 
   RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
   RETURN_ON_FAIL_BOOL_E(System::instance().close());
@@ -160,7 +165,8 @@ bool App::create_window()
 
   RETURN_ON_FAIL_BOOL(RegisterClassExA(&wcex), LOG_WARNING_LN);
 
-  const uint32_t window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
+  //const UINT window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
+  const UINT window_style = WS_VISIBLE | WS_POPUP;
 
   _hwnd = CreateWindowA(kClassName, "shindig - magnus österlind - 2010", window_style,
     CW_USEDEFAULT, CW_USEDEFAULT, _width, _height, NULL, NULL,
@@ -259,8 +265,8 @@ void App::run()
 
       if (_draw_plane) {
         D3DXPLANE plane;
-        D3DXPlaneFromPointNormal(&plane, &D3DXVECTOR3(0,100,0), &D3DXVECTOR3(0,0,-1));
-        DebugRenderer::instance().draw_plane(_trackball, plane);
+        D3DXPlaneFromPointNormal(&plane, &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
+        DebugRenderer::instance().draw_plane(camera(), plane);
       }
 
 
@@ -466,7 +472,12 @@ void App::add_dbg_message(const char* fmt, ...)
 }
 
 
-Camera *App::trackball()
+Camera *App::camera()
 {
-  return _trackball;
+  switch (_cur_camera) {
+  case 0 : return _trackball;
+  case 1 : return _freefly;
+  }
+  return NULL;
 }
+

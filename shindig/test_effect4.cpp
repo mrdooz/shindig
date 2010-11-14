@@ -42,7 +42,7 @@ bool TestEffect4::init()
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/test_effect4.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
     MakeDelegate(this, &TestEffect4::effect_loaded)));
 
-	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("data/scripts/test_effect4.lua", System::kDirRelative), MakeDelegate(this, &TestEffect4::load_states), true));
+	RETURN_ON_FAIL_BOOL_E(s.add_file_changed(s.convert_path("effects/test_effect4_states.lua", System::kDirRelative), MakeDelegate(this, &TestEffect4::load_states), true));
 
   string2 f = s.convert_path("data/textures/quad.png", System::kDirDropBox);
   if (file_exists(f))
@@ -133,7 +133,7 @@ bool TestEffect4::render()
 bool TestEffect4::load_states(const string2& filename)
 {
 	auto& s = System::instance();
-	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", &_blend_state.p, &_dss.p, &_sampler_state.p))
+	if (!lua_load_states(filename, "default_blend", "default_dss", "default_sampler", NULL, &_blend_state.p, &_dss.p, &_sampler_state.p, NULL))
 		return false;
 
 	return true;
