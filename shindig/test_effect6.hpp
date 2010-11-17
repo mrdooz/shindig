@@ -29,14 +29,14 @@ private:
   void effect_loaded(EffectWrapper *effect);
 	bool load_states(const string2& filename);
 
-  DynamicVb<D3DXVECTOR3> _verts;
+  std::vector<D3DXVECTOR3> _points;
+  AppendableVb<PosNormal> _verts;
   CComPtr<ID3D11InputLayout> _layout;
   std::auto_ptr<EffectWrapper> _effect;
   int _vertex_count;
 
   D3DXVECTOR3 _up;
   D3DXVECTOR3 _cur_top;
-  std::vector<D3DXVECTOR3> _points;
   float _last_update;
   float _angle;
 };

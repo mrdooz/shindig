@@ -181,6 +181,8 @@ bool lua_load_states(const char *filename,
     return false;
   }
 
+  // XXX: To get this to work, the lua_longjmp struct must be moved from ldo.c to ldo.h. There
+  // has to be a cleaner way to do this..
   lua_longjmp jmp;
   jmp.previous = l->errorJmp;
   jmp.status = 0;

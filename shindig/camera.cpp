@@ -150,8 +150,16 @@ void FreeFlyCamera::key_down(const KeyInfo& k)
   case VK_LEFT:
     _theta -= (float)D3DX_PI/10;
     break;
-  case VK_RIGHT:
-    _theta += (float)D3DX_PI/10;
+  case VK_RIGHT: 
+    _theta += (float)D3DX_PI/10; 
+    break;
+
+  case 'A':
+    _frame.e -= _frame.x; 
+    break;
+
+  case 'D':
+    _frame.e += _frame.x; 
     break;
 
   case 'W':

@@ -369,29 +369,31 @@ struct Bezier
 
 void TestEffect6::extrude(const Bezier& bezier)
 {
-  int splits = 20;
+  const int splits = 20;
   float inc = 1 / (float)(splits - 1);
 
   const uint32_t spins = 20;
 
   bool first_point = true;
 
-  D3DXVECTOR3 binormal;
   D3DXVECTOR3 prev_binormal;
   D3DXVECTOR3 prev_tangent;
-  D3DXVECTOR3 tangent;
-  D3DXVECTOR3 normal;
   D3DXVECTOR3 prev_normal;
 
-  D3DXVECTOR3 *vtx = _verts.map();
 
   const int32_t num_knots = bezier.curves.size();
   float t = 0;
+
+  vector<PosNormal> verts;
+  verts.reserve((num_knots-1)*splits*spins);
+
   for (int32_t i = 0; i < num_knots-1; ++i) {
     for (int32_t j = 0; j < splits; ++j, t += inc) {
       D3DXVECTOR3 cur = bezier.interpolate(t);
-      tangent = vec3_normalize(bezier.diff1(t));
+      D3DXVECTOR3 tangent = vec3_normalize(bezier.diff1(t));
 
+      D3DXVECTOR3 binormal;
+      D3DXVECTOR3 normal;
       if (first_point) {
         first_point = false;
         normal = vec3_cross(tangent, bezier.diff2(t));
@@ -405,7 +407,8 @@ void TestEffect6::extrude(const Bezier& bezier)
       }
 
       prev_binormal = binormal;
-      prev_tangent = tangent;
+      //prev_tangent = tangent;
+      //prev_normal = normal;
 
       const float delta_angle = 2 * (float)D3DX_PI / (float)(spins - 1);
       float cur_angle = 0;
@@ -419,60 +422,28 @@ void TestEffect6::extrude(const Bezier& bezier)
         D3DXMatrixRotationAxis(&mtx_rot2, &tangent, cur_angle);
         D3DXVec3TransformCoord(&tmp, &scaled_s, &mtx_rot2);
         D3DXVec3TransformNormal(&tmp2, &normal, &mtx_rot2);
-        *vtx++ = tmp + cur;
-        //vb->add(tmp + cur, tmp2);
+        verts.push_back(PosNormal(tmp + cur, normal));
       }
-
-/*
-      if (last_knot) {
-        scaled_s *= ((splits_-1) - j) / (float)splits_;
-      }
-
-      for (uint32_t k = 0; k < spins; ++k, cur_angle += delta_angle) {
-        D3DXMatrixRotationAxis(&mtx_rot2, &tangent, cur_angle);
-        D3DXVec3TransformCoord(&tmp, &scaled_s, &mtx_rot2);
-        D3DXVec3TransformNormal(&tmp2, &normal, &mtx_rot2);
-
-        vb->add(tmp + cur, tmp2);
-      }
-*/
     }
   }
-/*
-  ib->start_frame();
-  for (uint32_t i = 0; i < vb->vertex_count() / spins  - 1; ++i) {
-    for (uint32_t j = 0; j < spins; ++j) {
 
-      // d-c
-      // | |
-      // b-a
-      const uint32_t next_j = (j + 1) % spins;
-      const uint32_t a = i*spins + j;
-      const uint32_t b = i*spins + next_j;
-      const uint32_t c = (i+1)*spins + j;
-      const uint32_t d = (i+1)*spins + next_j;
+  PosNormal *vtx = _verts.map();
+  const int segments = verts.size() / spins - 1;
+  for (int i = 0; i < segments; ++i) {
+    for (int j = 0; j < spins; ++j) {
+      const PosNormal& v0 = verts[(i+0)*spins+j];
+      const PosNormal& v1 = verts[(i+1)*spins+j];
+      const PosNormal& v2 = verts[(i+1)*spins+((j+1)%spins)];
+      const PosNormal& v3 = verts[(i+0)*spins+((j+1)%spins)];
+      *vtx++ = v0;
+      *vtx++ = v1;
+      *vtx++ = v2;
 
-      // a, b, c
-      ib->add(a);
-      ib->add(b);
-      ib->add(c);
-
-      // b, d, c
-      ib->add(b);
-      ib->add(d);
-      ib->add(c);
+      *vtx++ = v0;
+      *vtx++ = v2;
+      *vtx++ = v3;
     }
   }
-  ib->end_frame();
-
-  vb->end_frame();
-  vb->set_input_layout();
-  vb->set_vertex_buffer();
-  ib->set_index_buffer();
-  g_d3d_device->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  g_d3d_device->DrawIndexed(ib->index_count(), 0, 0);
-*/
-
   _verts.unmap(vtx);
 }
 
@@ -484,14 +455,6 @@ TestEffect6::TestEffect6()
   , _cur_top(0,0,0)
   , _angle(0)
 {
-  D3DXVECTOR3 pts[] = {
-    D3DXVECTOR3(0,0,0),
-    D3DXVECTOR3(0,20,0),
-    D3DXVECTOR3(0,40,0),
-    D3DXVECTOR3(0,60,0),
-  };
-
-  //bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(pts, ELEMS_IN_ARRAY(pts)));
 }
 
 TestEffect6::~TestEffect6()
@@ -503,8 +466,8 @@ bool TestEffect6::init()
   auto& s = System::instance();
   auto& r = ResourceManager::instance();
 
-  RETURN_ON_FAIL_BOOL_E(_verts.create(20*1024));
-  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/simple.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect6::effect_loaded)));
+  RETURN_ON_FAIL_BOOL_E(_verts.create(1000000));
+  RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/test_effect6.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect6::effect_loaded)));
   App::instance().add_update_callback(MakeDelegate(this, &TestEffect6::update), true);
   return true;
 }
@@ -522,10 +485,9 @@ bool TestEffect6::render()
   ID3D11Device* device = g.device();
   ID3D11DeviceContext* context = g.context();
 
-  extrude(bezier);
-
-  context->OMSetDepthStencilState(g.default_dss(), g.default_stencil_ref());
+  context->OMSetDepthStencilState(g.default_depth_stencil_state(), g.default_stencil_ref());
   context->OMSetBlendState(g.default_blend_state(), g.default_blend_factors(), g.default_sample_mask());
+  context->RSSetState(g.default_rasterizer_state());
 
   D3DXMATRIX mtx;
   const D3DXMATRIX view = App::instance().camera()->view();
@@ -538,7 +500,7 @@ bool TestEffect6::render()
   _effect->set_shaders(context);
 
   context->IASetInputLayout(_layout);
-  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   set_vb(context, _verts.get(), _verts.stride);
   context->Draw(_verts.num_verts(), 0);
@@ -555,7 +517,8 @@ void TestEffect6::effect_loaded(EffectWrapper *effect)
 {
   _effect.reset(effect);
   InputDesc(). 
-    add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0).
+    add("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0).
+    add("NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12).
     create(_layout, _effect.get());
 }
 
@@ -572,16 +535,17 @@ void TestEffect6::update(float t, float dt, int num_ticks, float a)
       // each point is selected as a random point on the circle around
       // the current normal
 
-      D3DXVECTOR3 pt = _cur_top + /*len * _up + */D3DXVECTOR3(0.1f, 0, 0);
+      D3DXVECTOR3 pt = _cur_top + len * _up + D3DXVECTOR3(0.1f, 0, 0);
       _angle += randf(-(float)D3DX_PI/10, (float)D3DX_PI/10);
       D3DXMatrixRotationAxis(&mtx, &_up, _angle);
       D3DXVec3TransformCoord(&pt, &pt, &mtx);
-      pt += len * _up;
       _points.push_back(pt);
       _up = vec3_normalize(pt - _cur_top);
       _cur_top = pt;
     }
-    bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(_points));
 
+    int n = min(6, _points.size());
+    bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(&_points[_points.size() - n], n));
+    extrude(bezier);
   }
 }

@@ -139,7 +139,6 @@
     <ClInclude Include="debug_renderer.hpp" />
     <ClInclude Include="font_writer.hpp" />
     <ClInclude Include="demo.hpp" />
-    <ClInclude Include="dynamic_vb.hpp" />
     <ClInclude Include="effect_base.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="imgui.hpp" />
