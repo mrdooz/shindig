@@ -81,3 +81,5 @@ extern "C"
 #include <Shlguid.h>
 #include <Shlobj.h>
 #include <direct.h>
+
+#include <WS2tcpip.h>

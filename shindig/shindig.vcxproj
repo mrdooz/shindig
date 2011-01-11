@@ -107,10 +107,29 @@
     <ClCompile Include="demo.cpp" />
     <ClCompile Include="geometry.cpp" />
     <ClCompile Include="imgui.cpp" />
+    <ClCompile Include="iprof\prof_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="iprof\prof_gather.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="iprof\prof_process.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="iprof\prof_win32.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="lua_utils.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="mesh2.cpp" />
+    <ClCompile Include="network.cpp" />
     <ClCompile Include="obj_loader.cpp" />
     <ClCompile Include="redux_loader.cpp" />
     <ClCompile Include="render_target.cpp" />
@@ -142,10 +161,15 @@
     <ClInclude Include="effect_base.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="imgui.hpp" />
+    <ClInclude Include="iprof\prof.h" />
+    <ClInclude Include="iprof\prof_gather.h" />
+    <ClInclude Include="iprof\prof_internal.h" />
+    <ClInclude Include="iprof\prof_win32.h" />
     <ClInclude Include="lua_utils.hpp" />
     <ClInclude Include="material.hpp" />
     <ClInclude Include="mesh.hpp" />
     <ClInclude Include="mesh2.hpp" />
+    <ClInclude Include="network.hpp" />
     <ClInclude Include="object.hpp" />
     <ClInclude Include="obj_loader.hpp" />
     <ClInclude Include="redux_loader.hpp" />

@@ -49,11 +49,17 @@ private:
 	typedef std::vector<D3DXVECTOR3> Normals;
 	typedef std::vector<D3DXVECTOR2> TexCoords;
   typedef std::vector<Face> Faces;
-  typedef std::map<int, std::vector<int> > VertsByFace;
+  typedef std::hash_map<int, std::vector<int> > VertsByFace;
 
 	struct Group
 	{
-		Group(const string2& name) : name(name), vert_ofs(0), normal_ofs(0), tex_ofs(0), face_ofs(0), face_count(0) {}
+		Group(const string2& name) : name(name), vert_ofs(0), normal_ofs(0), tex_ofs(0), face_ofs(0), face_count(0) 
+    {
+      verts.reserve(10000);
+      normals.reserve(10000);
+      tex_coords.reserve(10000);
+      faces.reserve(10000);
+    }
 		string2 name;
 		string2 material_name;
 		Verts verts;

@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="iprof">
+      <UniqueIdentifier>{79d3d02f-48c6-4896-9add-75ec40f30325}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp">
@@ -98,6 +101,21 @@
     </ClCompile>
     <ClCompile Include="test_effect6.cpp">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iprof\prof_draw.cpp">
+      <Filter>iprof</Filter>
+    </ClCompile>
+    <ClCompile Include="iprof\prof_gather.cpp">
+      <Filter>iprof</Filter>
+    </ClCompile>
+    <ClCompile Include="iprof\prof_process.cpp">
+      <Filter>iprof</Filter>
+    </ClCompile>
+    <ClCompile Include="iprof\prof_win32.cpp">
+      <Filter>iprof</Filter>
+    </ClCompile>
+    <ClCompile Include="network.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -195,6 +213,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="test_effect6.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iprof\prof.h">
+      <Filter>iprof</Filter>
+    </ClInclude>
+    <ClInclude Include="iprof\prof_gather.h">
+      <Filter>iprof</Filter>
+    </ClInclude>
+    <ClInclude Include="iprof\prof_internal.h">
+      <Filter>iprof</Filter>
+    </ClInclude>
+    <ClInclude Include="iprof\prof_win32.h">
+      <Filter>iprof</Filter>
+    </ClInclude>
+    <ClInclude Include="network.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

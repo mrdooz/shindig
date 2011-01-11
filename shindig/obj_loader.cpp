@@ -3,6 +3,9 @@
 #include "mesh2.hpp"
 #include "geometry.hpp"
 #include "material.hpp"
+#include <celsus/Profiler.hpp>
+
+using namespace std;
 
 void ObjLoader::handle_face_transition(bool *reading_face_data, Groups *groups, Group **cur_group, int running_face_idx, int running_vert_idx, int running_normal_idx, int running_tex_idx)
 {
@@ -15,10 +18,6 @@ void ObjLoader::handle_face_transition(bool *reading_face_data, Groups *groups, 
 		g->vert_ofs = running_vert_idx;
 		g->normal_ofs = running_normal_idx;
 		g->tex_ofs = running_tex_idx;
-		g->verts.reserve(10000);
-		g->normals.reserve(10000);
-		g->tex_coords.reserve(10000);
-		g->faces.reserve(10000);
 	}
 }
 
@@ -35,7 +34,7 @@ bool ObjLoader::load_binary_file(const char *filename, Geometries *geometries)
 
 		Geometry *g = new Geometry();
 		Mesh2 *m = new Mesh2();
-		std::vector<uint8_t> verts, indices;
+		vector<uint8_t> verts, indices;
 		r.read_vector(&verts);
 		r.read_vector(&indices);
 		r.read(&g->_sphere.radius);
@@ -79,7 +78,7 @@ void ObjLoader::calc_bounding_sphere(const Verts& verts, float *radius, D3DXVECT
 	// float max distance from center
 	float dist = D3DXVec3LengthSq(&(verts[0] - c));
 	for (int i = 1; i < (int)verts.size(); ++i) 
-		dist = std::max<float>(dist, D3DXVec3LengthSq(&(verts[i] - c)));
+		dist = max<float>(dist, D3DXVec3LengthSq(&(verts[i] - c)));
 
 	*radius = sqrtf(dist);
 	*center = c;
@@ -97,7 +96,7 @@ bool ObjLoader::load_from_file(const char *filename, Geometries *geometries)
 	if (!parse_file(filename, &groups)) {
 		LOG_WARNING_LN("Error parsing file: %s", filename);
 		return false;
-		}
+  }
 
 	// write binary header
 	FileWriter w;
@@ -121,16 +120,16 @@ bool ObjLoader::load_from_file(const char *filename, Geometries *geometries)
 		float radius;
 		calc_bounding_sphere(verts, &radius, &center);
 
-		std::vector<D3DXVECTOR3> face_normals;
-		std::vector<D3DXVECTOR3> vertex_normals;
+		vector<D3DXVECTOR3> face_normals;
+		vector<D3DXVECTOR3> vertex_normals;
 
 		// if we have vertex normals in the face data, we can skip these
 		// calculations, but we have to create new vertices instead
 		if (faces[0].na != -1) {
 			const bool has_uvs = faces[0].ta != -1;
-			std::vector<PosNormalTex> new_verts;
-			std::vector<int32_t> new_indices;
-			typedef std::map<int64_t, int32_t> VertRemap;
+			vector<PosNormalTex> new_verts;
+			vector<int32_t> new_indices;
+			typedef hash_map<int64_t, int32_t> VertRemap;
 			VertRemap vert_remap;	// maps the vertex id to an index in the new_vertices list
 			// we use a 64 bit index to identify the verts, so we can max have 2^21 verts
 			if (verts.size() > 1 << 21)
@@ -150,7 +149,7 @@ bool ObjLoader::load_from_file(const char *filename, Geometries *geometries)
 						// insert new vertex
 						idx = new_verts.size();
 						new_verts.push_back(PosNormalTex(cur->verts[v], cur->normals[n], has_uvs ? cur->tex_coords[t] : D3DXVECTOR2(0,0)));
-						vert_remap.insert(std::make_pair(id, idx));
+						vert_remap.insert(make_pair(id, idx));
 					} else {
 						idx = it->second;
 					}
@@ -271,7 +270,7 @@ bool ObjLoader::load_from_file(const char *filename, Geometries *geometries)
   return true;
 }
 
-bool ObjLoader::load_material_file(const char *filename, std::vector<Material *> *materials)
+bool ObjLoader::load_material_file(const char *filename, vector<Material *> *materials)
 {
 	TextScanner scanner;
 	if (!scanner.load(filename))
@@ -307,19 +306,20 @@ bool ObjLoader::load_material_file(const char *filename, std::vector<Material *>
 				if (s == float_values[i]) {
 					if (!scanner.read_float(&f))
 						break;
-					cur->float_values.insert(std::make_pair(s, f));
+					cur->float_values.insert(make_pair(s, f));
 					found = true;
 				}
 			}
 
 			// float3
-			std::vector<float> floats;
+      float floats[10];
 			for (int i = 0; !found && i < ELEMS_IN_ARRAY(float3_values); ++i) {
 				if (s == float3_values[i]) {
-					if (!scanner.read_floats(&floats))
+          int count = 10;
+					if (!scanner.read_floats(floats, &count))
 						break;
-					if (floats.size() == 3) {
-						cur->float3_values.insert(std::make_pair(s, D3DXVECTOR3(floats[0], floats[1], floats[2])));
+					if (count == 3) {
+						cur->float3_values.insert(make_pair(s, D3DXVECTOR3(floats[0], floats[1], floats[2])));
 						found = true;
 					}
 				}
@@ -331,7 +331,7 @@ bool ObjLoader::load_material_file(const char *filename, std::vector<Material *>
 					string2 val;
 					if (!scanner.read_string(&val))
 						break;
-					cur->string_values.insert(std::make_pair(s, val));
+					cur->string_values.insert(make_pair(s, val));
 					found = true;
 				}
 			}
@@ -374,6 +374,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 
 */
 
+  SCOPED_FUNC_PROFILE();
 
   TextScanner scanner;
   if (!scanner.load(filename)) {
@@ -401,18 +402,20 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 		if (s == "vn") {
 			handle_face_transition(&reading_face_data, groups, &cur_group, running_face_idx, running_vert_idx, running_normal_idx, running_tex_idx);
 
-			std::vector<float> f;
-			scanner.read_floats(&f);
-			if (f.size() != 3)
+      float f[3];
+      int cnt = 3;
+			scanner.read_floats(f, &cnt);
+			if (cnt != 3)
 				return false;
 			cur_group->normals.push_back(D3DXVECTOR3(f[0], f[1], -f[2]));
 			running_normal_idx++;
 
 		} else if (s == "vt") {
 			handle_face_transition(&reading_face_data, groups, &cur_group, running_face_idx, running_vert_idx, running_normal_idx, running_tex_idx);
-			std::vector<float> t;
-			scanner.read_floats(&t);
-			if (t.size() != 3)
+      float t[3];
+      int cnt = 3;
+			scanner.read_floats(t, &cnt);
+			if (cnt != 3)
 				return false;
 			cur_group->tex_coords.push_back(D3DXVECTOR2(t[0], t[1]));
 			running_tex_idx++;
@@ -432,10 +435,11 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 		} else if (s == "v") {
 			handle_face_transition(&reading_face_data, groups, &cur_group, running_face_idx, running_vert_idx, running_normal_idx, running_tex_idx);
 
-			std::vector<float> f;
-			scanner.read_floats(&f);
-			if (f.size() != 3)
-				return false;
+      float f[3];
+      int cnt = 3;
+      scanner.read_floats(f, &cnt);
+      if (cnt != 3)
+        return false;
 			cur_group->verts.push_back(D3DXVECTOR3(f[0], f[1], -f[2]));
 			running_vert_idx++;
 
@@ -446,13 +450,14 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 			// f v1/vt1
 			// f v1/vt1/vn1
 			// f v1//vn1
-			std::vector<int> tmp;
-			std::vector<int> v;
-			std::vector<int> t;
-			std::vector<int> n;
+			vector<int> v;
+			vector<int> t;
+			vector<int> n;
 			int t2;
-			while (scanner.read_ints(&tmp)) {
-				if (tmp.size() == 1) {
+      int tmp[10];
+      int cnt = 10;
+			while (scanner.read_ints(tmp, &cnt)) {
+				if (cnt == 1) {
 					// face isn't just a list of vertex, but texcoord and normals too, so we have to parse
 					// these guys
 					v.push_back(tmp[0]);
@@ -481,7 +486,7 @@ bool ObjLoader::parse_file(const char *filename, Groups *groups)
 
 				} else {
 					// face is a nice list of space seperated indices
-					v = tmp;
+          copy(tmp, &tmp[cnt], back_inserter(v));
 					break;
 				}
 			}

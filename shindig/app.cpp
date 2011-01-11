@@ -11,6 +11,10 @@
 #include "font_writer.hpp"
 #include "debug_menu.hpp"
 #include "debug_renderer.hpp"
+#include <celsus/Profiler.hpp>
+#include "iprof/prof.h"
+#include "iprof/prof_internal.h"
+#include "network.hpp"
 
 
 App* App::_instance = nullptr;
@@ -54,7 +58,6 @@ App& App::instance()
 
 bool App::init(HINSTANCE hinstance)
 {
-  
 	_hinstance = hinstance;
   _width = GetSystemMetrics(SM_CXSCREEN);
   _height = GetSystemMetrics(SM_CYSCREEN);
@@ -80,6 +83,7 @@ bool App::init(HINSTANCE hinstance)
 
   RETURN_ON_FAIL_BOOL_E(IMGui::instance().init());
   RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().init());
+  RETURN_ON_FAIL_BOOL_E(Network::instance().init());
 
 	_test_effect = new TestEffect6();
 	_test_effect->init();
@@ -89,6 +93,7 @@ bool App::init(HINSTANCE hinstance)
 
   init_menu();
 
+  Profiler::instance().print();
 	return true;
 }
 
@@ -115,6 +120,7 @@ bool App::close()
     delete _test_effect;
   }
 
+  RETURN_ON_FAIL_BOOL_E(Network::instance().close());
   RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().close());
   RETURN_ON_FAIL_BOOL_E(IMGui::instance().close());
 
@@ -263,7 +269,11 @@ void App::run()
         running_time += num_ticks * dt;
         accumulator -= num_ticks * dt;
 
-				_test_effect->render();
+        {
+          //Prof_Zone(render);
+          _test_effect->render();
+
+        }
 			}
 
       if (_draw_plane) {
@@ -286,6 +296,10 @@ void App::run()
 			IMGui::instance().render();
 
 			TwDraw();
+
+      Prof_update(1);
+
+      Prof_Report *pob = Prof_create_report();
 
 			graphics.present();
 

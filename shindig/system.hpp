@@ -45,6 +45,7 @@ public:
 
   const string2& dropbox() const { return _dropbox; }
   const string2& working_dir() const { return _working_dir; }
+  const string2& debug_host() const { return _debug_host; }
 
 	void add_custom_dir(const string2& dir);
 
@@ -90,6 +91,7 @@ private:
   string2 _my_documents;
   string2 _dropbox;
   string2 _working_dir;
+  string2 _debug_host;
 
 	uint32_t _time_idx;
   std::vector<uint32_t>  _callback_times;

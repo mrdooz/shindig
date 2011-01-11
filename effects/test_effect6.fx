@@ -1,6 +1,6 @@
 matrix mtx;
 
-float3 light = float3(0,200,0);
+float3 light = float3(0,100,100);
 
 struct vsInput
 {

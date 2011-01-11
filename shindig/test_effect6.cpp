@@ -220,152 +220,129 @@ void gaussian_solve(const Matrix2d<T>& m, const Matrix2d<T>& a, Matrix2d<T> *x)
   gaussian_solve(c, &x);
 }
 
-// wrapper around a <data,size> tuple
-template<typename T>
-class AsArray
+Bezier Bezier::from_points(AsArray<D3DXVECTOR3> data_points)
 {
-public:
-  AsArray(T* data, int n) : _data(data), _n(n) {}
-  AsArray(std::vector<T>& v) : _data(&v[0]), _n((int)v.size()) {}
-  int size() const { return _n; }
-  T *data() { return _data; }
-private:
-  T *_data;
-  int _n;
-};
+  assert(data_points.size() >= 4);
+  D3DXVECTOR3 *s = data_points.data();
 
-struct Bezier
-{
-  static Bezier from_points(AsArray<D3DXVECTOR3> points)
-  {
-    assert(points.size() >= 4);
+  // S are data points. We want to calculate the control
+  // points (B) that give us a Bezier curve that passes through S
 
-    // Create a Bezier curve that passes through all the
-    // given points.
+  // Create a B-spline, and determine the control points
+  // that pass throught the given points
 
-    // Create a B-spline, and determine the control points
-    // that pass throught the given points
+  Matrix2d<float> m;
+  const int size = data_points.size() - 2;
+  m.init(size, size+1);
 
-    Matrix2d<float> m;
-    const int size = points.size() - 2;
-    m.init(size, size+1);
+  vector<D3DXVECTOR3> b;
+  b.resize(data_points.size());
+  const int back = data_points.size()-1;
+  b[0] = s[0];
+  b[back] = s[back];
 
-    D3DXVECTOR3 *pts = (D3DXVECTOR3 *)_alloca(sizeof(D3DXVECTOR3) * points.size());
-    D3DXVECTOR3 *d = points.data();
-    pts[0] = d[0];
-    pts[points.size()-1] = d[points.size()-1];
+  // solve for each coordinate
+  for (int c = 0; c < 3; ++c) {
 
-    // solve for each coordinate
-    for (int c = 0; c < 3; ++c) {
-
-      // build the 1-4-1 matrix
-      for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-          m.at(i,j) = 
-            (j == i - 1 || j == i + 1) ? 1.0f :
-            j == i ? 4.0f :
-            0.0f;
-        }
+    // build the 1-4-1 matrix
+    for (int i = 0; i < size; ++i) {
+      for (int j = 0; j < size; ++j) {
+        m.at(i,j) = 
+          (j == i - 1 || j == i + 1) ? 1.0f :
+          j == i ? 4.0f :
+          0.0f;
       }
-
-      // add the control points to the last column
-      for (int i = 0; i < size; ++i)
-        m.at(i, size) = 
-        i == 0 ? (6*d[1][c] - d[0][c]) :
-        i == size - 1 ? (6*d[size][c] - d[size+1][c]) :
-        6 * d[i+1][c];
-
-      // solve..
-      Matrix2d<float> x;
-      gaussian_solve(m, &x);
-
-      // TODO: fix
-      for (int i = 0; i < size; ++i)
-        pts[i+1][c] = x.at(i,0);
-
     }
 
-    Bezier b;
+    // add the control points to the last column
+    m.at(0,size) = (6*s[1][c] - s[0][c]);
+    m.at(size-1,size) = (6*s[size][c] - s[size+1][c]);
+    for (int i = 1; i < size-1; ++i)
+      m.at(i,size) = 6 * s[i+1][c];
 
-    // there are points-1 bezier curves
-    for (int i = 0; i < points.size()-1; ++i)
-      b.curves.push_back(ControlPoints(
-      d[i+0],
-      2*pts[i+0]/3 + 1*pts[i+1]/3,
-      1*pts[i+0]/3 + 2*pts[i+1]/3,
-      d[i+1]));
+    // solve..
+    Matrix2d<float> x;
+    gaussian_solve(m, &x);
 
-    return b;
-  }
-
-  D3DXVECTOR3 interpolate(float t) const
-  {
-    // 3*(1-t)*t^2*P2+3*(1-t)^2*t*P1+(1-t)^3*P0+p3*t^3
-
-    int ofs = max(0, min((int)curves.size()-1,(int)t));
-    t = max(0, min(1,t - ofs));
-
-    const ControlPoints& pts = curves[ofs];
-
-    const float tt = (1-t);
-    const float tt2 = tt*tt;
-    const float tt3 = tt2*tt;
-
-    const float t2 = t*t;
-    const float t3 = t2*t;
-
-    return tt3 * pts.p0 + 3 * tt2 * t * pts.p1 + 3 * tt * t2 * pts.p2 + t3 * pts.p3;
-  }
-
-  D3DXVECTOR3 diff1(float t) const
-  {
-    // 1st derivate
-    // -3*t^2*P2+6*(1-t)*t*P2-6*(1-t)*t*P1+3*(1-t)^2*P1-3*(1-t)^2*P0+3*p3*t^2
-
-    int ofs = max(0, min((int)curves.size()-1,(int)t));
-    t = max(0, min(1,t - ofs));
-
-    const ControlPoints& pts = curves[ofs];
-
-    const float tt = (1-t);
-    const float tt2 = tt*tt;
-    const float tt3 = tt2*tt;
-
-    const float t2 = t*t;
-    const float t3 = t2*t;
-
-    return -3*t2*pts.p2 + 6*tt*t*pts.p2 - 6*tt*t*pts.p1 + 3*tt2*pts.p1 - 3*tt2*pts.p0 + 3*pts.p3*t2;
-  }
-
-  D3DXVECTOR3 diff2(float t) const
-  {
-    // 2nd derivate
-    // -12*t*P2+6*(1-t)*P2+6*t*P1-12*(1-t)*P1+6*(1-t)*P0+6*p3*t
-
-    int ofs = max(0, min((int)curves.size()-1,(int)t));
-    t = max(0, min(1,t - ofs));
-
-    const ControlPoints& pts = curves[ofs];
-
-    const float tt = (1-t);
-    const float tt2 = tt*tt;
-    const float tt3 = tt2*tt;
-
-    const float t2 = t*t;
-    const float t3 = t2*t;
-
-    return 12*t*pts.p2 + t*tt*pts.p2 + 6*t*pts.p1 - 12*tt*pts.p1 + 6*tt*pts.p0 + 6*pts.p3*t;
+    // TODO: fix
+    for (int i = 0; i < size; ++i)
+      b[i+1][c] = x.at(i,0);
 
   }
 
-  struct ControlPoints
-  {
-    ControlPoints(const D3DXVECTOR3& p0, const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, const D3DXVECTOR3& p3) : p0(p0), p1(p1), p2(p2), p3(p3) {}
-    D3DXVECTOR3 p0, p1, p2, p3;
-  };
+  Bezier bezier;
 
-  std::vector<ControlPoints> curves;
-};
+  // There are [data_points-1] bezier segments. Create these from
+  // the B-spline control points
+  for (int i = 0; i < data_points.size()-1; ++i)
+    bezier.curves.push_back(ControlPoints(
+    s[i+0],
+    2*b[i+0]/3 + 1*b[i+1]/3,
+    1*b[i+0]/3 + 2*b[i+1]/3,
+    s[i+1]));
+
+  return bezier;
+}
+
+D3DXVECTOR3 Bezier::interpolate(float t) const
+{
+  // 3*(1-t)*t^2*P2+3*(1-t)^2*t*P1+(1-t)^3*P0+p3*t^3
+
+  int ofs = max(0, min((int)curves.size()-1,(int)t));
+  t = max(0, min(1,t - ofs));
+
+  const ControlPoints& pts = curves[ofs];
+
+  const float tt = (1-t);
+  const float tt2 = tt*tt;
+  const float tt3 = tt2*tt;
+
+  const float t2 = t*t;
+  const float t3 = t2*t;
+
+  return tt3 * pts.p0 + 3 * tt2 * t * pts.p1 + 3 * tt * t2 * pts.p2 + t3 * pts.p3;
+}
+
+D3DXVECTOR3 Bezier::diff1(float t) const
+{
+  // 1st derivate
+  // -3*t^2*P2+6*(1-t)*t*P2-6*(1-t)*t*P1+3*(1-t)^2*P1-3*(1-t)^2*P0+3*p3*t^2
+
+  int ofs = max(0, min((int)curves.size()-1,(int)t));
+  t = max(0, min(1,t - ofs));
+
+  const ControlPoints& pts = curves[ofs];
+
+  const float tt = (1-t);
+  const float tt2 = tt*tt;
+  const float tt3 = tt2*tt;
+
+  const float t2 = t*t;
+  const float t3 = t2*t;
+
+  return -3*t2*pts.p2 + 6*tt*t*pts.p2 - 6*tt*t*pts.p1 + 3*tt2*pts.p1 - 3*tt2*pts.p0 + 3*pts.p3*t2;
+}
+
+D3DXVECTOR3 Bezier::diff2(float t) const
+{
+  // 2nd derivate
+  // -12*t*P2+6*(1-t)*P2+6*t*P1-12*(1-t)*P1+6*(1-t)*P0+6*p3*t
+
+  int ofs = max(0, min((int)curves.size()-1,(int)t));
+  t = max(0, min(1,t - ofs));
+
+  const ControlPoints& pts = curves[ofs];
+
+  const float tt = (1-t);
+  const float tt2 = tt*tt;
+  const float tt3 = tt2*tt;
+
+  const float t2 = t*t;
+  const float t3 = t2*t;
+
+  return 12*t*pts.p2 + t*tt*pts.p2 + 6*t*pts.p1 - 12*tt*pts.p1 + 6*tt*pts.p0 + 6*pts.p3*t;
+
+}
 
 void TestEffect6::extrude(const Bezier& bezier)
 {
@@ -374,57 +351,52 @@ void TestEffect6::extrude(const Bezier& bezier)
 
   const uint32_t spins = 20;
 
-  bool first_point = true;
+  static bool first_point = true;
 
-  D3DXVECTOR3 prev_binormal;
-  D3DXVECTOR3 prev_tangent;
-  D3DXVECTOR3 prev_normal;
-
-
-  const int32_t num_knots = bezier.curves.size();
-  float t = 0;
+  static D3DXVECTOR3 prev_binormal;
+  const int32_t num_segments = bezier.curves.size();
 
   vector<PosNormal> verts;
-  verts.reserve((num_knots-1)*splits*spins);
+  verts.reserve(num_segments*splits*spins);
 
-  for (int32_t i = 0; i < num_knots-1; ++i) {
-    for (int32_t j = 0; j < splits; ++j, t += inc) {
-      D3DXVECTOR3 cur = bezier.interpolate(t);
-      D3DXVECTOR3 tangent = vec3_normalize(bezier.diff1(t));
+  const float max_t = (float)num_segments;
+  const float inc_t = 1.0f / splits;
+  float t = 0;
+  while (t <= max_t) {
+    D3DXVECTOR3 cur = bezier.interpolate(t);
+    static D3DXVECTOR3 tangent = vec3_normalize(bezier.diff1(t));
 
-      D3DXVECTOR3 binormal;
-      D3DXVECTOR3 normal;
-      if (first_point) {
-        first_point = false;
-        normal = vec3_cross(tangent, bezier.diff2(t));
-        // if the curvature is 0, choose any normal perpedictular to the tangent
-        normal = vec3_normalize(D3DXVec3LengthSq(&normal) < 0.0001f ? find_orthogonal(tangent) : vec3_cross(normal, tangent));
-        binormal = vec3_cross(tangent, normal);
-      } else {
-        // Ken Sloan's method to propagate the reference frame
-        normal = vec3_cross(prev_binormal, tangent);
-        binormal = vec3_cross(tangent, normal);
-      }
-
-      prev_binormal = binormal;
-      //prev_tangent = tangent;
-      //prev_normal = normal;
-
-      const float delta_angle = 2 * (float)D3DX_PI / (float)(spins - 1);
-      float cur_angle = 0;
-      D3DXVECTOR3 tmp;
-      D3DXVECTOR3 tmp2;
-      D3DXMATRIX mtx_rot2(kMtxId);
-
-      D3DXVECTOR3 scaled_s = normal;
-
-      for (uint32_t k = 0; k < spins; ++k, cur_angle += delta_angle) {
-        D3DXMatrixRotationAxis(&mtx_rot2, &tangent, cur_angle);
-        D3DXVec3TransformCoord(&tmp, &scaled_s, &mtx_rot2);
-        D3DXVec3TransformNormal(&tmp2, &normal, &mtx_rot2);
-        verts.push_back(PosNormal(tmp + cur, normal));
-      }
+    D3DXVECTOR3 binormal;
+    D3DXVECTOR3 normal;
+    if (first_point) {
+      first_point = false;
+      normal = vec3_cross(tangent, bezier.diff2(t));
+      // if the curvature is 0, choose any normal perpedictular to the tangent
+      normal = vec3_normalize(D3DXVec3LengthSq(&normal) < 0.0001f ? find_orthogonal(tangent) : vec3_cross(normal, tangent));
+      binormal = vec3_cross(tangent, normal);
+    } else {
+      // Ken Sloan's method to propagate the reference frame
+      normal = vec3_cross(prev_binormal, tangent);
+      binormal = vec3_cross(tangent, normal);
     }
+
+    prev_binormal = binormal;
+
+    const float delta_angle = 2 * (float)D3DX_PI / (float)(spins - 1);
+    float cur_angle = 0;
+    D3DXVECTOR3 tmp;
+    D3DXVECTOR3 tmp2;
+    D3DXMATRIX mtx_rot2(kMtxId);
+
+    D3DXVECTOR3 scaled_s = normal;
+
+    for (uint32_t k = 0; k < spins; ++k, cur_angle += delta_angle) {
+      D3DXMatrixRotationAxis(&mtx_rot2, &tangent, cur_angle);
+      D3DXVec3TransformCoord(&tmp, &scaled_s, &mtx_rot2);
+      D3DXVec3TransformNormal(&tmp2, &normal, &mtx_rot2);
+      verts.push_back(PosNormal(tmp + cur, tmp2));
+    }
+    t += inc_t;
   }
 
   PosNormal *vtx = _verts.map();
@@ -436,15 +408,91 @@ void TestEffect6::extrude(const Bezier& bezier)
       const PosNormal& v2 = verts[(i+1)*spins+((j+1)%spins)];
       const PosNormal& v3 = verts[(i+0)*spins+((j+1)%spins)];
       *vtx++ = v0;
-      *vtx++ = v1;
       *vtx++ = v2;
+      *vtx++ = v1;
 
       *vtx++ = v0;
-      *vtx++ = v2;
       *vtx++ = v3;
+      *vtx++ = v2;
     }
   }
   _verts.unmap(vtx);
+}
+
+void TestEffect6::extrude2(const Bezier& bezier)
+{
+  // uses the progress to determine how much to extrude
+
+  const int num_segments = bezier.curves.size();
+  const int splits = 20;
+
+  const uint32_t spins = 20;
+
+  static bool first_point = true;
+
+  static D3DXVECTOR3 prev_binormal;
+
+  vector<PosNormal> verts;
+  verts.reserve(num_segments*splits*spins);
+
+  const float max_t = _progress * num_segments;
+  const float inc_t = 1.0f / splits;
+  float t = 0;
+  while (t <= max_t) {
+    D3DXVECTOR3 cur = bezier.interpolate(t);
+    static D3DXVECTOR3 tangent = vec3_normalize(bezier.diff1(t));
+
+    D3DXVECTOR3 binormal;
+    D3DXVECTOR3 normal;
+    if (first_point) {
+      first_point = false;
+      normal = vec3_cross(tangent, bezier.diff2(t));
+      // if the curvature is 0, choose any normal perpedictular to the tangent
+      normal = vec3_normalize(D3DXVec3LengthSq(&normal) < 0.0001f ? find_orthogonal(tangent) : vec3_cross(normal, tangent));
+      binormal = vec3_cross(tangent, normal);
+    } else {
+      // Ken Sloan's method to propagate the reference frame
+      normal = vec3_cross(prev_binormal, tangent);
+      binormal = vec3_cross(tangent, normal);
+    }
+
+    prev_binormal = binormal;
+
+    const float delta_angle = 2 * (float)D3DX_PI / (float)(spins - 1);
+    float cur_angle = 0;
+    D3DXVECTOR3 tmp;
+    D3DXVECTOR3 tmp2;
+    D3DXMATRIX mtx_rot2(kMtxId);
+
+    D3DXVECTOR3 scaled_s = normal;
+
+    for (uint32_t k = 0; k < spins; ++k, cur_angle += delta_angle) {
+      D3DXMatrixRotationAxis(&mtx_rot2, &tangent, cur_angle);
+      D3DXVec3TransformCoord(&tmp, &scaled_s, &mtx_rot2);
+      D3DXVec3TransformNormal(&tmp2, &normal, &mtx_rot2);
+      verts.push_back(PosNormal(tmp + cur, tmp2));
+    }
+    t += inc_t;
+  }
+
+  PosNormal *vtx = _tmp_verts.map();
+  const int segments = verts.size() / spins - 1;
+  for (int i = 0; i < segments; ++i) {
+    for (int j = 0; j < spins; ++j) {
+      const PosNormal& v0 = verts[(i+0)*spins+j];
+      const PosNormal& v1 = verts[(i+1)*spins+j];
+      const PosNormal& v2 = verts[(i+1)*spins+((j+1)%spins)];
+      const PosNormal& v3 = verts[(i+0)*spins+((j+1)%spins)];
+      *vtx++ = v0;
+      *vtx++ = v2;
+      *vtx++ = v1;
+
+      *vtx++ = v0;
+      *vtx++ = v3;
+      *vtx++ = v2;
+    }
+  }
+  _tmp_verts.unmap(vtx);
 }
 
 Bezier bezier;
@@ -461,14 +509,62 @@ TestEffect6::~TestEffect6()
 {
 }
 
+struct PlyLoader
+{
+  bool load(const char *filename);
+  void parse_header();
+
+  AsArray<byte> _data;
+};
+
+bool PlyLoader::load(const char *filename)
+{
+  if (!load_file(filename, &_data))
+    return false;
+
+  return true;
+}
+
+void PlyLoader::parse_header()
+{
+
+}
+
+
 bool TestEffect6::init()
 {
   auto& s = System::instance();
   auto& r = ResourceManager::instance();
 
   RETURN_ON_FAIL_BOOL_E(_verts.create(1000000));
+  RETURN_ON_FAIL_BOOL_E(_tmp_verts.create(20000));
   RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/test_effect6.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect6::effect_loaded)));
   App::instance().add_update_callback(MakeDelegate(this, &TestEffect6::update), true);
+
+
+  D3DXMATRIX mtx;
+  const float len = 1;
+  vector<D3DXVECTOR3> pts;
+  D3DXVECTOR3 up(0,1,0), cur_top(0,0,0);
+  float angle = 0;
+  for (int j = 0; j < 100; ++j) {
+    for (int i = 0; i < 4; ++i) {
+      // each point is selected as a random point on the circle around
+      // the current normal
+
+      D3DXVECTOR3 pt = cur_top + len * _up + D3DXVECTOR3(0.1f, 0, 0);
+      //angle += randf(-(float)D3DX_PI/100, (float)D3DX_PI/100);
+      D3DXMatrixRotationAxis(&mtx, &up, angle);
+      D3DXVec3TransformCoord(&pt, &pt, &mtx);
+      pts.push_back(pt);
+      up = vec3_normalize(pt - cur_top);
+      cur_top = pt;
+    }
+
+  }
+
+  _full_curve = Bezier::from_points(AsArray<D3DXVECTOR3>(pts));
+
   return true;
 }
 
@@ -481,6 +577,9 @@ bool TestEffect6::close()
 
 bool TestEffect6::render()
 {
+  if (!bezier.curves.empty())
+    extrude2(bezier);
+
   Graphics& g = Graphics::instance();
   ID3D11Device* device = g.device();
   ID3D11DeviceContext* context = g.context();
@@ -505,6 +604,9 @@ bool TestEffect6::render()
   set_vb(context, _verts.get(), _verts.stride);
   context->Draw(_verts.num_verts(), 0);
 
+  set_vb(context, _tmp_verts.get(), _tmp_verts.stride);
+  context->Draw(_tmp_verts.num_verts(), 0);
+
   return true;
 }
 
@@ -524,28 +626,42 @@ void TestEffect6::effect_loaded(EffectWrapper *effect)
 
 void TestEffect6::update(float t, float dt, int num_ticks, float a)
 {
+
+  _progress = min(1, max(0, (t - _last_update)));
+
   // every second, add a new curve
   if (t - _last_update > 1.0f) {
+
+    // add the previous bezier segments
+    if (!bezier.curves.empty())
+      extrude(bezier);
+
     _last_update = t;
+    _progress = 0;
 
-    float len = 2;
-
+    bezier.curves.clear();
+    int ofs = max(0,(int)t-1);
+    int stride = 2;
+    for (int i = 0; i < stride; ++i)
+      bezier.curves.push_back(_full_curve.curves[ofs*stride+i]);
+/*
     D3DXMATRIX mtx;
+    const float len = 2;
+    _cur_points.clear();
+    _cur_points.push_back(_cur_top);
     for (int i = 0; i < 4; ++i) {
       // each point is selected as a random point on the circle around
       // the current normal
 
       D3DXVECTOR3 pt = _cur_top + len * _up + D3DXVECTOR3(0.1f, 0, 0);
-      _angle += randf(-(float)D3DX_PI/10, (float)D3DX_PI/10);
+      _angle += randf(-(float)D3DX_PI/100, (float)D3DX_PI/100);
       D3DXMatrixRotationAxis(&mtx, &_up, _angle);
       D3DXVec3TransformCoord(&pt, &pt, &mtx);
-      _points.push_back(pt);
+      _cur_points.push_back(pt);
       _up = vec3_normalize(pt - _cur_top);
       _cur_top = pt;
     }
-
-    int n = min(6, _points.size());
-    bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(&_points[_points.size() - n], n));
-    extrude(bezier);
+*/
+    //bezier = Bezier::from_points(AsArray<D3DXVECTOR3>(_cur_points));
   }
 }

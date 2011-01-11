@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "system.hpp"
 
+/*
+  TODO: load a shindig.conf, and a local shindig.user.conf
+*/
+
 System* System::_instance = nullptr;
 
 System::System()
@@ -12,6 +16,7 @@ System::System()
   , _spectrum_right(new float[1024])
   , _spectrum_combined(new float[1024])
 {
+  _debug_host = "192.168.0.17";
 }
 
 System::~System()
