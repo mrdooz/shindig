@@ -7,6 +7,7 @@
 #include "test_effect4.hpp"
 #include "test_effect5.hpp"
 #include "test_effect6.hpp"
+#include "test_effect7.hpp"
 #include "imgui.hpp"
 #include "font_writer.hpp"
 #include "debug_menu.hpp"
@@ -83,9 +84,9 @@ bool App::init(HINSTANCE hinstance)
 
   RETURN_ON_FAIL_BOOL_E(IMGui::instance().init());
   RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().init());
-  RETURN_ON_FAIL_BOOL_E(Network::instance().init());
+  //RETURN_ON_FAIL_BOOL_E(Network::instance().init());
 
-	_test_effect = new TestEffect6();
+	_test_effect = new TestEffect7();
 	_test_effect->init();
 
   _trackball = new Trackball();

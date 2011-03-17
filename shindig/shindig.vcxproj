@@ -125,8 +125,16 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="lookup3.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="lua_utils.cpp" />
     <ClCompile Include="material.cpp" />
+    <ClCompile Include="md5.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="mesh2.cpp" />
     <ClCompile Include="network.cpp" />
@@ -148,6 +156,7 @@
     <ClCompile Include="test_effect4.cpp" />
     <ClCompile Include="test_effect5.cpp" />
     <ClCompile Include="test_effect6.cpp" />
+    <ClCompile Include="test_effect7.cpp" />
     <ClCompile Include="vector_font.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -167,6 +176,7 @@
     <ClInclude Include="iprof\prof_win32.h" />
     <ClInclude Include="lua_utils.hpp" />
     <ClInclude Include="material.hpp" />
+    <ClInclude Include="md5.h" />
     <ClInclude Include="mesh.hpp" />
     <ClInclude Include="mesh2.hpp" />
     <ClInclude Include="network.hpp" />
@@ -187,6 +197,7 @@
     <ClInclude Include="test_effect4.hpp" />
     <ClInclude Include="test_effect5.hpp" />
     <ClInclude Include="test_effect6.hpp" />
+    <ClInclude Include="test_effect7.hpp" />
     <ClInclude Include="vector_font.hpp" />
   </ItemGroup>
   <ItemGroup>

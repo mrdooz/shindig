@@ -509,28 +509,6 @@ TestEffect6::~TestEffect6()
 {
 }
 
-struct PlyLoader
-{
-	bool load(const char *filename);
-	void parse_header();
-
-	AsArray<byte> _data;
-};
-
-bool PlyLoader::load(const char *filename)
-{
-	if (!load_file(filename, &_data))
-		return false;
-
-	return true;
-}
-
-void PlyLoader::parse_header()
-{
-
-}
-
-
 bool TestEffect6::init()
 {
 	auto& s = System::instance();

@@ -141,6 +141,8 @@ bool TestEffect::close()
 
 void TestEffect::render_meshes()
 {
+	// broken!
+/*
 	ID3D11Device* device = Graphics::instance().device();
 	ID3D11DeviceContext* context = Graphics::instance().context();
 
@@ -186,10 +188,13 @@ void TestEffect::render_meshes()
 
 		context->DrawIndexed(m->_index_count, 0, 0);
 	}
+*/
 }
 
 bool TestEffect::render()
 {
+	// broken!
+/*
   if (!_vs_effect || !_vs_fs || !_ps_effect || !_ps_fs) {
     return true;
   }
@@ -241,7 +246,7 @@ bool TestEffect::render()
 
 	ID3D11ShaderResourceView* null_textures[] = { NULL };
 	context->PSSetShaderResources(0, 1, null_textures);
-
+	*/
 	return true;
 }
 

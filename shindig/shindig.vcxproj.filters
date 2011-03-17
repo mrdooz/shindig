@@ -16,6 +16,9 @@
     <Filter Include="iprof">
       <UniqueIdentifier>{79d3d02f-48c6-4896-9add-75ec40f30325}</UniqueIdentifier>
     </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{6e418f26-9cb8-46ba-9877-93f17405640e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp">
@@ -116,6 +119,15 @@
     </ClCompile>
     <ClCompile Include="network.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_effect7.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lookup3.c">
+      <Filter>external</Filter>
+    </ClCompile>
+    <ClCompile Include="md5.c">
+      <Filter>external</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -229,6 +241,12 @@
     </ClInclude>
     <ClInclude Include="network.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_effect7.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="md5.h">
+      <Filter>external</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
