@@ -1000,8 +1000,9 @@ struct MCNK : public ChunkHeader {
 
 void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<TerrainChunk *> *terrain)
 {
-	int xx = sizeof(MCNK);
 	int64 ofs = 0;
+	int chunk_counter = 0;
+
 	while (ofs < len) {
 		ChunkHeader header = *(ChunkHeader *)&buf[ofs];
 
@@ -1067,8 +1068,6 @@ void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<Ter
 
 		case MK_TAG('M', 'C', 'N', 'K'):
 			{
-				static int chunk_counter = 0;
-
 				MCNK *mcnk = (MCNK *)&buf[ofs];
 				// fix up the pointers
 #define FIXUP(type, p) mcnk->ptr_ ## p = mcnk->ptr_ ## p ? (type *)&buf[ofs + uintptr_t(mcnk->ptr_ ## p)] : 0;
@@ -1093,15 +1092,20 @@ void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<Ter
 				//   10   11   12   13   14   15   16   17
 				// 18   19   20   21   22   23   24   25   26
 
+
 				float chunk_size = block_size / 16.0f;
 				float chunk_ofs =  chunk_size / 2.0f;
+
+				float chunk_x = (chunk_counter % 16) * block_size;
+				float chunk_z = (chunk_counter / 16) * block_size;
+
 				int i = 0;
-				for (int y = 0; y < 9 + 8; ++y) {
-					bool odd = !!(y % 2);
+				for (int z = 0; z < 9 + 8; ++z) {
+					bool odd = !!(z % 2);
 					for (int x = 0; x < (odd ? 8 : 9); ++x) {
-						b->data[i].pos.x = (odd ? chunk_ofs : 0) + x * chunk_size / 9.0f;
+						b->data[i].pos.x = chunk_x + (odd ? chunk_ofs : 0) + x * chunk_size / 9.0f;
 						b->data[i].pos.y = mcnk->ptr_height->height[i];
-						b->data[i].pos.z = (odd ? chunk_ofs : 0) + y * chunk_size / 9.0f;
+						b->data[i].pos.z = chunk_z + (odd ? chunk_ofs : 0) + z * chunk_size / 9.0f;
 						++i;
 					}
 				}
@@ -1129,6 +1133,34 @@ TestEffect7::~TestEffect7()
 {
 }
 
+static void add_tris(int x, vector<int32>* tris)
+{
+	// v0----v1
+	//    v2
+	// v3----v4
+	int v0 = x;
+	int v1 = x + 1;
+	int v2 = x + 9;
+	int v3 = x + 9 + 8;
+	int v4 = x + 9 + 8 + 1;
+
+	tris->push_back(v0);
+	tris->push_back(v1);
+	tris->push_back(v2);
+
+	tris->push_back(v2);
+	tris->push_back(v1);
+	tris->push_back(v4);
+
+	tris->push_back(v3);
+	tris->push_back(v2);
+	tris->push_back(v4);
+
+	tris->push_back(v0);
+	tris->push_back(v2);
+	tris->push_back(v3);
+}
+
 bool TestEffect7::init()
 {
 	auto& s = System::instance();
@@ -1144,11 +1176,20 @@ bool TestEffect7::init()
 
 	uint8 *data;
 	uint64 len;
-	if (!loader.load_file("World\\maps\\AbyssalMaw\\AbyssalMaw_29_29.adt", &data, &len))
+	if (!loader.load_file("World\\maps\\Deephome\\Deephome_26_25.adt", &data, &len))
 		return false;
 
 	vector<adt::TerrainChunk *> chunks;
-	adt::adt_parse(data, len, 29, 29, &chunks);
+	adt::adt_parse(data, len, 26, 25, &chunks);
+
+	vector<int> tris;
+	for (int i = 0; i < 9-1; ++i) {
+		for (int j = 0; j < 9-1; ++j) {
+			add_tris(j*(9+8) + i, &tris);
+		}
+	}
+
+	create_static_index_buffer(Graphics::instance().device(), tris, &_ib);
 
 	PosNormal *p = _verts.map();
 	for (size_t i = 0; i < chunks.size(); ++i) {
@@ -1193,7 +1234,8 @@ bool TestEffect7::render()
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	set_vb(context, _verts.get(), _verts.stride);
-	context->Draw(_verts.num_verts(), 0);
+	set_ib(context, _ib);
+	context->DrawIndexed(_ib.num_elems, 0, 0);
 
 	return true;
 }

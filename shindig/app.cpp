@@ -30,20 +30,20 @@ App* App::_instance = nullptr;
 
 
 App::App()
-  : _hinstance(NULL)
-  , _width(-1)
-  , _height(-1)
-  , _hwnd(NULL)
+	: _hinstance(NULL)
+	, _width(-1)
+	, _height(-1)
+	, _hwnd(NULL)
 	, _test_effect(NULL)
 	, _debug_writer(nullptr)
-  , _state_wireframe("wireframe", false)
-  , _dbg_message_count(0)
-  , _trackball(nullptr)
-  , _freefly(nullptr)
-  , _cur_camera(1)
-  , _draw_plane(true)
+	, _state_wireframe("wireframe", false)
+	, _dbg_message_count(0)
+	, _trackball(nullptr)
+	, _freefly(nullptr)
+	, _cur_camera(1)
+	, _draw_plane(true)
 {
-
+	find_app_root();
 }
 
 App::~App()
@@ -60,14 +60,14 @@ App& App::instance()
 bool App::init(HINSTANCE hinstance)
 {
 	_hinstance = hinstance;
-  _width = GetSystemMetrics(SM_CXSCREEN);
-  _height = GetSystemMetrics(SM_CYSCREEN);
-  create_window();
+	_width = GetSystemMetrics(SM_CXSCREEN);
+	_height = GetSystemMetrics(SM_CYSCREEN);
+	create_window();
 
 	Graphics& graphics = Graphics::instance();
 
-  RETURN_ON_FAIL_BOOL_E(System::instance().init());
-  RETURN_ON_FAIL_BOOL_E(graphics.init_directx(_hwnd, _width, _height));
+	RETURN_ON_FAIL_BOOL_E(System::instance().init());
+	RETURN_ON_FAIL_BOOL_E(graphics.init_directx(_hwnd, _width, _height));
 
 	TwInit(TW_DIRECT3D11, graphics.device(), graphics.context());
 	TwWindowSize(_width, _height);
@@ -78,23 +78,23 @@ bool App::init(HINSTANCE hinstance)
 	TwAddSeparator(_tweakbar, NULL, NULL);
 
 
-  _debug_writer = new FontWriter();
+	_debug_writer = new FontWriter();
 	RETURN_ON_FAIL_BOOL_E(_debug_writer->init(System::instance().convert_path("data/fonts/TCB_____.ttf", System::kDirRelative), 0, 0, _width, _height));
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().init());
 
-  RETURN_ON_FAIL_BOOL_E(IMGui::instance().init());
-  RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().init());
-  //RETURN_ON_FAIL_BOOL_E(Network::instance().init());
+	RETURN_ON_FAIL_BOOL_E(IMGui::instance().init());
+	RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().init());
+	//RETURN_ON_FAIL_BOOL_E(Network::instance().init());
 
 	_test_effect = new TestEffect7();
 	_test_effect->init();
 
-  _trackball = new Trackball();
-  _freefly = new FreeFlyCamera();
+	_trackball = new Trackball();
+	_freefly = new FreeFlyCamera();
 
-  init_menu();
+	init_menu();
 
-  Profiler::instance().print();
+	Profiler::instance().print();
 	return true;
 }
 
@@ -116,72 +116,72 @@ bool App::close()
 
 	TwTerminate();
 
-  if (_test_effect) {
-    _test_effect->close();
-    delete _test_effect;
-  }
+	if (_test_effect) {
+		_test_effect->close();
+		delete _test_effect;
+	}
 
-  RETURN_ON_FAIL_BOOL_E(Network::instance().close());
-  RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().close());
-  RETURN_ON_FAIL_BOOL_E(IMGui::instance().close());
+	RETURN_ON_FAIL_BOOL_E(Network::instance().close());
+	RETURN_ON_FAIL_BOOL_E(DebugRenderer::instance().close());
+	RETURN_ON_FAIL_BOOL_E(IMGui::instance().close());
 
 	RETURN_ON_FAIL_BOOL_E(DebugMenu::instance().close());
 
-  SAFE_DELETE(_debug_writer);
-  SAFE_DELETE(_trackball);
-  SAFE_DELETE(_freefly);
+	SAFE_DELETE(_debug_writer);
+	SAFE_DELETE(_trackball);
+	SAFE_DELETE(_freefly);
 
-  RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
-  RETURN_ON_FAIL_BOOL_E(System::instance().close());
+	RETURN_ON_FAIL_BOOL_E(Graphics::instance().close());
+	RETURN_ON_FAIL_BOOL_E(System::instance().close());
 
-  delete this;
-  _instance = nullptr;
+	delete this;
+	_instance = nullptr;
 
 	return true;
 }
 
 void App::set_client_size()
 {
-  RECT client_rect;
-  RECT window_rect;
-  GetClientRect(_hwnd, &client_rect);
-  GetWindowRect(_hwnd, &window_rect);
-  window_rect.right -= window_rect.left;
-  window_rect.bottom -= window_rect.top;
-  window_rect.left = window_rect.top = 0;
-  const int dx = window_rect.right - client_rect.right;
-  const int dy = window_rect.bottom - client_rect.bottom;
+	RECT client_rect;
+	RECT window_rect;
+	GetClientRect(_hwnd, &client_rect);
+	GetWindowRect(_hwnd, &window_rect);
+	window_rect.right -= window_rect.left;
+	window_rect.bottom -= window_rect.top;
+	window_rect.left = window_rect.top = 0;
+	const int dx = window_rect.right - client_rect.right;
+	const int dy = window_rect.bottom - client_rect.bottom;
 
-  SetWindowPos(_hwnd, NULL, -1, -1, _width + dx, _height + dy, SWP_NOZORDER | SWP_NOREPOSITION);
+	SetWindowPos(_hwnd, NULL, -1, -1, _width + dx, _height + dy, SWP_NOZORDER | SWP_NOREPOSITION);
 }
 
 bool App::create_window()
 {
-  const char* kClassName = "ShindigClass";
+	const char* kClassName = "ShindigClass";
 
-  WNDCLASSEXA wcex;
-  ZeroMemory(&wcex, sizeof(wcex));
+	WNDCLASSEXA wcex;
+	ZeroMemory(&wcex, sizeof(wcex));
 
-  wcex.cbSize = sizeof(WNDCLASSEXA);
-  wcex.style          = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-  wcex.lpfnWndProc    = tramp_wnd_proc;
-  wcex.hInstance      = _hinstance;
-  wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-  wcex.lpszClassName  = kClassName;
+	wcex.cbSize = sizeof(WNDCLASSEXA);
+	wcex.style          = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wcex.lpfnWndProc    = tramp_wnd_proc;
+	wcex.hInstance      = _hinstance;
+	wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+	wcex.lpszClassName  = kClassName;
 
 
-  RETURN_ON_FAIL_BOOL(RegisterClassExA(&wcex), LOG_WARNING_LN);
+	RETURN_ON_FAIL_BOOL(RegisterClassExA(&wcex), LOG_WARNING_LN);
 
-  //const UINT window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
-  const UINT window_style = WS_VISIBLE | WS_POPUP;
+	//const UINT window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
+	const UINT window_style = WS_VISIBLE | WS_POPUP;
 
-  _hwnd = CreateWindowA(kClassName, "shindig - magnus österlind - 2010", window_style,
-    CW_USEDEFAULT, CW_USEDEFAULT, _width, _height, NULL, NULL,
-    _hinstance, NULL);
+	_hwnd = CreateWindowA(kClassName, "shindig - magnus österlind - 2010", window_style,
+		CW_USEDEFAULT, CW_USEDEFAULT, _width, _height, NULL, NULL,
+		_hinstance, NULL);
 
-  set_client_size();
+	set_client_size();
 
-  ShowWindow(_hwnd, SW_SHOW);
+	ShowWindow(_hwnd, SW_SHOW);
 
 	return true;
 }
@@ -202,8 +202,8 @@ void App::tramp_menu(void *menu_item)
 	case kMenuToggleWireframe:
 		App::instance().toggle_wireframe();
 		break;
-  case kMenuDrawXZPlane:
-    App::instance().toggle_plane();
+	case kMenuDrawXZPlane:
+		App::instance().toggle_plane();
 	}
 }
 
@@ -219,93 +219,93 @@ void App::toggle_wireframe()
 
 void App::toggle_plane()
 {
-  _draw_plane = !_draw_plane;
+	_draw_plane = !_draw_plane;
 }
 
 
 void App::run()
 {
-  auto& graphics = Graphics::instance();
+	auto& graphics = Graphics::instance();
 
-  MSG msg = {0};
+	MSG msg = {0};
 
-  float running_time = 0;
-  const float dt = 1 / 100.0f;
+	float running_time = 0;
+	const float dt = 1 / 100.0f;
 
-  LARGE_INTEGER freq;
-  QueryPerformanceFrequency(&freq);
-  LARGE_INTEGER cur;
-  QueryPerformanceCounter(&cur);
-  float cur_time = (float)(cur.QuadPart / freq.QuadPart);
-  float accumulator = 0;
+	LARGE_INTEGER freq;
+	QueryPerformanceFrequency(&freq);
+	LARGE_INTEGER cur;
+	QueryPerformanceCounter(&cur);
+	float cur_time = (float)(cur.QuadPart / freq.QuadPart);
+	float accumulator = 0;
 
 
-  while (WM_QUIT != msg.message) {
-    if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
-    } else {
+	while (WM_QUIT != msg.message) {
+		if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		} else {
 			System::instance().tick();
 			graphics.clear();
 			_debug_writer->reset_frame();
 			IMGui::instance().init_frame();
 
-      DebugRenderer::instance().start_frame();
+			DebugRenderer::instance().start_frame();
 
 			if (_test_effect) {
 
-        QueryPerformanceCounter(&cur);
-        float new_time = (float)cur.QuadPart / freq.QuadPart;
-        float delta_time = new_time - cur_time;
-        cur_time = new_time;
-        accumulator += delta_time;
+				QueryPerformanceCounter(&cur);
+				float new_time = (float)cur.QuadPart / freq.QuadPart;
+				float delta_time = new_time - cur_time;
+				cur_time = new_time;
+				accumulator += delta_time;
 
-        // calc the number of ticks to step
-        int num_ticks = (int)(accumulator / dt);
-        const float a = delta_time > 0 ? (accumulator - num_ticks * dt) / delta_time : 0;
+				// calc the number of ticks to step
+				int num_ticks = (int)(accumulator / dt);
+				const float a = delta_time > 0 ? (accumulator - num_ticks * dt) / delta_time : 0;
 
-        for (int i = 0; i < (int)_update_callbacks.size(); ++i)
-          _update_callbacks[i](running_time, dt, num_ticks, a);
+				for (int i = 0; i < (int)_update_callbacks.size(); ++i)
+					_update_callbacks[i](running_time, dt, num_ticks, a);
 
-        running_time += num_ticks * dt;
-        accumulator -= num_ticks * dt;
+				running_time += num_ticks * dt;
+				accumulator -= num_ticks * dt;
 
-        {
-          //Prof_Zone(render);
-          _test_effect->render();
+				{
+					//Prof_Zone(render);
+					_test_effect->render();
 
-        }
+				}
 			}
 
-      if (_draw_plane) {
-        D3DXPLANE plane;
-        D3DXPlaneFromPointNormal(&plane, &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
-        DebugRenderer::instance().draw_plane(camera(), plane);
-      }
+			if (_draw_plane) {
+				D3DXPLANE plane;
+				D3DXPlaneFromPointNormal(&plane, &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
+				DebugRenderer::instance().draw_plane(camera(), plane);
+			}
 
 
-      graphics.tick();
-      _dbg_message_count = 0;
-      add_dbg_message(".fps: %.1f\n", graphics.fps());
+			graphics.tick();
+			_dbg_message_count = 0;
+			add_dbg_message(".fps: %.1f\n", graphics.fps());
 
-      int y_ofs = 100;
+			int y_ofs = 100;
 
 			_debug_writer->render();
 			DebugMenu::instance().render();
-      DebugRenderer::instance().end_frame();
+			DebugRenderer::instance().end_frame();
 			DebugRenderer::instance().render();
 			IMGui::instance().render();
 
 			TwDraw();
 
-      Prof_update(1);
+			Prof_update(1);
 
-      Prof_Report *pob = Prof_create_report();
+			Prof_Report *pob = Prof_create_report();
 
 			graphics.present();
 
-    }
-  }
+		}
+	}
 
 }
 
@@ -322,26 +322,26 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	// See if the debug menu wants to handle the message first
 	LRESULT res = DebugMenu::instance().wnd_proc(hWnd, message, wParam, lParam);
 
-  UIState& ui_state = IMGui::instance().ui_state();
+	UIState& ui_state = IMGui::instance().ui_state();
 
-  switch( message ) 
-  {
-  case WM_SIZE:
-    {
-      const int width = LOWORD(lParam);
-      const int height = HIWORD(lParam);
+	switch( message ) 
+	{
+	case WM_SIZE:
+		{
+			const int width = LOWORD(lParam);
+			const int height = HIWORD(lParam);
 			Graphics::instance().resize(width, height);
-    }
-    break;
+		}
+		break;
 
-  case WM_DESTROY:
-    PostQuitMessage(0);
-    break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
 
-  case WM_LBUTTONDOWN:
+	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
-    ui_state.mouse_down = 1;
+		ui_state.mouse_down = 1;
 		{
 			MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam));
 			for (auto i = _mouse_down_callbacks.begin(), e = _mouse_down_callbacks.end(); i != e; ++i)
@@ -352,7 +352,7 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
-    ui_state.mouse_down = 0;
+		ui_state.mouse_down = 0;
 		{
 			MouseInfo m(!!(wParam & MK_LBUTTON), !!(wParam & MK_MBUTTON), !!(wParam & MK_RBUTTON), LOWORD(lParam), HIWORD(lParam));
 			for (auto i = _mouse_up_callbacks.begin(), e = _mouse_up_callbacks.end(); i != e; ++i)
@@ -361,8 +361,8 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 		break;
 
 	case WM_MOUSEMOVE:
-    ui_state.mouse_x = GET_X_LPARAM(lParam);
-    ui_state.mouse_y = GET_Y_LPARAM(lParam);
+		ui_state.mouse_x = GET_X_LPARAM(lParam);
+		ui_state.mouse_y = GET_Y_LPARAM(lParam);
 		{
 			// only call the callbacks if we've actually moved
 			static int last_wparam = 0;
@@ -377,7 +377,7 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 				last_wparam = wParam;
 			}
 		}
-    break;
+		break;
 
 	case WM_MOUSEWHEEL:
 		{
@@ -387,7 +387,7 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 		}
 		break;
 
-  case WM_KEYDOWN:
+	case WM_KEYDOWN:
 		{
 			KeyInfo k(wParam, lParam);
 			for (auto i = _keydown_callbacks.begin(), e = _keydown_callbacks.end(); i != e; ++i)
@@ -395,16 +395,16 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 		}
 		break;
 
-  case WM_CHAR:
-    ui_state.key_entered = wParam;
-    break;
+	case WM_CHAR:
+		ui_state.key_entered = wParam;
+		break;
 
-  case WM_KEYUP:
-    switch (wParam) 
-    {
-    case VK_ESCAPE:
-      PostQuitMessage( 0 );
-      break;
+	case WM_KEYUP:
+		switch (wParam) 
+		{
+		case VK_ESCAPE:
+			PostQuitMessage( 0 );
+			break;
 		default:
 			{
 				KeyInfo k(wParam, lParam);
@@ -412,12 +412,12 @@ LRESULT App::wnd_proc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 					(*i)(k);
 			}
 			break;
-    }
-    break;
+		}
+		break;
 
-  default:
-    return DefWindowProc( hWnd, message, wParam, lParam );
-  }
+	default:
+		return DefWindowProc( hWnd, message, wParam, lParam );
+	}
 	return res;
 }
 
@@ -478,32 +478,51 @@ void App::add_key_up(const fnKeyUp& fn, bool add)
 
 void App::add_update_callback(const fnUpdate& fn, bool add)
 {
-  if (add)
-    _update_callbacks.push_back(fn);
-  else
-    safe_erase(_update_callbacks, fn);
+	if (add)
+		_update_callbacks.push_back(fn);
+	else
+		safe_erase(_update_callbacks, fn);
 }
 
 void App::add_dbg_message(const char* fmt, ...)
 {
-  va_list arg;
-  va_start(arg, fmt);
+	va_list arg;
+	va_start(arg, fmt);
 
-  const int len = _vscprintf(fmt, arg) + 1;
+	const int len = _vscprintf(fmt, arg) + 1;
 
-  char* buf = (char*)_alloca(len);
-  vsprintf_s(buf, len, fmt, arg);
-  va_end(arg);
-  _debug_writer->write(0, _dbg_message_count++ * 16, 16, buf);
+	char* buf = (char*)_alloca(len);
+	vsprintf_s(buf, len, fmt, arg);
+	va_end(arg);
+	_debug_writer->write(0, _dbg_message_count++ * 16, 16, buf);
+}
+
+void App::find_app_root()
+{
+	// keep going up directory levels until we find "app.root", or we hit the bottom..
+	char *starting_dir = _getcwd(NULL, 0);
+	while (true) {
+		if (file_exists("app.root")) {
+			char *buf = _getcwd(NULL, 0);
+			_app_root = buf;
+			free(buf);
+			return;
+		}
+		if (_chdir("..") == -1)
+			break;
+	}
+
+	_app_root = starting_dir;
+	free(starting_dir);
 }
 
 
 Camera *App::camera()
 {
-  switch (_cur_camera) {
-  case 0 : return _trackball;
-  case 1 : return _freefly;
-  }
-  return NULL;
+	switch (_cur_camera) {
+	case 0 : return _trackball;
+	case 1 : return _freefly;
+	}
+	return NULL;
 }
 

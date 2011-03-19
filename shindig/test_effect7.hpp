@@ -26,6 +26,7 @@ private:
   void effect_loaded(EffectWrapper *effect);
 	bool load_states(const string2& filename);
 
+	StaticBuffer _ib;
   DynamicVb<PosNormal> _verts;
   CComPtr<ID3D11InputLayout> _layout;
   std::auto_ptr<EffectWrapper> _effect;

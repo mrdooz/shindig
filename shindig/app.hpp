@@ -150,6 +150,7 @@ private:
 	void init_menu();
   bool create_window();
   void set_client_size();
+	void find_app_root();
 
 	LRESULT wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
   static LRESULT CALLBACK tramp_wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -180,6 +181,7 @@ private:
   Camera *_freefly;
   TwBar *_tweakbar;
   bool _draw_plane;
+	string2 _app_root;
 };
 
 #endif
