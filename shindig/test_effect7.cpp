@@ -966,8 +966,8 @@ struct MCLV : public ChunkHeader {
 
 struct MCNK : public ChunkHeader {
 	uint32 flags;
-	uint32 index_x;
-	uint32 index_y;
+	uint32 index_row;
+	uint32 index_col;
 	uint32 layers;
 	uint32 doodad_refs;
 	MCVT *ptr_height;  // these are stored as offsets in the file, but we adjust them load time
@@ -998,10 +998,14 @@ struct MCNK : public ChunkHeader {
 
 #define MK_TAG(a, b, c, d) (a) << 24 | (b) << 16 | (c) << 8 | (d)
 
+void crunk(MCNK *mcnk)
+{
+
+}
+
 void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<TerrainChunk *> *terrain)
 {
 	int64 ofs = 0;
-	int chunk_counter = 0;
 
 	while (ofs < len) {
 		ChunkHeader header = *(ChunkHeader *)&buf[ofs];
@@ -1083,8 +1087,10 @@ void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<Ter
 				FIXUP(MCLV, mclv);
 
 				TerrainChunk *b = new TerrainChunk;
+				crunk(mcnk);
 
 				// Convert wow-block coord to d3d coord
+/*
 				float block_size = 1600 / 3.0f;
 				D3DXVECTOR3 org(block_size * ((block_y / 64.0f) - 0.5f), 0, block_size * ((block_x / 64.0f) - 0.5f));
 
@@ -1109,7 +1115,7 @@ void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<Ter
 						++i;
 					}
 				}
-
+*/
 				terrain->push_back(b);
 
 				int a = 10;
