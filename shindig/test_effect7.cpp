@@ -1003,6 +1003,16 @@ void crunk(MCNK *mcnk)
 
 }
 
+// converts name_y_x to d3d
+D3DXVECTOR3 block_to_d3d(int y, int x)
+{
+	const float block_radius = 102400 / 6.0f;
+	return D3DXVECTOR3(
+		(y - 32) * block_radius,
+		0,
+		(x - 32) * block_radius);
+}
+
 void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<TerrainChunk *> *terrain)
 {
 	int64 ofs = 0;
