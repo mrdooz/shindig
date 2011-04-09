@@ -26,6 +26,7 @@ vsOutput vsMain( in vsInput v )
 
 float4 psMain(in vsOutput v) : SV_TARGET
 {
+//	return float4(1,0,1,1);
 	return float4(v.normal,1);
 	return 0.5f * dot(normalize(light - v.ws_pos), v.normal);
 }

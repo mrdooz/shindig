@@ -41,7 +41,7 @@ App::App()
 	, _trackball(nullptr)
 	, _freefly(nullptr)
 	, _cur_camera(1)
-	, _draw_plane(true)
+	, _draw_plane(false)
 {
 	find_app_root();
 }

@@ -114,7 +114,7 @@ void FreeFlyCamera::init()
 {
   _phi = 0;
   _theta = 0;
-  _frame.e = D3DXVECTOR3(0,0,-100);
+  _frame.e = D3DXVECTOR3(-3000,0,3200);
 }
 
 void FreeFlyCamera::update()
