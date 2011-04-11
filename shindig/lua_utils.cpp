@@ -183,6 +183,7 @@ bool lua_load_states(const char *filename,
 
   // XXX: To get this to work, the lua_longjmp struct must be moved from ldo.c to ldo.h. There
   // has to be a cleaner way to do this..
+/*
   lua_longjmp jmp;
   jmp.previous = l->errorJmp;
   jmp.status = 0;
@@ -190,7 +191,7 @@ bool lua_load_states(const char *filename,
 
   int err;
   if (!(err = setjmp(jmp.b))) {
-
+*/
     CComPtr<ID3D11BlendState> tmp_blend;
     CComPtr<ID3D11SamplerState> tmp_sampler;
     CComPtr<ID3D11DepthStencilState> tmp_dss;
@@ -212,11 +213,11 @@ bool lua_load_states(const char *filename,
     if (d) *d = tmp_dss.Detach();
     if (s) *s = tmp_sampler.Detach();
     if (r) *r = tmp_rast.Detach();
-
+/*
   } else {
     LOG_ERROR_LN("Error loading lua state: %s", filename);
     return false;
   }
-
+*/
 	return true;
 }

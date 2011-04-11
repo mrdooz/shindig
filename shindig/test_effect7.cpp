@@ -19,7 +19,6 @@
 
 using namespace std;
 using boost::scoped_array;
-//using namespace boost;
 
 // make some less annoying types
 typedef uint8_t uint8;
@@ -32,9 +31,32 @@ typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
 
+
+
 namespace adt {
 //	void adt_parse_obj0(const uint8 *buf, int64 len);
 }
+
+struct M2 {
+	uint32 mmid_entry;
+	uint32 unique_id;
+	D3DXVECTOR3 pos;
+	D3DXVECTOR3 rot;
+	uint16 scale;
+	uint16 flags;
+};
+
+struct Wmo {
+	uint32 mwid_entry;
+	uint32 unique_id;
+	D3DXVECTOR3 pos;
+	D3DXVECTOR3 rot;
+	D3DXVECTOR3 ext[2];
+	uint16 flags;
+	uint16 doodad_set;
+	uint16 name_set;
+	uint16 padding;
+};
 
 
 // infos from http://wiki.devklog.net/index.php?title=The_MoPaQ_Archive_Format
@@ -877,12 +899,6 @@ bool MpqLoader::extract(const char *filename)
 
 namespace adt {
 
-static const int cVertsPerChunk = 9*9+8*8;
-
-struct TerrainChunk {
-	PosNormal data[cVertsPerChunk];
-};
-
 struct ChunkHeader {
 	union {
 		uint32 tag;
@@ -890,6 +906,30 @@ struct ChunkHeader {
 	};
 	uint32 data_size;
 };
+
+void dump_adt(const uint8 *buf, int64 len)
+{
+	int64 ofs = 0;
+
+	while (ofs < len) {
+		ChunkHeader header = *(ChunkHeader *)&buf[ofs];
+		// skip chunks without any data in them
+		if (!header.data_size) {
+			ofs += sizeof(ChunkHeader);
+			continue;
+		}
+
+		LOG_VERBOSE_LN("%c%c%c%c (%d)", header.tag >> 24, (header.tag >> 16) & 0xff, (header.tag >> 8) & 0xff, (header.tag) & 0xff, header.data_size);
+		ofs += sizeof(ChunkHeader) + header.data_size;
+	}
+}
+
+static const int cVertsPerChunk = 9*9+8*8;
+
+struct TerrainChunk {
+	PosNormal data[cVertsPerChunk];
+};
+
 
 struct MVER : public ChunkHeader {
 	uint32 version;
@@ -932,11 +972,13 @@ struct MWMO : public ChunkHeader {
 
 
 struct MDDF : public ChunkHeader {
-
+#pragma warning(suppress: 4200)
+	M2 data[];
 };
 
 struct MODF : public ChunkHeader {
-
+#pragma warning(suppress: 4200)
+	Wmo data[];
 };
 
 struct MFBO : public ChunkHeader {
@@ -1098,7 +1140,8 @@ TerrainChunk *create_terrain_chunk(MCNK *mcnk)
 }
 
 
-void adt_parse_obj0(const uint8 *buf, int64 len, vector<string2> *m2, vector<string2> *wmo)
+
+void adt_parse_obj0(const uint8 *buf, int64 len, vector<string2> *m2_filenames, vector<M2> *m2_data, vector<string2> *wmo_filenames, vector<Wmo> *wmo_data)
 {
 	int64 ofs = 0;
 	vector<int> mmdx_offsets, mwmo_offsets;
@@ -1149,16 +1192,13 @@ void adt_parse_obj0(const uint8 *buf, int64 len, vector<string2> *m2, vector<str
 			break;
 
 		case MK_TAG('M', 'D', 'D', 'F'):
-			{
-				int a = 10;
-			}
+			m2_data->resize(header.data_size / sizeof(M2));
+			memcpy((void *)m2_data->data(), ((const MDDF *)&buf[ofs])->data, header.data_size);
 			break;
 
 		case MK_TAG('M', 'O', 'D', 'F'):
-			{
-				int a = 10;
-			}
-			break;
+			wmo_data->resize(header.data_size / sizeof(Wmo));
+			memcpy((void *)wmo_data->data(), ((const MODF *)&buf[ofs])->data, header.data_size);
 
 		case MK_TAG('M', 'C', 'R', 'F'):
 			{
@@ -1173,11 +1213,10 @@ void adt_parse_obj0(const uint8 *buf, int64 len, vector<string2> *m2, vector<str
 
 	// save the names of the files used in the block
 	for (size_t i = 0; i < mmdx_offsets.size(); ++i)
-		m2->push_back(&mmdx->filenames[mmdx_offsets[i]]);
+		m2_filenames->push_back(&mmdx->filenames[mmdx_offsets[i]]);
 
 	for (size_t i = 0; i < mwmo_offsets.size(); ++i)
-		wmo->push_back(&mwmo->filenames[mwmo_offsets[i]]);
-
+		wmo_filenames->push_back(&mwmo->filenames[mwmo_offsets[i]]);
 }
 
 void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<TerrainChunk *> *terrain)
@@ -1315,26 +1354,78 @@ static void add_tris(int x, vector<int32>* tris)
 	tris->push_back(v3);
 }
 
-struct LevelLoader
-{
-	bool init(const char *zone_name);
+static const int cBlocksPerAxis = 64;
+static const int cBlocksPerZone = cBlocksPerAxis * cBlocksPerAxis;
 
-	static const int cBlocksPerAxis = 64;
-	static const int cBlocksPerZone = cBlocksPerAxis * cBlocksPerAxis;
+struct ObjectM2 {
+	bool is_loaded();
+};
+
+struct ObjectWmo {
+	bool is_loaded();
+};
+
+struct WorldBlock {
+	WorldBlock() : _empty(true), _loaded(false) {}
+
+	bool is_loaded();
+	bool is_empty();
+
+	vector<string2> m2_objects;
+	vector<string2> wmo_objects;
+
+	bool _empty;
+	bool _loaded;
+};
+
+struct Zone {
+	void render(const Camera &camera);
+
+	WorldBlock _blocks[cBlocksPerZone];
+};
+
+struct ZoneLoader {
+	Zone *init(const char *zone_name);
 
 	int _block_idx[cBlocksPerZone];
 
 	MpqLoader _loader;
 };
 
-bool LevelLoader::init(const char *zone_name)
+
+void Zone::render(const Camera &camera)
+{
+	// determine the visible blocks
+
+	// schedule blocks for loading
+
+	// 
+}
+
+
+
+Zone *ZoneLoader::init(const char *zone_name)
 {
 	if (!_loader.load_tables("\\projects\\cata_mpq\\expansion3.mpq"))
-		return false;
+		return NULL;
+
+	Zone *zone = new Zone;
 
 	// Check which blocks are available
 	for (int i=0; i < 64; ++i) {
 		for (int j =0; j < 64; ++j) {
+
+			WorldBlock &wb = zone->_blocks[i*cBlocksPerAxis+j];
+
+			{
+				char wdl[MAX_PATH];
+				sprintf(wdl, "%s_%.2d_%.2d_obj0.adt", zone_name, i+1, j+1);
+				uint8* buf;
+				uint64 len;
+				if (_loader.load_file(wdl, &buf, &len))
+					adt::dump_adt(buf, len);
+			}
+
 			char obj0[MAX_PATH];
 			// load the _obj0.adt file
 			sprintf(obj0, "%s_%.2d_%.2d_obj0.adt", zone_name, i+1, j+1);
@@ -1342,15 +1433,17 @@ bool LevelLoader::init(const char *zone_name)
 			uint64 len;
 			if (_loader.load_file(obj0, &buf, &len)) {
 				vector<string2> m2, wmo;
-				adt::adt_parse_obj0(buf, len, &m2, &wmo);
+				vector<M2> m2_objs;
+				vector<Wmo> wmo_objs;
+				adt::adt_parse_obj0(buf, len, &wb.m2_objects, &m2_objs, &wb.wmo_objects, &wmo_objs);
 				char adt_file[MAX_PATH];
 				sprintf(adt_file, "%s_%.2d_%.2d.adt", zone_name, i+1, j+1);
 				_block_idx[i * cBlocksPerAxis + j] = _loader.find_file(adt_file);
+				wb._empty = false;
 			}
-
 		}
 	}
-	return true;
+	return zone;
 }
 
 bool TestEffect7::init()
@@ -1362,13 +1455,11 @@ bool TestEffect7::init()
 	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/test_effect6.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect7::effect_loaded)));
 	App::instance().add_update_callback(MakeDelegate(this, &TestEffect7::update), true);
 
-	MpqLoader loader;
-	if (!loader.load_tables("\\projects\\cata_mpq\\expansion3.mpq"))
+	ZoneLoader loader;
+	Zone *zone = loader.init("World\\maps\\Deephome\\Deephome");
+	if (!zone)
 		return false;
-
-	LevelLoader ll;
-	ll.init("World\\maps\\Deephome\\Deephome");
-
+/*
 	vector<adt::TerrainChunk *> chunks;
 
 	for (int x = 0; x < 5; ++x) {
@@ -1388,27 +1479,28 @@ bool TestEffect7::init()
 		}
 	}
 
-	vector<int> tris;
+	if (!chunks.empty()) {
+		vector<int> tris;
 
-	for (size_t x = 0; x < chunks.size(); ++x) {
-		for (int i = 0; i < 9-1; ++i) {
-			for (int j = 0; j < 9-1; ++j) {
-				add_tris(x * adt::cVertsPerChunk + j*(9+8) + i, &tris);
+		for (size_t x = 0; x < chunks.size(); ++x) {
+			for (int i = 0; i < 9-1; ++i) {
+				for (int j = 0; j < 9-1; ++j) {
+					add_tris(x * adt::cVertsPerChunk + j*(9+8) + i, &tris);
+				}
 			}
 		}
+
+		create_static_index_buffer(Graphics::instance().device(), tris, &_ib);
+
+		PosNormal *p = _verts.map();
+		for (size_t i = 0; i < chunks.size(); ++i) {
+			memcpy(p, &chunks[i]->data[0], adt::cVertsPerChunk * sizeof(PosNormal));
+			p += adt::cVertsPerChunk;
+		}
+
+		_verts.unmap(p);
 	}
-
-	create_static_index_buffer(Graphics::instance().device(), tris, &_ib);
-
-	PosNormal *p = _verts.map();
-	for (size_t i = 0; i < chunks.size(); ++i) {
-		memcpy(p, &chunks[i]->data[0], adt::cVertsPerChunk * sizeof(PosNormal));
-		p += adt::cVertsPerChunk;
-	}
-
-	_verts.unmap(p);
-
-
+	*/
 	return true;
 }
 

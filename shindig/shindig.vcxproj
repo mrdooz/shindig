@@ -107,6 +107,7 @@
     <ClCompile Include="font_writer.cpp" />
     <ClCompile Include="demo.cpp" />
     <ClCompile Include="geometry.cpp" />
+    <ClCompile Include="graphics2.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="iprof\prof_draw.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
@@ -170,6 +171,7 @@
     <ClInclude Include="demo.hpp" />
     <ClInclude Include="effect_base.hpp" />
     <ClInclude Include="geometry.hpp" />
+    <ClInclude Include="graphics2.hpp" />
     <ClInclude Include="imgui.hpp" />
     <ClInclude Include="iprof\prof.h" />
     <ClInclude Include="iprof\prof_gather.h" />

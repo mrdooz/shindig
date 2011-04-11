@@ -129,6 +129,9 @@
     <ClCompile Include="md5.c">
       <Filter>external</Filter>
     </ClCompile>
+    <ClCompile Include="graphics2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp">
@@ -247,6 +250,9 @@
     </ClInclude>
     <ClInclude Include="md5.h">
       <Filter>external</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics2.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
