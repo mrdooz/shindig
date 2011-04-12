@@ -1378,6 +1378,11 @@ struct WorldBlock {
 	bool _loaded;
 };
 
+struct AABB {
+	D3DXVECTOR3 v_min;
+	D3DXVECTOR3 v_max;
+};
+
 struct Zone {
 	void render(const Camera &camera);
 
@@ -1385,7 +1390,7 @@ struct Zone {
 };
 
 struct ZoneLoader {
-	Zone *init(const char *zone_name);
+	Zone *load(const char *zone_name);
 
 	int _block_idx[cBlocksPerZone];
 
@@ -1404,12 +1409,21 @@ void Zone::render(const Camera &camera)
 
 
 
-Zone *ZoneLoader::init(const char *zone_name)
+Zone *ZoneLoader::load(const char *zone_name)
 {
 	if (!_loader.load_tables("\\projects\\cata_mpq\\expansion3.mpq"))
 		return NULL;
 
 	Zone *zone = new Zone;
+
+	{
+		char wdl[MAX_PATH];
+		sprintf(wdl, "%s.wdl", zone_name);
+		uint8* buf;
+		uint64 len;
+		if (_loader.load_file(wdl, &buf, &len))
+			adt::dump_adt(buf, len);
+	}
 
 	// Check which blocks are available
 	for (int i=0; i < 64; ++i) {
@@ -1417,14 +1431,6 @@ Zone *ZoneLoader::init(const char *zone_name)
 
 			WorldBlock &wb = zone->_blocks[i*cBlocksPerAxis+j];
 
-			{
-				char wdl[MAX_PATH];
-				sprintf(wdl, "%s_%.2d_%.2d_obj0.adt", zone_name, i+1, j+1);
-				uint8* buf;
-				uint64 len;
-				if (_loader.load_file(wdl, &buf, &len))
-					adt::dump_adt(buf, len);
-			}
 
 			char obj0[MAX_PATH];
 			// load the _obj0.adt file
@@ -1456,7 +1462,7 @@ bool TestEffect7::init()
 	App::instance().add_update_callback(MakeDelegate(this, &TestEffect7::update), true);
 
 	ZoneLoader loader;
-	Zone *zone = loader.init("World\\maps\\Deephome\\Deephome");
+	Zone *zone = loader.load("World\\maps\\Deephome\\Deephome");
 	if (!zone)
 		return false;
 /*
