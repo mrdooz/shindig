@@ -16,6 +16,7 @@
 #include <zlib.h>
 #include <direct.h>
 #include "md5.h"
+#include <xnamath.h>
 
 using namespace std;
 using boost::scoped_array;
@@ -1379,13 +1380,14 @@ struct WorldBlock {
 };
 
 struct AABB {
-	D3DXVECTOR3 v_min;
-	D3DXVECTOR3 v_max;
+	XMFLOAT3 v_min;
+	XMFLOAT3 v_max;
 };
 
 struct Zone {
 	void render(const Camera &camera);
 
+	AABB _bounding_boxes[cBlocksPerZone];
 	WorldBlock _blocks[cBlocksPerZone];
 };
 
@@ -1400,6 +1402,9 @@ struct ZoneLoader {
 
 void Zone::render(const Camera &camera)
 {
+	XMFLOAT4 planes[6];
+	calc_planes(camera.view() * camera.proj(), planes);
+
 	// determine the visible blocks
 
 	// schedule blocks for loading
@@ -1425,12 +1430,24 @@ Zone *ZoneLoader::load(const char *zone_name)
 			adt::dump_adt(buf, len);
 	}
 
+	const float x_min = -17066;
+	const float x_max = +17066;
+	const float x_inc = (x_max - x_min) / (cBlocksPerAxis-1);
+	const float z_min = -17066;
+	const float z_max = +17066;
+	const float z_inc = (z_max - z_min) / (cBlocksPerAxis-1);
+
+	float z_cur = z_max;
 	// Check which blocks are available
 	for (int i=0; i < 64; ++i) {
+		float x_cur = x_min;
 		for (int j =0; j < 64; ++j) {
 
-			WorldBlock &wb = zone->_blocks[i*cBlocksPerAxis+j];
-
+			const int idx = i*cBlocksPerAxis+j;
+			WorldBlock &wb = zone->_blocks[idx];
+			AABB &aabb = zone->_bounding_boxes[idx];
+			aabb.v_min = XMFLOAT3(x_cur, FLT_MIN, z_cur);
+			aabb.v_max = XMFLOAT3(x_cur + x_inc, FLT_MAX, z_cur - z_inc);
 
 			char obj0[MAX_PATH];
 			// load the _obj0.adt file
@@ -1447,7 +1464,9 @@ Zone *ZoneLoader::load(const char *zone_name)
 				_block_idx[i * cBlocksPerAxis + j] = _loader.find_file(adt_file);
 				wb._empty = false;
 			}
+			x_cur += x_inc;
 		}
+		z_cur -= z_inc;
 	}
 	return zone;
 }

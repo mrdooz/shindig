@@ -21,9 +21,10 @@ struct OBB
   D3DXVECTOR3 extents[3];
   D3DXVECTOR3 center;
 };
-
+/*
 struct AABB
 {
   D3DXVECTOR3 v0;
   D3DXVECTOR3 v1;
 };
+*/
