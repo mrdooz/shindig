@@ -1384,6 +1384,27 @@ struct AABB {
 	XMFLOAT3 v_max;
 };
 
+void expand_aabb(const AABB &aabb, XMFLOAT3 *out)
+{
+	XMVECTOR c = (XMLoadFloat3(&aabb.v_min) + XMLoadFloat3(&aabb.v_max)) / 2;
+	XMVECTOR r = (XMLoadFloat3(&aabb.v_max) - XMLoadFloat3(&aabb.v_min)) / 2;
+	XMVECTOR rx = XMVectorSet(XMVectorGetX(r), 0, 0, 0);
+	XMVECTOR ry = XMVectorSet(0, XMVectorGetY(r), 0, 0);
+	XMVECTOR rz = XMVectorSet(0, 0, XMVectorGetZ(r), 0);
+
+	// 2-3
+	// 0-1
+	XMStoreFloat3(&out[0], c - rx - ry  + rz);
+	XMStoreFloat3(&out[1], c + rx - ry  + rz);
+	XMStoreFloat3(&out[2], c - rx + ry  + rz);
+	XMStoreFloat3(&out[3], c + rx + ry  + rz);
+
+	XMStoreFloat3(&out[4], c - rx - ry  - rz);
+	XMStoreFloat3(&out[5], c + rx - ry  - rz);
+	XMStoreFloat3(&out[6], c - rx + ry  - rz);
+	XMStoreFloat3(&out[7], c + rx + ry  - rz);
+}
+
 struct Zone {
 	void render(const Camera &camera);
 
@@ -1402,8 +1423,14 @@ struct ZoneLoader {
 
 void Zone::render(const Camera &camera)
 {
-	XMFLOAT4 planes[6];
-	calc_planes(camera.view() * camera.proj(), planes);
+	// transform the AABBs to clip space for easier culling
+	//D3DXMATRIX mtx = camera.view() * camera.proj();
+
+	XMFLOAT3 ws_points[8*cBlocksPerZone];
+	XMFLOAT4 cs_points[8*cBlocksPerZone];
+	for (int i = 0; i < cBlocksPerZone; ++i)
+		expand_aabb(_bounding_boxes[i], &ws_points[i*8]);
+
 
 	// determine the visible blocks
 
@@ -1484,6 +1511,8 @@ bool TestEffect7::init()
 	Zone *zone = loader.load("World\\maps\\Deephome\\Deephome");
 	if (!zone)
 		return false;
+
+	zone->render(*App::instance().camera());
 /*
 	vector<adt::TerrainChunk *> chunks;
 
