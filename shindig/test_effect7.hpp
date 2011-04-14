@@ -9,6 +9,8 @@
 class Mesh2;
 struct Material;
 
+struct Zone;
+
 class TestEffect7 : public EffectBase
 {
 public:
@@ -26,6 +28,7 @@ private:
   void effect_loaded(EffectWrapper *effect);
 	bool load_states(const string2& filename);
 
+	Zone *_zone;
 	StaticBuffer _ib;
   DynamicVb<PosNormal> _verts;
   CComPtr<ID3D11InputLayout> _layout;

@@ -32,12 +32,6 @@ typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
 
-
-
-namespace adt {
-//	void adt_parse_obj0(const uint8 *buf, int64 len);
-}
-
 struct M2 {
 	uint32 mmid_entry;
 	uint32 unique_id;
@@ -58,6 +52,428 @@ struct Wmo {
 	uint16 name_set;
 	uint16 padding;
 };
+
+namespace adt {
+
+	struct ChunkHeader {
+		union {
+			uint32 tag;
+			char ctag[4];
+		};
+		uint32 data_size;
+	};
+
+	void dump_adt(const uint8 *buf, int64 len)
+	{
+		int64 ofs = 0;
+
+		while (ofs < len) {
+			ChunkHeader header = *(ChunkHeader *)&buf[ofs];
+			// skip chunks without any data in them
+			if (!header.data_size) {
+				ofs += sizeof(ChunkHeader);
+				continue;
+			}
+
+			LOG_VERBOSE_LN("%c%c%c%c (%d)", header.tag >> 24, (header.tag >> 16) & 0xff, (header.tag >> 8) & 0xff, (header.tag) & 0xff, header.data_size);
+			ofs += sizeof(ChunkHeader) + header.data_size;
+		}
+	}
+
+	static const int cVertsPerChunk = 9*9+8*8;
+
+	struct TerrainChunk {
+		PosNormal data[cVertsPerChunk];
+	};
+
+
+	struct MVER : public ChunkHeader {
+		uint32 version;
+	};
+
+	struct MCIN : public ChunkHeader {
+		struct Entry {
+			void *mcnk;
+			uint32 size;
+			uint32 flags;
+			uint32 async_id;
+		} entries[16*16];
+	};
+
+	struct MTEX : public ChunkHeader {
+		const char *filenames;
+	};
+
+	// offsets for the filenames in the mmdx chunk
+	struct MMID : public ChunkHeader {
+#pragma warning(suppress: 4200)
+		int filename_offsets[];
+	};
+
+	struct MMDX : public ChunkHeader {
+#pragma warning(suppress: 4200)
+		const char filenames[];
+	};
+
+	// offsets for the filenames in the mwmo chunk
+	struct MWID : public ChunkHeader {
+#pragma warning(suppress: 4200)
+		int filename_offsets[];
+	};
+
+	struct MWMO : public ChunkHeader {
+#pragma warning(suppress: 4200)
+		const char filenames[];
+	};
+
+
+	struct MDDF : public ChunkHeader {
+#pragma warning(suppress: 4200)
+		M2 data[];
+	};
+
+	struct MODF : public ChunkHeader {
+#pragma warning(suppress: 4200)
+		Wmo data[];
+	};
+
+	struct MFBO : public ChunkHeader {
+
+	};
+
+	struct MH2O : public ChunkHeader {
+
+	};
+
+	struct MTFX : public ChunkHeader {
+
+	};
+
+
+	struct MHDR : public ChunkHeader {
+		uint32 flags;
+		MCIN *mcin;
+		MTEX *mtex;
+		MMDX *mmdx;
+		MMID *mmid;
+		MWMO *mwmo;
+		MWID *mwid;
+		MDDF *mddf;
+		MODF *modf;
+		MFBO *mfbo;
+		MH2O *mh2o;
+		MTFX *mtfx;
+		uint32 unused[4];
+	};
+
+	struct MCVT : public ChunkHeader {
+		float height[cVertsPerChunk];
+	};
+
+	struct MCNR : public ChunkHeader {
+		struct Entry {
+			int8 x, y, z;
+		} entries[cVertsPerChunk];
+	};
+
+	struct MCLY : public ChunkHeader {
+
+	};
+
+	struct MCRF : public ChunkHeader {
+
+	};
+
+	struct MCAL : public ChunkHeader {
+
+	};
+
+	struct MCSH : public ChunkHeader {
+
+	};
+
+	struct MCSE : public ChunkHeader {
+
+	};
+
+	struct MCLQ : public ChunkHeader {
+
+	};
+
+	struct MCCV : public ChunkHeader {
+
+	};
+
+	struct MCLV : public ChunkHeader {
+
+	};
+
+	struct MCNK : public ChunkHeader {
+		uint32 flags;
+		uint32 index_row;
+		uint32 index_col;
+		uint32 layers;
+		uint32 doodad_refs;
+		MCVT *ptr_height;  // these are stored as offsets in the file, but we adjust them load time
+		MCNR *ptr_normal;
+		MCLY *ptr_layer;
+		MCRF *ptr_refs;
+		MCAL *ptr_alpha;
+		uint32 num_alpha;
+		MCSH *ptr_shadow;
+		uint32 num_shadow;
+		uint32 area_id;
+		uint32 num_map_obj_Refs;
+		uint32 holes;
+		uint8 lq_texturemap[16];
+		uint32 pred_tex;
+		uint32 no_effect_doodad;
+		MCSE *ptr_sound_emitters;
+		uint32 num_sound_emitters;
+		MCLQ *ptr_liquid;
+		uint32 num_liquid;
+		float pos_x;
+		float pos_y;
+		float pos_z;
+		MCCV *ptr_mccv;
+		MCLV *ptr_mclv;
+		uint32 unused;
+	};
+
+#define MK_TAG(a, b, c, d) (a) << 24 | (b) << 16 | (c) << 8 | (d)
+
+	// converts name_y_x to d3d
+	D3DXVECTOR3 block_to_d3d(int y, int x)
+	{
+		const float map_size = 102400 / 3.0f;
+		const float block_radius = map_size / 2 / 64;
+		return D3DXVECTOR3(
+			(y - 32) * block_radius,
+			0,
+			(x - 32) * block_radius);
+	}
+
+	D3DXVECTOR3 coord_to_d3d(float x, float y, float z)
+	{
+		return D3DXVECTOR3(-y, z, x);
+	}
+
+	D3DXVECTOR3 uncompress_normal(int nx, int ny, int nz)
+	{
+		return D3DXVECTOR3(nx/127.0f, ny/127.0f, nz/127.0f);
+	}
+
+	TerrainChunk *create_terrain_chunk(MCNK *mcnk)
+	{
+		TerrainChunk *b = new TerrainChunk;
+
+		const float block_size = 1600 / 3.0f;
+		const float chunk_size = block_size / 16;
+		const float grid_spacing = chunk_size / 8;
+
+		const D3DXVECTOR3 chunk_org = coord_to_d3d(mcnk->pos_x, mcnk->pos_y, mcnk->pos_z);
+
+		// vertex layout:
+		// 1    2    3    4    5    6    7    8    9
+		//   10   11   12   13   14   15   16   17
+		// 18   19   20   21   22   23   24   25   26
+
+		int idx = 0;
+		for (int i = 0; i < 8+9; ++i) {
+			const bool inner = !!(i % 2);
+			const float nudge = inner ? grid_spacing / 2 : 0;
+			for (int j = 0; j < (inner ? 8 : 9); ++j) {
+				const float x = nudge + j * grid_spacing;
+				const float y = mcnk->ptr_height->height[idx];
+				const float z = 9 * grid_spacing - (nudge + (i >> 1) * grid_spacing);
+				b->data[idx].pos = chunk_org + D3DXVECTOR3(x, y, z);
+				b->data[idx].normal = uncompress_normal(mcnk->ptr_normal->entries[idx].x, mcnk->ptr_normal->entries[idx].y, mcnk->ptr_normal->entries[idx].z);
+				++idx;
+			}
+		}
+
+		return b;
+	}
+
+
+
+	void adt_parse_obj0(const uint8 *buf, int64 len, vector<string2> *m2_filenames, vector<M2> *m2_data, vector<string2> *wmo_filenames, vector<Wmo> *wmo_data)
+	{
+		int64 ofs = 0;
+		vector<int> mmdx_offsets, mwmo_offsets;
+		MMDX *mmdx = NULL;
+		MWMO *mwmo = NULL;
+
+		while (ofs < len) {
+			ChunkHeader header = *(ChunkHeader *)&buf[ofs];
+			// skip chunks without any data in them
+			if (!header.data_size) {
+				ofs += sizeof(ChunkHeader);
+				continue;
+			}
+
+			LOG_VERBOSE_LN("%c%c%c%c (%d)", header.tag >> 24, (header.tag >> 16) & 0xff, (header.tag >> 8) & 0xff, (header.tag) & 0xff, header.data_size);
+			switch (header.tag) {
+			case MK_TAG('M', 'V', 'E', 'R'):
+				{
+					MVER *mver = (MVER *)&buf[ofs];
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'M', 'I', 'D'):
+				{
+					MMID *mmid = (MMID *)&buf[ofs];
+					for (size_t i = 0; i < header.data_size / sizeof(int); ++i)
+						mmdx_offsets.push_back(mmid->filename_offsets[i]);
+				}
+				break;
+
+			case MK_TAG('M', 'M', 'D', 'X'):
+				assert(!mmdx);
+				mmdx = (MMDX *)&buf[ofs];
+				break;
+
+			case MK_TAG('M', 'W', 'I', 'D'):
+				{
+					MWID *mwid = (MWID *)&buf[ofs];
+					for (size_t i = 0; i < header.data_size / sizeof(int); ++i)
+						mwmo_offsets.push_back(mwid->filename_offsets[i]);
+				}
+				break;
+
+			case MK_TAG('M', 'W', 'M', 'O'):
+				assert(!mwmo);
+				mwmo = (MWMO *)&buf[ofs];
+				break;
+
+			case MK_TAG('M', 'D', 'D', 'F'):
+				m2_data->resize(header.data_size / sizeof(M2));
+				memcpy((void *)m2_data->data(), ((const MDDF *)&buf[ofs])->data, header.data_size);
+				break;
+
+			case MK_TAG('M', 'O', 'D', 'F'):
+				wmo_data->resize(header.data_size / sizeof(Wmo));
+				memcpy((void *)wmo_data->data(), ((const MODF *)&buf[ofs])->data, header.data_size);
+
+			case MK_TAG('M', 'C', 'R', 'F'):
+				{
+
+				}
+				break;
+
+			}
+
+			ofs += sizeof(ChunkHeader) + header.data_size;
+		}
+
+		// save the names of the files used in the block
+		for (size_t i = 0; i < mmdx_offsets.size(); ++i)
+			m2_filenames->push_back(&mmdx->filenames[mmdx_offsets[i]]);
+
+		for (size_t i = 0; i < mwmo_offsets.size(); ++i)
+			wmo_filenames->push_back(&mwmo->filenames[mwmo_offsets[i]]);
+	}
+
+	void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<TerrainChunk *> *terrain)
+	{
+		const D3DXVECTOR3 block_pos = block_to_d3d(block_y, block_x);
+
+		int64 ofs = 0;
+		while (ofs < len) {
+			ChunkHeader header = *(ChunkHeader *)&buf[ofs];
+
+			//LOG_VERBOSE_LN("%c%c%c%c (%d)", header.tag >> 24, (header.tag >> 16) & 0xff, (header.tag >> 8) & 0xff, (header.tag) & 0xff, header.data_size);
+
+			switch (header.tag) {
+			case MK_TAG('M', 'V', 'E', 'R'):
+				{
+					MVER *mver = (MVER *)&buf[ofs];
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'H', 'D', 'R'):
+				{
+					MHDR *mhdr = (MHDR *)&buf[ofs];
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'C', 'I', 'N'):
+				break;
+
+			case MK_TAG('M', 'T', 'E', 'X'):
+				{
+					MTEX *mtex = (MTEX *)&buf[ofs];
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'M', 'D', 'X'):
+				{
+					MMDX *mmdx = (MMDX *)&buf[ofs];
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'M', 'I', 'D'):
+				break;
+
+			case MK_TAG('M', 'W', 'M', 'O'):
+				{
+					MWMO *mmdx = (MWMO *)&buf[ofs];
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'W', 'I', 'D'):
+				break;
+
+			case MK_TAG('M', 'D', 'D', 'F'):
+				break;
+
+			case MK_TAG('M', 'O', 'D', 'F'):
+				{
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'H', '2', 'O'):
+				{
+					int a = 10;
+				}
+				break;
+
+			case MK_TAG('M', 'C', 'N', 'K'):
+				{
+					MCNK *mcnk = (MCNK *)&buf[ofs];
+					// fix up the pointers
+#define FIXUP(type, p) mcnk->ptr_ ## p = mcnk->ptr_ ## p ? (type *)&buf[ofs + uintptr_t(mcnk->ptr_ ## p)] : 0;
+					FIXUP(MCVT, height);
+					FIXUP(MCNR, normal);
+					FIXUP(MCLY, layer);
+					FIXUP(MCRF, refs);
+					FIXUP(MCAL, alpha);
+					FIXUP(MCSH, shadow);
+					FIXUP(MCSE, sound_emitters);
+					FIXUP(MCLQ, liquid);
+					FIXUP(MCCV, mccv);
+					FIXUP(MCLV, mclv);
+
+					terrain->push_back(create_terrain_chunk(mcnk));
+				}
+				break;
+
+
+			}
+
+			ofs += sizeof(ChunkHeader) + header.data_size;
+		}
+	}
+
+}
+
 
 
 // infos from http://wiki.devklog.net/index.php?title=The_MoPaQ_Archive_Format
@@ -487,7 +903,7 @@ struct MpqLoader {
 	int32_t find_file(const char *filename);
 	bool load_file_data(int32 idx, uint32 *file_pos, uint32 *file_size, uint32 *compressed_size, uint32 *flags, uint32 *unknown);
 
-//private:
+	//private:
 	// Different types of hashes to make with hash_string
 	enum HashType {
 		HashTypeTableOffset = 0,
@@ -518,6 +934,212 @@ struct MpqLoader {
 	uint32 _crypt_table[0x500];
 	//uint8;
 };
+
+
+static const int cBlocksPerAxis = 64;
+static const int cBlocksPerZone = cBlocksPerAxis * cBlocksPerAxis;
+
+struct ObjectM2 {
+	bool is_loaded();
+};
+
+struct ObjectWmo {
+	bool is_loaded();
+};
+
+struct WorldBlock {
+	WorldBlock() : _empty(true), _loaded(false) {}
+
+	bool is_loaded();
+	bool is_empty();
+
+	vector<string2> m2_objects;
+	vector<string2> wmo_objects;
+
+	bool _empty;
+	bool _loaded;
+};
+
+bool WorldBlock::is_loaded()
+{
+	return _loaded;
+}
+
+struct AABB {
+	XMFLOAT3 v_min;
+	XMFLOAT3 v_max;
+};
+
+void expand_aabb(const AABB &aabb, XMFLOAT3 *out)
+{
+	XMVECTOR c = (XMLoadFloat3(&aabb.v_min) + XMLoadFloat3(&aabb.v_max)) / 2;
+	XMVECTOR r = (XMLoadFloat3(&aabb.v_max) - XMLoadFloat3(&aabb.v_min)) / 2;
+	XMVECTOR rx = XMVectorSet(XMVectorGetX(r), 0, 0, 0);
+	XMVECTOR ry = XMVectorSet(0, XMVectorGetY(r), 0, 0);
+	XMVECTOR rz = XMVectorSet(0, 0, XMVectorGetZ(r), 0);
+
+	// 2-3
+	// 0-1
+	XMStoreFloat3(&out[0], c - rx - ry  + rz);
+	XMStoreFloat3(&out[1], c + rx - ry  + rz);
+	XMStoreFloat3(&out[2], c - rx + ry  + rz);
+	XMStoreFloat3(&out[3], c + rx + ry  + rz);
+
+	XMStoreFloat3(&out[4], c - rx - ry  - rz);
+	XMStoreFloat3(&out[5], c + rx - ry  - rz);
+	XMStoreFloat3(&out[6], c - rx + ry  - rz);
+	XMStoreFloat3(&out[7], c + rx + ry  - rz);
+}
+
+struct Zone {
+	void render(const Camera &camera);
+
+	AABB _bounding_boxes[cBlocksPerZone];
+	WorldBlock _blocks[cBlocksPerZone];
+};
+
+struct ZoneLoader {
+	Zone *load(const char *zone_name);
+
+	int _block_idx[cBlocksPerZone];
+
+	MpqLoader _loader;
+};
+
+XMMATRIX load_xmmatrix(const D3DXMATRIX &mtx)
+{
+	XMMATRIX m;
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			m(i, j) = mtx(i,j);
+		}
+	}
+	return m;
+}
+
+enum ClipPlanes {
+	kClipLeft   = 1 << 0,
+	kClipRight  = 1 << 1,
+	kClipTop    = 1 << 2,
+	kClipBottom = 1 << 3,
+	kClipNear   = 1 << 4,
+	kClipFar    = 1 << 5,
+};
+
+void inside_frustum(const XMFLOAT4 *corners, int boxes, bool *results)
+{
+	uint32 res[8];
+	for (int i = 0; i < boxes; ++i) {
+
+		for (int j = 0; j < 8; ++j) {
+			const XMFLOAT4 &cur = corners[i*8+j];
+			res[j] = 0;
+			res[j] |= (cur.x < -cur.w) ? kClipLeft : 0;
+			res[j] |= (cur.x > cur.w) ? kClipRight : 0;
+			res[j] |= (cur.y < -cur.w) ? kClipBottom : 0;
+			res[j] |= (cur.y > cur.w) ? kClipTop : 0;
+			res[j] |= (cur.z < 0) ? kClipNear : 0;
+			res[j] |= (cur.z > cur.w) ? kClipFar : 0;
+		}
+
+		uint32 tmp = res[0];
+		for (int j = 0; j < 8; ++j)
+			tmp &= res[j];
+
+		// if tmp != 0, then all the corner points are outside a certain plane
+		results[i] = !tmp;
+	}
+}
+
+
+void Zone::render(const Camera &camera)
+{
+	// transform the AABBs to clip space for easier culling
+	XMMATRIX mtx = load_xmmatrix(camera.view() * camera.proj());
+
+	// Calc the corner points for the AABBs, and transform these to clip space
+	XMFLOAT3 ws_points[8*cBlocksPerZone];
+	XMFLOAT4 cs_points[8*cBlocksPerZone];
+	for (int i = 0; i < cBlocksPerZone; ++i)
+		expand_aabb(_bounding_boxes[i], &ws_points[i*8]);
+
+	XMVector3TransformStream(cs_points, sizeof(XMFLOAT4), ws_points, sizeof(XMFLOAT3), 8*cBlocksPerZone, mtx);
+
+	// determine the visible blocks
+	bool inside[cBlocksPerZone];
+	inside_frustum(cs_points, cBlocksPerZone, inside);
+
+	// todo: we should do some kind of speculative loading here
+
+	vector<int> blocks_to_load;
+	// schedule blocks for loading
+	for (int i = 0; i < cBlocksPerZone; ++i) {
+		if (inside[i] && !_blocks[i].is_loaded())
+			blocks_to_load.push_back(i);
+	}
+
+	// 
+}
+
+
+
+Zone *ZoneLoader::load(const char *zone_name)
+{
+	if (!_loader.load_tables("\\projects\\cata_mpq\\expansion3.mpq"))
+		return NULL;
+
+	Zone *zone = new Zone;
+
+	{
+		char wdl[MAX_PATH];
+		sprintf(wdl, "%s.wdl", zone_name);
+		uint8* buf;
+		uint64 len;
+		if (_loader.load_file(wdl, &buf, &len))
+			adt::dump_adt(buf, len);
+	}
+
+	const float x_min = -17066;
+	const float x_max = +17066;
+	const float x_inc = (x_max - x_min) / (cBlocksPerAxis-1);
+	const float z_min = -17066;
+	const float z_max = +17066;
+	const float z_inc = (z_max - z_min) / (cBlocksPerAxis-1);
+
+	float z_cur = z_max;
+	// Check which blocks are available
+	for (int i=0; i < 64; ++i) {
+		float x_cur = x_min;
+		for (int j =0; j < 64; ++j) {
+
+			const int idx = i*cBlocksPerAxis+j;
+			WorldBlock &wb = zone->_blocks[idx];
+			AABB &aabb = zone->_bounding_boxes[idx];
+			aabb.v_min = XMFLOAT3(x_cur, FLT_MIN, z_cur);
+			aabb.v_max = XMFLOAT3(x_cur + x_inc, FLT_MAX, z_cur - z_inc);
+
+			char obj0[MAX_PATH];
+			// load the _obj0.adt file
+			sprintf(obj0, "%s_%.2d_%.2d_obj0.adt", zone_name, i+1, j+1);
+			uint8* buf;
+			uint64 len;
+			if (_loader.load_file(obj0, &buf, &len)) {
+				vector<string2> m2, wmo;
+				vector<M2> m2_objs;
+				vector<Wmo> wmo_objs;
+				adt::adt_parse_obj0(buf, len, &wb.m2_objects, &m2_objs, &wb.wmo_objects, &wmo_objs);
+				char adt_file[MAX_PATH];
+				sprintf(adt_file, "%s_%.2d_%.2d.adt", zone_name, i+1, j+1);
+				_block_idx[i * cBlocksPerAxis + j] = _loader.find_file(adt_file);
+				wb._empty = false;
+			}
+			x_cur += x_inc;
+		}
+		z_cur -= z_inc;
+	}
+	return zone;
+}
+
 
 MpqLoader::MpqLoader()
 	: _het_header(nullptr)
@@ -898,433 +1520,15 @@ bool MpqLoader::extract(const char *filename)
 	return true;
 }
 
-namespace adt {
-
-struct ChunkHeader {
-	union {
-		uint32 tag;
-		char ctag[4];
-	};
-	uint32 data_size;
-};
-
-void dump_adt(const uint8 *buf, int64 len)
-{
-	int64 ofs = 0;
-
-	while (ofs < len) {
-		ChunkHeader header = *(ChunkHeader *)&buf[ofs];
-		// skip chunks without any data in them
-		if (!header.data_size) {
-			ofs += sizeof(ChunkHeader);
-			continue;
-		}
-
-		LOG_VERBOSE_LN("%c%c%c%c (%d)", header.tag >> 24, (header.tag >> 16) & 0xff, (header.tag >> 8) & 0xff, (header.tag) & 0xff, header.data_size);
-		ofs += sizeof(ChunkHeader) + header.data_size;
-	}
-}
-
-static const int cVertsPerChunk = 9*9+8*8;
-
-struct TerrainChunk {
-	PosNormal data[cVertsPerChunk];
-};
-
-
-struct MVER : public ChunkHeader {
-	uint32 version;
-};
-
-struct MCIN : public ChunkHeader {
-	struct Entry {
-		void *mcnk;
-		uint32 size;
-		uint32 flags;
-		uint32 async_id;
-	} entries[16*16];
-};
-
-struct MTEX : public ChunkHeader {
-	const char *filenames;
-};
-
-// offsets for the filenames in the mmdx chunk
-struct MMID : public ChunkHeader {
-#pragma warning(suppress: 4200)
-	int filename_offsets[];
-};
-
-struct MMDX : public ChunkHeader {
-#pragma warning(suppress: 4200)
-	const char filenames[];
-};
-
-// offsets for the filenames in the mwmo chunk
-struct MWID : public ChunkHeader {
-#pragma warning(suppress: 4200)
-	int filename_offsets[];
-};
-
-struct MWMO : public ChunkHeader {
-#pragma warning(suppress: 4200)
-	const char filenames[];
-};
-
-
-struct MDDF : public ChunkHeader {
-#pragma warning(suppress: 4200)
-	M2 data[];
-};
-
-struct MODF : public ChunkHeader {
-#pragma warning(suppress: 4200)
-	Wmo data[];
-};
-
-struct MFBO : public ChunkHeader {
-
-};
-
-struct MH2O : public ChunkHeader {
-
-};
-
-struct MTFX : public ChunkHeader {
-
-};
-
-
-struct MHDR : public ChunkHeader {
-	uint32 flags;
-	MCIN *mcin;
-	MTEX *mtex;
-	MMDX *mmdx;
-	MMID *mmid;
-	MWMO *mwmo;
-	MWID *mwid;
-	MDDF *mddf;
-	MODF *modf;
-	MFBO *mfbo;
-	MH2O *mh2o;
-	MTFX *mtfx;
-	uint32 unused[4];
-};
-
-struct MCVT : public ChunkHeader {
-	float height[cVertsPerChunk];
-};
-
-struct MCNR : public ChunkHeader {
-	struct Entry {
-		int8 x, y, z;
-	} entries[cVertsPerChunk];
-};
-
-struct MCLY : public ChunkHeader {
-
-};
-
-struct MCRF : public ChunkHeader {
-
-};
-
-struct MCAL : public ChunkHeader {
-
-};
-
-struct MCSH : public ChunkHeader {
-
-};
-
-struct MCSE : public ChunkHeader {
-
-};
-
-struct MCLQ : public ChunkHeader {
-
-};
-
-struct MCCV : public ChunkHeader {
-
-};
-
-struct MCLV : public ChunkHeader {
-
-};
-
-struct MCNK : public ChunkHeader {
-	uint32 flags;
-	uint32 index_row;
-	uint32 index_col;
-	uint32 layers;
-	uint32 doodad_refs;
-	MCVT *ptr_height;  // these are stored as offsets in the file, but we adjust them load time
-	MCNR *ptr_normal;
-	MCLY *ptr_layer;
-	MCRF *ptr_refs;
-	MCAL *ptr_alpha;
-	uint32 num_alpha;
-	MCSH *ptr_shadow;
-	uint32 num_shadow;
-	uint32 area_id;
-	uint32 num_map_obj_Refs;
-	uint32 holes;
-	uint8 lq_texturemap[16];
-	uint32 pred_tex;
-	uint32 no_effect_doodad;
-	MCSE *ptr_sound_emitters;
-	uint32 num_sound_emitters;
-	MCLQ *ptr_liquid;
-	uint32 num_liquid;
-	float pos_x;
-	float pos_y;
-	float pos_z;
-	MCCV *ptr_mccv;
-	MCLV *ptr_mclv;
-	uint32 unused;
-};
-
-#define MK_TAG(a, b, c, d) (a) << 24 | (b) << 16 | (c) << 8 | (d)
-
-// converts name_y_x to d3d
-D3DXVECTOR3 block_to_d3d(int y, int x)
-{
-	const float map_size = 102400 / 3.0f;
-	const float block_radius = map_size / 2 / 64;
-	return D3DXVECTOR3(
-		(y - 32) * block_radius,
-		0,
-		(x - 32) * block_radius);
-}
-
-D3DXVECTOR3 coord_to_d3d(float x, float y, float z)
-{
-	return D3DXVECTOR3(-y, z, x);
-}
-
-D3DXVECTOR3 uncompress_normal(int nx, int ny, int nz)
-{
-	return D3DXVECTOR3(nx/127.0f, ny/127.0f, nz/127.0f);
-}
-
-TerrainChunk *create_terrain_chunk(MCNK *mcnk)
-{
-	TerrainChunk *b = new TerrainChunk;
-
-	const float block_size = 1600 / 3.0f;
-	const float chunk_size = block_size / 16;
-	const float grid_spacing = chunk_size / 8;
-
-	const D3DXVECTOR3 chunk_org = coord_to_d3d(mcnk->pos_x, mcnk->pos_y, mcnk->pos_z);
-
-	// vertex layout:
-	// 1    2    3    4    5    6    7    8    9
-	//   10   11   12   13   14   15   16   17
-	// 18   19   20   21   22   23   24   25   26
-
-	int idx = 0;
-	for (int i = 0; i < 8+9; ++i) {
-		const bool inner = !!(i % 2);
-		const float nudge = inner ? grid_spacing / 2 : 0;
-		for (int j = 0; j < (inner ? 8 : 9); ++j) {
-			const float x = nudge + j * grid_spacing;
-			const float y = mcnk->ptr_height->height[idx];
-			const float z = 9 * grid_spacing - (nudge + (i >> 1) * grid_spacing);
-			b->data[idx].pos = chunk_org + D3DXVECTOR3(x, y, z);
-			b->data[idx].normal = uncompress_normal(mcnk->ptr_normal->entries[idx].x, mcnk->ptr_normal->entries[idx].y, mcnk->ptr_normal->entries[idx].z);
-			++idx;
-		}
-	}
-
-	return b;
-}
-
-
-
-void adt_parse_obj0(const uint8 *buf, int64 len, vector<string2> *m2_filenames, vector<M2> *m2_data, vector<string2> *wmo_filenames, vector<Wmo> *wmo_data)
-{
-	int64 ofs = 0;
-	vector<int> mmdx_offsets, mwmo_offsets;
-	MMDX *mmdx = NULL;
-	MWMO *mwmo = NULL;
-
-	while (ofs < len) {
-		ChunkHeader header = *(ChunkHeader *)&buf[ofs];
-		// skip chunks without any data in them
-		if (!header.data_size) {
-			ofs += sizeof(ChunkHeader);
-			continue;
-		}
-
-		LOG_VERBOSE_LN("%c%c%c%c (%d)", header.tag >> 24, (header.tag >> 16) & 0xff, (header.tag >> 8) & 0xff, (header.tag) & 0xff, header.data_size);
-		switch (header.tag) {
-		case MK_TAG('M', 'V', 'E', 'R'):
-			{
-				MVER *mver = (MVER *)&buf[ofs];
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'M', 'I', 'D'):
-			{
-				MMID *mmid = (MMID *)&buf[ofs];
-				for (size_t i = 0; i < header.data_size / sizeof(int); ++i)
-					mmdx_offsets.push_back(mmid->filename_offsets[i]);
-			}
-			break;
-
-		case MK_TAG('M', 'M', 'D', 'X'):
-			assert(!mmdx);
-			mmdx = (MMDX *)&buf[ofs];
-			break;
-
-		case MK_TAG('M', 'W', 'I', 'D'):
-			{
-				MWID *mwid = (MWID *)&buf[ofs];
-				for (size_t i = 0; i < header.data_size / sizeof(int); ++i)
-					mwmo_offsets.push_back(mwid->filename_offsets[i]);
-			}
-			break;
-
-		case MK_TAG('M', 'W', 'M', 'O'):
-			assert(!mwmo);
-			mwmo = (MWMO *)&buf[ofs];
-			break;
-
-		case MK_TAG('M', 'D', 'D', 'F'):
-			m2_data->resize(header.data_size / sizeof(M2));
-			memcpy((void *)m2_data->data(), ((const MDDF *)&buf[ofs])->data, header.data_size);
-			break;
-
-		case MK_TAG('M', 'O', 'D', 'F'):
-			wmo_data->resize(header.data_size / sizeof(Wmo));
-			memcpy((void *)wmo_data->data(), ((const MODF *)&buf[ofs])->data, header.data_size);
-
-		case MK_TAG('M', 'C', 'R', 'F'):
-			{
-				
-			}
-			break;
-
-		}
-
-		ofs += sizeof(ChunkHeader) + header.data_size;
-	}
-
-	// save the names of the files used in the block
-	for (size_t i = 0; i < mmdx_offsets.size(); ++i)
-		m2_filenames->push_back(&mmdx->filenames[mmdx_offsets[i]]);
-
-	for (size_t i = 0; i < mwmo_offsets.size(); ++i)
-		wmo_filenames->push_back(&mwmo->filenames[mwmo_offsets[i]]);
-}
-
-void adt_parse(const uint8 *buf, int64 len, int block_x, int block_y, vector<TerrainChunk *> *terrain)
-{
-	const D3DXVECTOR3 block_pos = block_to_d3d(block_y, block_x);
-
-	int64 ofs = 0;
-	while (ofs < len) {
-		ChunkHeader header = *(ChunkHeader *)&buf[ofs];
-
-		//LOG_VERBOSE_LN("%c%c%c%c (%d)", header.tag >> 24, (header.tag >> 16) & 0xff, (header.tag >> 8) & 0xff, (header.tag) & 0xff, header.data_size);
-
-		switch (header.tag) {
-		case MK_TAG('M', 'V', 'E', 'R'):
-			{
-				MVER *mver = (MVER *)&buf[ofs];
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'H', 'D', 'R'):
-			{
-				MHDR *mhdr = (MHDR *)&buf[ofs];
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'C', 'I', 'N'):
-			break;
-
-		case MK_TAG('M', 'T', 'E', 'X'):
-			{
-				MTEX *mtex = (MTEX *)&buf[ofs];
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'M', 'D', 'X'):
-			{
-				MMDX *mmdx = (MMDX *)&buf[ofs];
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'M', 'I', 'D'):
-			break;
-
-		case MK_TAG('M', 'W', 'M', 'O'):
-			{
-				MWMO *mmdx = (MWMO *)&buf[ofs];
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'W', 'I', 'D'):
-			break;
-
-		case MK_TAG('M', 'D', 'D', 'F'):
-			break;
-
-		case MK_TAG('M', 'O', 'D', 'F'):
-			{
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'H', '2', 'O'):
-			{
-				int a = 10;
-			}
-			break;
-
-		case MK_TAG('M', 'C', 'N', 'K'):
-			{
-				MCNK *mcnk = (MCNK *)&buf[ofs];
-				// fix up the pointers
-#define FIXUP(type, p) mcnk->ptr_ ## p = mcnk->ptr_ ## p ? (type *)&buf[ofs + uintptr_t(mcnk->ptr_ ## p)] : 0;
-				FIXUP(MCVT, height);
-				FIXUP(MCNR, normal);
-				FIXUP(MCLY, layer);
-				FIXUP(MCRF, refs);
-				FIXUP(MCAL, alpha);
-				FIXUP(MCSH, shadow);
-				FIXUP(MCSE, sound_emitters);
-				FIXUP(MCLQ, liquid);
-				FIXUP(MCCV, mccv);
-				FIXUP(MCLV, mclv);
-
-				terrain->push_back(create_terrain_chunk(mcnk));
-			}
-			break;
-
-
-		}
-
-		ofs += sizeof(ChunkHeader) + header.data_size;
-	}
-}
-
-}
 
 TestEffect7::TestEffect7()
+	: _zone(NULL)
 {
 }
 
 TestEffect7::~TestEffect7()
 {
+	delete exch_null(_zone);
 }
 
 static void add_tris(int x, vector<int32>* tris)
@@ -1355,149 +1559,6 @@ static void add_tris(int x, vector<int32>* tris)
 	tris->push_back(v3);
 }
 
-static const int cBlocksPerAxis = 64;
-static const int cBlocksPerZone = cBlocksPerAxis * cBlocksPerAxis;
-
-struct ObjectM2 {
-	bool is_loaded();
-};
-
-struct ObjectWmo {
-	bool is_loaded();
-};
-
-struct WorldBlock {
-	WorldBlock() : _empty(true), _loaded(false) {}
-
-	bool is_loaded();
-	bool is_empty();
-
-	vector<string2> m2_objects;
-	vector<string2> wmo_objects;
-
-	bool _empty;
-	bool _loaded;
-};
-
-struct AABB {
-	XMFLOAT3 v_min;
-	XMFLOAT3 v_max;
-};
-
-void expand_aabb(const AABB &aabb, XMFLOAT3 *out)
-{
-	XMVECTOR c = (XMLoadFloat3(&aabb.v_min) + XMLoadFloat3(&aabb.v_max)) / 2;
-	XMVECTOR r = (XMLoadFloat3(&aabb.v_max) - XMLoadFloat3(&aabb.v_min)) / 2;
-	XMVECTOR rx = XMVectorSet(XMVectorGetX(r), 0, 0, 0);
-	XMVECTOR ry = XMVectorSet(0, XMVectorGetY(r), 0, 0);
-	XMVECTOR rz = XMVectorSet(0, 0, XMVectorGetZ(r), 0);
-
-	// 2-3
-	// 0-1
-	XMStoreFloat3(&out[0], c - rx - ry  + rz);
-	XMStoreFloat3(&out[1], c + rx - ry  + rz);
-	XMStoreFloat3(&out[2], c - rx + ry  + rz);
-	XMStoreFloat3(&out[3], c + rx + ry  + rz);
-
-	XMStoreFloat3(&out[4], c - rx - ry  - rz);
-	XMStoreFloat3(&out[5], c + rx - ry  - rz);
-	XMStoreFloat3(&out[6], c - rx + ry  - rz);
-	XMStoreFloat3(&out[7], c + rx + ry  - rz);
-}
-
-struct Zone {
-	void render(const Camera &camera);
-
-	AABB _bounding_boxes[cBlocksPerZone];
-	WorldBlock _blocks[cBlocksPerZone];
-};
-
-struct ZoneLoader {
-	Zone *load(const char *zone_name);
-
-	int _block_idx[cBlocksPerZone];
-
-	MpqLoader _loader;
-};
-
-
-void Zone::render(const Camera &camera)
-{
-	// transform the AABBs to clip space for easier culling
-	//D3DXMATRIX mtx = camera.view() * camera.proj();
-
-	XMFLOAT3 ws_points[8*cBlocksPerZone];
-	XMFLOAT4 cs_points[8*cBlocksPerZone];
-	for (int i = 0; i < cBlocksPerZone; ++i)
-		expand_aabb(_bounding_boxes[i], &ws_points[i*8]);
-
-
-	// determine the visible blocks
-
-	// schedule blocks for loading
-
-	// 
-}
-
-
-
-Zone *ZoneLoader::load(const char *zone_name)
-{
-	if (!_loader.load_tables("\\projects\\cata_mpq\\expansion3.mpq"))
-		return NULL;
-
-	Zone *zone = new Zone;
-
-	{
-		char wdl[MAX_PATH];
-		sprintf(wdl, "%s.wdl", zone_name);
-		uint8* buf;
-		uint64 len;
-		if (_loader.load_file(wdl, &buf, &len))
-			adt::dump_adt(buf, len);
-	}
-
-	const float x_min = -17066;
-	const float x_max = +17066;
-	const float x_inc = (x_max - x_min) / (cBlocksPerAxis-1);
-	const float z_min = -17066;
-	const float z_max = +17066;
-	const float z_inc = (z_max - z_min) / (cBlocksPerAxis-1);
-
-	float z_cur = z_max;
-	// Check which blocks are available
-	for (int i=0; i < 64; ++i) {
-		float x_cur = x_min;
-		for (int j =0; j < 64; ++j) {
-
-			const int idx = i*cBlocksPerAxis+j;
-			WorldBlock &wb = zone->_blocks[idx];
-			AABB &aabb = zone->_bounding_boxes[idx];
-			aabb.v_min = XMFLOAT3(x_cur, FLT_MIN, z_cur);
-			aabb.v_max = XMFLOAT3(x_cur + x_inc, FLT_MAX, z_cur - z_inc);
-
-			char obj0[MAX_PATH];
-			// load the _obj0.adt file
-			sprintf(obj0, "%s_%.2d_%.2d_obj0.adt", zone_name, i+1, j+1);
-			uint8* buf;
-			uint64 len;
-			if (_loader.load_file(obj0, &buf, &len)) {
-				vector<string2> m2, wmo;
-				vector<M2> m2_objs;
-				vector<Wmo> wmo_objs;
-				adt::adt_parse_obj0(buf, len, &wb.m2_objects, &m2_objs, &wb.wmo_objects, &wmo_objs);
-				char adt_file[MAX_PATH];
-				sprintf(adt_file, "%s_%.2d_%.2d.adt", zone_name, i+1, j+1);
-				_block_idx[i * cBlocksPerAxis + j] = _loader.find_file(adt_file);
-				wb._empty = false;
-			}
-			x_cur += x_inc;
-		}
-		z_cur -= z_inc;
-	}
-	return zone;
-}
-
 bool TestEffect7::init()
 {
 	auto& s = System::instance();
@@ -1508,11 +1569,9 @@ bool TestEffect7::init()
 	App::instance().add_update_callback(MakeDelegate(this, &TestEffect7::update), true);
 
 	ZoneLoader loader;
-	Zone *zone = loader.load("World\\maps\\Deephome\\Deephome");
-	if (!zone)
+	_zone = loader.load("World\\maps\\Deephome\\Deephome");
+	if (!_zone)
 		return false;
-
-	zone->render(*App::instance().camera());
 /*
 	vector<adt::TerrainChunk *> chunks;
 
@@ -1570,6 +1629,10 @@ bool TestEffect7::render()
 	Graphics& g = Graphics::instance();
 	ID3D11Device* device = g.device();
 	ID3D11DeviceContext* context = g.context();
+
+	_zone->render(*App::instance().camera());
+	if (!_verts.num_verts())
+		return true;
 
 	context->OMSetDepthStencilState(g.default_depth_stencil_state(), g.default_stencil_ref());
 	context->OMSetBlendState(g.default_blend_state(), g.default_blend_factors(), g.default_sample_mask());
