@@ -994,16 +994,15 @@ void expand_aabb(const AABB &aabb, XMFLOAT3 *out)
 struct Zone {
 	void render(const Camera &camera);
 
+	int _block_idx[cBlocksPerZone];
 	AABB _bounding_boxes[cBlocksPerZone];
 	WorldBlock _blocks[cBlocksPerZone];
 };
 
 struct ZoneLoader {
 	Zone *load(const char *zone_name);
-
-	int _block_idx[cBlocksPerZone];
-
 	MpqLoader _loader;
+	void async_load(int idx);
 };
 
 XMMATRIX load_xmmatrix(const D3DXMATRIX &mtx)
@@ -1078,6 +1077,9 @@ void Zone::render(const Camera &camera)
 			blocks_to_load.push_back(i);
 	}
 
+	for (size_t i = 0; i < blocks_to_load.size(); ++i) {
+		//_blocks
+	}
 	// 
 }
 
@@ -1130,7 +1132,7 @@ Zone *ZoneLoader::load(const char *zone_name)
 				adt::adt_parse_obj0(buf, len, &wb.m2_objects, &m2_objs, &wb.wmo_objects, &wmo_objs);
 				char adt_file[MAX_PATH];
 				sprintf(adt_file, "%s_%.2d_%.2d.adt", zone_name, i+1, j+1);
-				_block_idx[i * cBlocksPerAxis + j] = _loader.find_file(adt_file);
+				zone->_block_idx[i * cBlocksPerAxis + j] = _loader.find_file(adt_file);
 				wb._empty = false;
 			}
 			x_cur += x_inc;
@@ -1492,7 +1494,6 @@ void intrusive_split(char *str, char sep, vector<const char *> *splits)
 
 bool MpqLoader::extract(const char *filename)
 {
-
 	uint8 *buf;
 	uint64 len;
 
@@ -1523,11 +1524,13 @@ bool MpqLoader::extract(const char *filename)
 
 TestEffect7::TestEffect7()
 	: _zone(NULL)
+	, _zone_loader(NULL)
 {
 }
 
 TestEffect7::~TestEffect7()
 {
+	delete exch_null(_zone_loader);
 	delete exch_null(_zone);
 }
 
@@ -1568,8 +1571,8 @@ bool TestEffect7::init()
 	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/test_effect6.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect7::effect_loaded)));
 	App::instance().add_update_callback(MakeDelegate(this, &TestEffect7::update), true);
 
-	ZoneLoader loader;
-	_zone = loader.load("World\\maps\\Deephome\\Deephome");
+	_zone_loader = new ZoneLoader;
+	_zone = _zone_loader->load("World\\maps\\Deephome\\Deephome");
 	if (!_zone)
 		return false;
 /*
