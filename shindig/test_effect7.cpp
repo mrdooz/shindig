@@ -18,8 +18,10 @@
 #include "md5.h"
 #include <xnamath.h>
 
-using namespace std;
+//using namespace std;
 using boost::scoped_array;
+using std::vector;
+using std::function;
 
 // make some less annoying types
 typedef uint8_t uint8;
@@ -950,6 +952,9 @@ struct ObjectWmo {
 struct WorldBlock {
 	WorldBlock() : _empty(true), _loaded(false) {}
 
+	typedef function<void (WorldBlock *)> fnLoaded;
+
+	void async_load(const fnLoaded &loaded_callback);
 	bool is_loaded();
 	bool is_empty();
 
@@ -959,6 +964,11 @@ struct WorldBlock {
 	bool _empty;
 	bool _loaded;
 };
+
+void WorldBlock::async_load(const fnLoaded &loaded_callback)
+{
+
+}
 
 bool WorldBlock::is_loaded()
 {
@@ -991,13 +1001,103 @@ void expand_aabb(const AABB &aabb, XMFLOAT3 *out)
 	XMStoreFloat3(&out[7], c + rx + ry  - rz);
 }
 
+// We have 1 renderer per deferred context
+struct Renderer
+{
+	Renderer(HANDLE cancel, HANDLE render);
+	bool init();
+	bool close();
+
+	int num_visible_blocks();
+	void add_block();
+
+	static uint32 __stdcall run(void *arg);
+
+	CComPtr<ID3D11DeviceContext> _deferred_context;
+	vector<int> _blocks;
+	HANDLE _thread;
+	HANDLE _events[2];	// [Cancel, Render]
+};
+
+Renderer::Renderer(HANDLE cancel, HANDLE render)
+{
+	_events[0] = cancel;
+	_events[1] = render;
+}
+
+uint32 Renderer::run(void *arg)
+{
+	Renderer *self = (Renderer *)arg;
+
+	ID3D11Device *device = Graphics::instance().device();
+	if (FAILED(device->CreateDeferredContext(0, &self->_deferred_context.p)))
+		return 1;
+
+	// wait for stuff to render
+	while (true) {
+		DWORD res = WaitForMultipleObjects(2, self->_events, FALSE, INFINITE);
+		if (res == WAIT_OBJECT_0)
+			break;
+
+		// stuff to render
+	}
+
+	return 0;
+}
+
+bool Renderer::init()
+{
+	_thread = (HANDLE)_beginthreadex(NULL, 0, run, this, CREATE_SUSPENDED, NULL);
+
+	ResumeThread(_thread);
+
+	return true;
+}
+
+bool Renderer::close()
+{
+	return true;
+}
+
+int Renderer::num_visible_blocks()
+{
+	return 1;
+}
+
+void Renderer::add_block()
+{
+
+}
+
 struct Zone {
+	bool init();
 	void render(const Camera &camera);
 
+	HANDLE _cancel_event;
+	vector<Renderer *> _renderers;
 	int _block_idx[cBlocksPerZone];
 	AABB _bounding_boxes[cBlocksPerZone];
 	WorldBlock _blocks[cBlocksPerZone];
 };
+
+bool Zone::init()
+{
+	_cancel_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+	// create the renderers
+	const int cNumRenderers = 10;
+	for (int i = 0; i < cNumRenderers; ++i) {
+		HANDLE e = CreateEvent(NULL, TRUE, FALSE, NULL);
+		Renderer *r = new Renderer(_cancel_event, e);
+		if (!r->init()) {
+			delete exch_null(r);
+			return false;
+		}
+		_renderers.push_back(r);
+	}
+
+	return true;
+}
 
 struct ZoneLoader {
 	Zone *load(const char *zone_name);
@@ -1524,13 +1624,11 @@ bool MpqLoader::extract(const char *filename)
 
 TestEffect7::TestEffect7()
 	: _zone(NULL)
-	, _zone_loader(NULL)
 {
 }
 
 TestEffect7::~TestEffect7()
 {
-	delete exch_null(_zone_loader);
 	delete exch_null(_zone);
 }
 
@@ -1571,10 +1669,12 @@ bool TestEffect7::init()
 	RETURN_ON_FAIL_BOOL_E(r.load_shaders(s.convert_path("effects/test_effect6.fx", System::kDirRelative), "vsMain", NULL, "psMain", MakeDelegate(this, &TestEffect7::effect_loaded)));
 	App::instance().add_update_callback(MakeDelegate(this, &TestEffect7::update), true);
 
-	_zone_loader = new ZoneLoader;
-	_zone = _zone_loader->load("World\\maps\\Deephome\\Deephome");
-	if (!_zone)
+	ZoneLoader zone_loader;
+	_zone = zone_loader.load("World\\maps\\Deephome\\Deephome");
+	if (!_zone || !_zone->init())
 		return false;
+
+
 /*
 	vector<adt::TerrainChunk *> chunks;
 
